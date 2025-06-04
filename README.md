@@ -1,6 +1,6 @@
-# FactCheck - Sprint 1 Implementation
+# MyMaid - Sprint 1 Implementation
 
-FactCheck là một ứng dụng web để kiểm tra độ tin cậy của thông tin và tin tức. Đây là implementation của Sprint 1 với các tính năng cơ bản.
+MyMaid là một ứng dụng web cho phép người dùng tìm kiếm người giúp việc phù hợp với các nhu cầu của họ. Đây là implementation của Sprint 1 với các tính năng cơ bản.
 
 ## 🚀 Tính năng Sprint 1
 
