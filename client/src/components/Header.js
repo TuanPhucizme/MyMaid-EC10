@@ -7,7 +7,7 @@ export default function Header() {
       <Container>
         <Navbar expand="lg" className="py-0">
           {/* Logo và tên thương hiệu */}
-          <Navbar.Brand href="/" className="d-flex align-items-center gap-2">
+          <Navbar.Brand href="/" className="d-flex align-items-center gap-4">
             <img
               src="/logo.png" // ← thay bằng logo bạn upload hoặc link
               alt="MyMaid"
@@ -17,17 +17,15 @@ export default function Header() {
           </Navbar.Brand>
 
           {/* Menu chính */}
-          <Nav className="mx-auto gap-3 align-items-center">
+          <Nav className="mx-auto gap-4 align-items-center">
             <NavDropdown title="Về MyMaid" id="nav-about" />
             <NavDropdown title="Dịch vụ" id="nav-services" />
-            <Nav.Link>MyRewards</Nav.Link>
-            <Nav.Link>MyPay</Nav.Link>
-            <Nav.Link>Kinh nghiệm hay</Nav.Link>
+            <Nav.Link>Mẹo Vặt hay</Nav.Link>
           </Nav>
 
           {/* Góc phải: Ngôn ngữ & Quốc gia */}
-          <Nav className="ms-auto align-items-center gap-3">
-            <NavDropdown title="Trở thành đối tác" id="nav-partner" />
+          <Nav className="ms-auto align-items-center gap-4">
+            <Nav.Link>Trở thành đối tác</Nav.Link>
             <NavDropdown
               title={
                 <>
