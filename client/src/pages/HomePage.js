@@ -242,3 +242,4 @@ const HomePage = () => {
 };
 
 export default HomePage;
+src/pages/HomePage.js
