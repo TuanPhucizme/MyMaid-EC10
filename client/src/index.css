@@ -8,14 +8,14 @@
 body {
   font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   background-color: #f7fafc;
-  color: #1a202c;
+  color: #1c1949;
   line-height: 1.6;
 }
 
 /* Typography */
 h1, h2, h3 {
   font-weight: 600;
-  color: #1f2937;
+  color: #1c1949;
 }
 
 a {
@@ -51,7 +51,7 @@ a {
 }
 
 .btn-primary {
-  background-color: #f97316;
+  background-color: #2f94b5;
   color: white;
 }
 
@@ -60,7 +60,7 @@ a {
 }
 
 .btn-secondary {
-  background-color: #64748b;
+  background-color: #e3efbf;
   color: white;
 }
 
@@ -79,12 +79,12 @@ a {
 
 .btn-outline {
   background-color: transparent;
-  border: 2px solid #f97316;
-  color: #f97316;
+  border: 2px solid #2f94b5;
+  color: #2f94b5;
 }
 
 .btn-outline:hover:not(:disabled) {
-  background-color: #f97316;
+  background-color: #2f94b5;
   color: white;
 }
 
@@ -97,7 +97,7 @@ a {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
-  color: #374151;
+  color: #1c1949;
 }
 
 .form-input {
@@ -111,8 +111,8 @@ a {
 
 .form-input:focus {
   outline: none;
-  border-color: #f97316;
-  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+  border-color: #2fe9b5;
+  box-shadow: 0 0 0 3px rgba(47, 233, 181, 0.1);
 }
 
 .form-input.error {
@@ -127,7 +127,7 @@ a {
 
 /* Card Style - for service or layout */
 .card {
-  background: white;
+  background: #e3efbf;
   border-radius: 1rem;
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.05);
   padding: 1.5rem;
@@ -156,8 +156,8 @@ a {
 .spinner {
   width: 2rem;
   height: 2rem;
-  border: 3px solid #f3f4f6;
-  border-top: 3px solid #f97316;
+  border: 3px solid #e3efbf;
+  border-top: 3px solid #2f94b5;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
