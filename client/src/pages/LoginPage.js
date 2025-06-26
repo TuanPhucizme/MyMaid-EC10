@@ -185,8 +185,8 @@ const LoginPage = () => {
     <LoginContainer>
       <LoginCard>
         <LoginHeader>
-          <LoginTitle>Welcome Back</LoginTitle>
-          <LoginSubtitle>Sign in to your FactCheck account</LoginSubtitle>
+          <LoginTitle>Welcome</LoginTitle>
+          <LoginSubtitle>Sign in to your MyMaid account</LoginSubtitle>
         </LoginHeader>
 
         <Form onSubmit={handleSubmit(onSubmit)}>
