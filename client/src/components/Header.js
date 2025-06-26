@@ -1,5 +1,7 @@
-import React from "react";
+import { Import } from "lucide-react";
+import { useState } from "react";
 import { Container, Nav, Navbar, NavDropdown } from "react-bootstrap";
+import { Link } from "react-router-dom";
 
 export default function Header() {
   return (
@@ -7,40 +9,22 @@ export default function Header() {
       <Container>
         <Navbar expand="lg" className="py-0">
           {/* Logo và tên thương hiệu */}
-          <Navbar.Brand href="/" className="d-flex align-items-center gap-4">
+          <Navbar.Brand href="/" className="d-flex align-items-center gap-2">
             <img
-              src="/logo.png" // ← thay bằng logo bạn upload hoặc link
+              src="/logo.png"
               alt="MyMaid"
               style={{ width: 30, height: 30 }}
             />
-            <span className="text-warning fw-bold">MyMaid</span>
+            <span>MyMaid</span>
           </Navbar.Brand>
 
-          {/* Menu chính */}
-          <Nav className="mx-auto gap-4 align-items-center">
-            <NavDropdown title="Về MyMaid" id="nav-about" />
-            <NavDropdown title="Dịch vụ" id="nav-services" />
-            <Nav.Link>Mẹo Vặt hay</Nav.Link>
+          <Nav className="mx-auto gap-5 align-items-center">
+            <Nav.Link as={Link} to="/about-us" id="nav-about">Về MyMaid</Nav.Link>
+            <Nav.Link as={Link} to="/blog">Mẹo Vặt hay</Nav.Link>
+            <Nav.Link as={Link} to="/partner">Trở thành đối tác</Nav.Link>
+            <Nav.Link as={Link} to="/login">Đăng Nhập</Nav.Link>
           </Nav>
 
-          {/* Góc phải: Ngôn ngữ & Quốc gia */}
-          <Nav className="ms-auto align-items-center gap-4">
-            <Nav.Link>Trở thành đối tác</Nav.Link>
-            <NavDropdown
-              title={
-                <>
-                  <img
-                    src="https://flagcdn.com/w40/vn.png"
-                    alt="VN"
-                    style={{ width: 20, marginRight: 6 }}
-                  />
-                  Việt Nam
-                </>
-              }
-              id="nav-country"
-            />
-            <Nav.Link>Đăng Nhập</Nav.Link>
-          </Nav>
         </Navbar>
       </Container>
     </div>
