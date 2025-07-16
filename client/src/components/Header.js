@@ -1,32 +1,159 @@
-import { Import } from "lucide-react";
-import { useState } from "react";
-import { Container, Nav, Navbar, NavDropdown } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import Button from './ui/Button';
+import { useGSAP, animations } from '../hooks/useGSAP';
 
-export default function Header() {
+const Header = () => {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const location = useLocation();
+
+  const headerRef = useGSAP((gsap, element) => {
+    animations.slideInFromBottom(element);
+
+    // Logo animation
+    gsap.fromTo('.logo',
+      { scale: 0, rotation: -180 },
+      { scale: 1, rotation: 0, duration: 0.8, ease: "back.out(1.7)", delay: 0.2 }
+    );
+
+    // Navigation items stagger animation
+    animations.staggerChildren(element, '.nav-item', 0.1);
+  });
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const navItems = [
+    { name: 'Trang chủ', path: '/' },
+    { name: 'Dịch vụ', path: '/services' },
+    { name: 'Về MyMaid', path: '/about-us' },
+    { name: 'Blog', path: '/blog' },
+    { name: 'Đối tác', path: '/partner' }
+  ];
+
   return (
-    <div className="shadow-sm bg-white">
-      <Container>
-        <Navbar expand="lg" className="py-0">
-          {/* Logo và tên thương hiệu */}
-          <Navbar.Brand href="/" className="d-flex align-items-center gap-2">
-            <img
-              src="/logo.png"
-              alt="MyMaid"
-              style={{ width: 30, height: 30 }}
-            />
-            <span>MyMaid</span>
-          </Navbar.Brand>
+    <header
+      ref={headerRef}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled
+          ? 'bg-white/95 backdrop-blur-md shadow-lg'
+          : 'bg-white/80 backdrop-blur-sm'
+      }`}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 lg:h-20">
+          {/* Logo */}
+          <Link to="/" className="flex items-center space-x-3 group">
+            <div className="logo relative">
+              <img
+                src="/logo.png"
+                alt="MyMaid"
+                className="w-8 h-8 lg:w-10 lg:h-10 transition-transform group-hover:scale-110"
+              />
+              <div className="absolute inset-0 bg-primary-500 rounded-full opacity-0 group-hover:opacity-20 transition-opacity"></div>
+            </div>
+            <span className="text-xl lg:text-2xl font-bold text-neutral-900 group-hover:text-primary-600 transition-colors">
+              MyMaid
+            </span>
+          </Link>
 
-          <Nav className="mx-auto gap-5 align-items-center">
-            <Nav.Link as={Link} to="/about-us" id="nav-about">Về MyMaid</Nav.Link>
-            <Nav.Link as={Link} to="/blog">Mẹo Vặt hay</Nav.Link>
-            <Nav.Link as={Link} to="/partner">Trở thành đối tác</Nav.Link>
-            <Nav.Link as={Link} to="/login">Đăng Nhập</Nav.Link>
-          </Nav>
+          {/* Desktop Navigation */}
+          <nav className="hidden lg:flex items-center space-x-8">
+            {navItems.map((item, index) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`nav-item relative px-3 py-2 text-sm font-medium transition-colors hover:text-primary-600 ${
+                  location.pathname === item.path
+                    ? 'text-primary-600'
+                    : 'text-neutral-700'
+                }`}
+              >
+                {item.name}
+                {location.pathname === item.path && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-600 rounded-full"></div>
+                )}
+              </Link>
+            ))}
+          </nav>
 
-        </Navbar>
-      </Container>
-    </div>
+          {/* Desktop CTA */}
+          <div className="hidden lg:flex items-center space-x-4">
+            <Link to="/login">
+              <Button variant="ghost" size="sm">
+                Đăng nhập
+              </Button>
+            </Link>
+            <Link to="/register">
+              <Button size="sm">
+                Đăng ký
+              </Button>
+            </Link>
+          </div>
+
+          {/* Mobile menu button */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="lg:hidden p-2 rounded-lg hover:bg-neutral-100 transition-colors"
+          >
+            <svg
+              className={`w-6 h-6 transition-transform ${isMobileMenuOpen ? 'rotate-90' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              {isMobileMenuOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
+          </button>
+        </div>
+
+        {/* Mobile Navigation */}
+        <div className={`lg:hidden transition-all duration-300 overflow-hidden ${
+          isMobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+        }`}>
+          <div className="py-4 space-y-2 border-t border-neutral-200">
+            {navItems.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`block px-4 py-3 text-base font-medium rounded-lg transition-colors ${
+                  location.pathname === item.path
+                    ? 'bg-primary-50 text-primary-600'
+                    : 'text-neutral-700 hover:bg-neutral-50'
+                }`}
+              >
+                {item.name}
+              </Link>
+            ))}
+            <div className="flex flex-col space-y-2 px-4 pt-4 border-t border-neutral-200">
+              <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                <Button variant="ghost" className="w-full justify-center">
+                  Đăng nhập
+                </Button>
+              </Link>
+              <Link to="/register" onClick={() => setIsMobileMenuOpen(false)}>
+                <Button className="w-full justify-center">
+                  Đăng ký
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
   );
-}
+};
+
+export default Header;
