@@ -18,6 +18,21 @@ const blogPosts = [
     summary: "Bạn có biết cách giặt mà vẫn giữ được màu sắc và độ mềm mại của chăn ga?",
     image: "https://images.unsplash.com/photo-1556905055-8f358a7a47b2",
   },
+  {
+    title: "Bí quyết giặt chăn ga sạch như mới",
+    summary: "Bạn có biết cách giặt mà vẫn giữ được màu sắc và độ mềm mại của chăn ga?",
+    image: "https://images.unsplash.com/photo-1556905055-8f358a7a47b2",
+  },
+  {
+    title: "Bí quyết giặt chăn ga sạch như mới",
+    summary: "Bạn có biết cách giặt mà vẫn giữ được màu sắc và độ mềm mại của chăn ga?",
+    image: "https://images.unsplash.com/photo-1556905055-8f358a7a47b2",
+  },
+  {
+    title: "Bí quyết giặt chăn ga sạch như mới",
+    summary: "Bạn có biết cách giặt mà vẫn giữ được màu sắc và độ mềm mại của chăn ga?",
+    image: "https://images.unsplash.com/photo-1556905055-8f358a7a47b2",
+  },
 ];
 
 export default function BlogPage() {
