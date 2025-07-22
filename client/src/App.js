@@ -9,6 +9,9 @@ import AboutUs from "./pages/AboutUs";
 import Blog from "./pages/BlogPage";
 import LogIn from "./pages/LoginPage";
 import Register from "./pages/RegisterPage";
+import BookingSuccess from "./pages/BookingSuccess";
+import CheckoutPage from "./pages/CheckoutPage";
+import LaundryForm from "./pages/LaundryPage"; // Assuming you have a LaundryFormPage component
 
 function App() {
   return (
@@ -29,9 +32,14 @@ function App() {
         <Route path="/blog" element={<Blog />} />
         <Route path="/login" element={<LogIn />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/booking-success" element={<BookingSuccess />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/laundry" element={<LaundryForm />} />
       </Routes>
     </>
   );
 }
 
 export default App;
+
+//gắn BE

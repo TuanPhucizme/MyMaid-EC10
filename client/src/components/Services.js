@@ -1,5 +1,7 @@
 import React from "react";
 import { Container, Row, Col, Card } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
+
 
 const services = [
   { name: "Dọn Dẹp Nhà", sub: "Ca Lẻ" },
@@ -8,23 +10,34 @@ const services = [
   { name: "Dịch vụ chuyển nhà", isNew: true},
   { name: "Vệ sinh máy lạnh" },
   { name: "Vệ sinh Sofa - Đệm - Rèm" },
-  { name: "Giặt Đồ" },
+  { name: "Giặt Đồ", path : "/laundry" },
 ];
 
 export default function Services() {
+  const navigate = useNavigate();
+
   return (
     <Container>
       <h5 className="mb-3">Dịch vụ</h5>
       <Row>
         {services.map((service, index) => (
           <Col xs={6} md={3} className="mb-4" key={index}>
-            <Card className="text-center border-0 shadow-sm rounded-4">
-              <Card.Body>
-                <Card.Title className="h6">{service.name}</Card.Title>
-                {service.sub && <p className="text-muted">{service.sub}</p>}
-                {service.isNew && <span className="badge bg-danger">NEW</span>}
-              </Card.Body>
-            </Card>
+            <div
+              onClick={() => service.path && navigate(service.path)}
+              style={{ cursor: service.path ? "pointer" : "default" }}
+            >
+              <Card className="text-center border-0 shadow-sm rounded-4">
+                <Card.Body>
+                  <Card.Title className="h6">{service.name}</Card.Title>
+                  {service.sub && (
+                    <p className="text-muted mb-1">{service.sub}</p>
+                  )}
+                  {service.isNew && (
+                    <span className="badge bg-danger">NEW</span>
+                  )}
+                </Card.Body>
+              </Card>
+            </div>
           </Col>
         ))}
       </Row>
