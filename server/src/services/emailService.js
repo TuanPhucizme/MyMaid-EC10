@@ -2,15 +2,21 @@ const nodemailer = require('nodemailer');
 
 class EmailService {
   constructor() {
-    this.transporter = nodemailer.createTransporter({
-      host: process.env.EMAIL_HOST,
-      port: process.env.EMAIL_PORT,
-      secure: false, // true for 465, false for other ports
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      }
-    });
+    // Only create transporter if email configuration is available
+    if (process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+      this.transporter = nodemailer.createTransport({
+        host: process.env.EMAIL_HOST,
+        port: process.env.EMAIL_PORT,
+        secure: false, // true for 465, false for other ports
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS
+        }
+      });
+    } else {
+      console.log('⚠️ Email configuration not found, email service will be disabled');
+      this.transporter = null;
+    }
   }
 
   async sendVerificationEmail(email, token, firstName) {
@@ -49,6 +55,10 @@ class EmailService {
     };
 
     try {
+      if (!this.transporter) {
+        console.log(`⚠️ Email service disabled - verification email would be sent to ${email}`);
+        return;
+      }
       await this.transporter.sendMail(mailOptions);
       console.log(`Verification email sent to ${email}`);
     } catch (error) {
@@ -94,6 +104,10 @@ class EmailService {
     };
 
     try {
+      if (!this.transporter) {
+        console.log(`⚠️ Email service disabled - password reset email would be sent to ${email}`);
+        return;
+      }
       await this.transporter.sendMail(mailOptions);
       console.log(`Password reset email sent to ${email}`);
     } catch (error) {

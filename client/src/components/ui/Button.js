@@ -8,16 +8,22 @@ const Button = React.forwardRef(({
   children,
   disabled,
   loading,
+  href,
+  target,
   ...props
 }, ref) => {
-  const baseStyles = "inline-flex items-center justify-center font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
+  const baseStyles = "inline-flex items-center justify-center font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95";
   
   const variants = {
     primary: "bg-primary-500 hover:bg-primary-600 text-white focus:ring-primary-500 shadow-md hover:shadow-lg",
     secondary: "bg-secondary-500 hover:bg-secondary-600 text-neutral-900 focus:ring-secondary-500 shadow-md hover:shadow-lg",
     outline: "border-2 border-primary-500 text-primary-500 hover:bg-primary-500 hover:text-white focus:ring-primary-500",
     ghost: "text-neutral-700 hover:bg-neutral-100 focus:ring-neutral-500",
-    danger: "bg-red-500 hover:bg-red-600 text-white focus:ring-red-500 shadow-md hover:shadow-lg"
+    danger: "bg-red-500 hover:bg-red-600 text-white focus:ring-red-500 shadow-md hover:shadow-lg",
+    success: "bg-green-500 hover:bg-green-600 text-white focus:ring-green-500 shadow-md hover:shadow-lg",
+    warning: "bg-yellow-500 hover:bg-yellow-600 text-white focus:ring-yellow-500 shadow-md hover:shadow-lg",
+    dark: "bg-neutral-800 hover:bg-neutral-900 text-white focus:ring-neutral-500 shadow-md hover:shadow-lg",
+    light: "bg-neutral-100 hover:bg-neutral-200 text-neutral-900 focus:ring-neutral-500"
   };
 
   const sizes = {
@@ -26,6 +32,38 @@ const Button = React.forwardRef(({
     lg: "px-6 py-3 text-lg rounded-xl",
     xl: "px-8 py-4 text-xl rounded-2xl"
   };
+
+  const buttonContent = (
+    <>
+      {loading && (
+        <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      )}
+      {children}
+    </>
+  );
+
+  // If href is provided, render as link
+  if (href) {
+    return (
+      <a
+        href={href}
+        target={target}
+        rel={target === '_blank' ? 'noopener noreferrer' : undefined}
+        className={cn(
+          baseStyles,
+          variants[variant],
+          sizes[size],
+          className
+        )}
+        {...props}
+      >
+        {buttonContent}
+      </a>
+    );
+  }
 
   return (
     <button
@@ -39,13 +77,7 @@ const Button = React.forwardRef(({
       disabled={disabled || loading}
       {...props}
     >
-      {loading && (
-        <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-      )}
-      {children}
+      {buttonContent}
     </button>
   );
 });

@@ -11,7 +11,13 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = Cookies.get('token');
-    if (token) {
+    const firebaseToken = Cookies.get('firebaseToken');
+    
+    if (firebaseToken) {
+      // Use Firebase token if available
+      config.headers.Authorization = `Bearer ${firebaseToken}`;
+    } else if (token) {
+      // Fallback to JWT token for legacy users
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -28,6 +34,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       // Token expired or invalid
       Cookies.remove('token');
+      Cookies.remove('firebaseToken');
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -36,11 +43,21 @@ api.interceptors.response.use(
 
 // Auth API endpoints
 export const authAPI = {
+  // Traditional auth endpoints
   register: (userData) => api.post('/auth/register', userData),
   login: (email, password) => api.post('/auth/login', { email, password }),
+  
+  // Firebase auth endpoints
+  loginWithFirebase: (idToken) => api.post('/auth/login/firebase', { idToken }),
+  refreshToken: (firebaseUid) => api.post('/auth/refresh-token', { firebaseUid }),
+  
+  // Common auth endpoints
   verifyEmail: (token) => api.post('/auth/verify-email', { token }),
   forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
   resetPassword: (token, newPassword) => api.post('/auth/reset-password', { token, newPassword }),
+  logout: () => api.post('/auth/logout'),
+  
+  // User profile endpoints
   getProfile: () => api.get('/users/profile'),
   updateProfile: (profileData) => api.put('/users/profile', profileData),
 };

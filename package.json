@@ -1,7 +1,65 @@
 {
+  "name": "mymaid-ec10",
+  "version": "1.0.0",
+  "description": "MyMaid - Nền tảng kết nối dịch vụ giúp việc chuyên nghiệp",
+  "main": "start.js",
+  "scripts": {
+    "start": "node process-manager.js start",
+    "start:legacy": "node start.js",
+    "start:fixed": "node start-fixed.js",
+    "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
+    "server": "cd server && npm start",
+    "server:dev": "cd server && npm run dev",
+    "client": "cd client && npm start",
+    "client:dev": "cd client && npm start",
+    "client:3000": "cd client && npm run start:3000",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "build": "cd client && npm run build",
+    "test": "cd server && npm test",
+    "check-env": "cd server && npm run check-env",
+    "clean": "rm -rf node_modules && cd server && rm -rf node_modules && cd ../client && rm -rf node_modules",
+    "setup": "npm run install:all && npm run check-env",
+    "quick-start": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
+    "server-only": "cd server && npm run dev",
+    "client-only": "cd client && npm start",
+    "stop": "node process-manager.js stop",
+    "stop:legacy": "taskkill /f /im node.exe 2>nul && echo \"Killed all Node.js processes\" && netstat -ano | findstr :3000 | findstr LISTENING >nul && for /f \"tokens=5\" %a in ('netstat -ano ^| findstr :3000 ^| findstr LISTENING') do taskkill /f /pid %a 2>nul && echo \"Cleared port 3000\" || echo \"Port 3000 is free\" && netstat -ano | findstr :5000 | findstr LISTENING >nul && for /f \"tokens=5\" %a in ('netstat -ano ^| findstr :5000 ^| findstr LISTENING') do taskkill /f /pid %a 2>nul && echo \"Cleared port 5000\" || echo \"Port 5000 is free\"",
+    "stop:all": "npm run stop && echo \"All Node.js processes and ports have been cleared\"",
+    "clear-ports": "netstat -ano | findstr :3000 | findstr LISTENING >nul && for /f \"tokens=5\" %a in ('netstat -ano ^| findstr :3000 ^| findstr LISTENING') do taskkill /f /pid %a 2>nul && echo \"Cleared port 3000\" || echo \"Port 3000 is free\" && netstat -ano | findstr :5000 | findstr LISTENING >nul && for /f \"tokens=5\" %a in ('netstat -ano ^| findstr :5000 ^| findstr LISTENING') do taskkill /f /pid %a 2>nul && echo \"Cleared port 5000\" || echo \"Port 5000 is free\"",
+    "kill:ports": "netstat -ano | findstr :3000 | findstr LISTENING >nul && for /f \"tokens=5\" %a in ('netstat -ano ^| findstr :3000 ^| findstr LISTENING') do taskkill /f /pid %a 2>nul && echo \"Killed process on port 3000\" || echo \"No process on port 3000\" && netstat -ano | findstr :5000 | findstr LISTENING >nul && for /f \"tokens=5\" %a in ('netstat -ano ^| findstr :5000 ^| findstr LISTENING') do taskkill /f /pid %a 2>nul && echo \"Killed process on port 5000\" || echo \"No process on port 5000\"",
+    "force-kill-ports": "node force-kill-ports.js",
+    "force-kill-3000": "node force-kill-ports.js 3000",
+    "force-kill-5000": "node force-kill-ports.js 5000",
+    "status": "node process-manager.js status",
+    "restart": "node process-manager.js restart",
+    "pm:start": "node process-manager.js start",
+    "pm:stop": "node process-manager.js stop",
+    "pm:status": "node process-manager.js status",
+    "pm:restart": "node process-manager.js restart"
+  },
   "dependencies": {
     "bootstrap": "^5.3.6",
     "react-bootstrap": "^2.10.10",
-    "react-bootstrap-icons": "^1.11.6"
+    "react-bootstrap-icons": "^1.11.6",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": [
+    "mymaid",
+    "cleaning-service",
+    "maid-service",
+    "firebase",
+    "react",
+    "express",
+    "nodejs"
+  ],
+  "author": "MyMaid Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   }
 }

@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Button from './ui/Button';
 import { useGSAP, animations } from '../hooks/useGSAP';
+import { useAuth } from '../context/AuthContext';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   const headerRef = useGSAP((gsap, element) => {
     animations.slideInFromBottom(element);
@@ -29,6 +33,21 @@ const Header = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    // Close mobile menu when route changes
+    setIsMobileMenuOpen(false);
+    setIsUserMenuOpen(false);
+  }, [location]);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   const navItems = [
     { name: 'Trang chủ', path: '/' },
@@ -86,16 +105,66 @@ const Header = () => {
 
           {/* Desktop CTA */}
           <div className="hidden lg:flex items-center space-x-4">
-            <Link to="/login">
-              <Button variant="ghost" size="sm">
-                Đăng nhập
-              </Button>
-            </Link>
-            <Link to="/register">
-              <Button size="sm">
-                Đăng ký
-              </Button>
-            </Link>
+            {user ? (
+              <div className="relative">
+                <button
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className="flex items-center space-x-2 p-2 rounded-lg hover:bg-neutral-100 transition-colors"
+                >
+                  <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white font-medium">
+                    {user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                  <span className="text-sm font-medium text-neutral-700">{user.displayName || 'User'}</span>
+                  <svg className="w-4 h-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* User Dropdown Menu */}
+                {isUserMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-neutral-200 py-2">
+                    <Link
+                      to="/dashboard"
+                      className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
+                    >
+                      Dashboard
+                    </Link>
+                    <Link
+                      to="/profile"
+                      className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
+                    >
+                      Hồ sơ
+                    </Link>
+                    <Link
+                      to="/services"
+                      className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
+                    >
+                      Đặt dịch vụ
+                    </Link>
+                    <hr className="my-2" />
+                    <button
+                      onClick={handleLogout}
+                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      Đăng xuất
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="ghost" size="sm">
+                    Đăng nhập
+                  </Button>
+                </Link>
+                <Link to="/register">
+                  <Button size="sm">
+                    Đăng ký
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -137,18 +206,45 @@ const Header = () => {
                 {item.name}
               </Link>
             ))}
-            <div className="flex flex-col space-y-2 px-4 pt-4 border-t border-neutral-200">
-              <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                <Button variant="ghost" className="w-full justify-center">
-                  Đăng nhập
-                </Button>
-              </Link>
-              <Link to="/register" onClick={() => setIsMobileMenuOpen(false)}>
-                <Button className="w-full justify-center">
-                  Đăng ký
-                </Button>
-              </Link>
-            </div>
+            
+            {user ? (
+              <div className="px-4 pt-4 border-t border-neutral-200 space-y-2">
+                <div className="flex items-center space-x-3 py-2">
+                  <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white font-medium">
+                    {user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                  <span className="text-sm font-medium text-neutral-700">{user.displayName || 'User'}</span>
+                </div>
+                <Link to="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button variant="ghost" className="w-full justify-center">
+                    Dashboard
+                  </Button>
+                </Link>
+                <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button variant="ghost" className="w-full justify-center">
+                    Hồ sơ
+                  </Button>
+                </Link>
+                <button onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}>
+                  <Button variant="danger" className="w-full justify-center">
+                    Đăng xuất
+                  </Button>
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col space-y-2 px-4 pt-4 border-t border-neutral-200">
+                <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button variant="ghost" className="w-full justify-center">
+                    Đăng nhập
+                  </Button>
+                </Link>
+                <Link to="/register" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button className="w-full justify-center">
+                    Đăng ký
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>

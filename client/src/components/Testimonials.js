@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { testimonials, testimonialStats } from '../data/testimonials';
 import { Card, CardContent } from './ui/Card';
 import Badge from './ui/Badge';
+import Button from './ui/Button';
 import { useGSAP, animations } from '../hooks/useGSAP';
 import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
 
@@ -115,6 +117,7 @@ const TestimonialCard = ({ testimonial, index }) => {
 const Testimonials = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const { ref: sectionRef, hasIntersected } = useIntersectionObserver();
+  const navigate = useNavigate();
   
   const titleRef = useGSAP((gsap, element) => {
     if (hasIntersected) {
@@ -145,6 +148,19 @@ const Testimonials = () => {
   }, []);
 
   const visibleTestimonials = testimonials.slice(0, 6);
+
+  const handleViewAllReviews = () => {
+    // Navigate to a reviews page or open modal
+    console.log('View all reviews');
+  };
+
+  const handleWriteReview = () => {
+    navigate('/services');
+  };
+
+  const handleLearnMore = () => {
+    navigate('/about-us');
+  };
 
   return (
     <section ref={sectionRef} className="py-20 bg-white">
@@ -218,6 +234,27 @@ const Testimonials = () => {
                 }`}
               />
             ))}
+          </div>
+        </div>
+
+        {/* CTA Section */}
+        <div className="mt-16 text-center space-y-6">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button size="lg" onClick={handleWriteReview}>
+              Viết đánh giá
+            </Button>
+            <Button variant="outline" size="lg" onClick={handleViewAllReviews}>
+              Xem tất cả đánh giá
+            </Button>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button variant="ghost" onClick={handleLearnMore}>
+              Tìm hiểu thêm về MyMaid
+            </Button>
+            <Button variant="ghost" onClick={() => navigate('/services')}>
+              Đặt dịch vụ ngay
+            </Button>
           </div>
         </div>
       </div>

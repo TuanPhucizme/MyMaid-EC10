@@ -9,7 +9,10 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
-require('dotenv').config();
+const path = require('path');
+
+// Load environment variables from root directory
+require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 
 // TODO: Add environment validation to ensure required env vars are set
 // TODO: Add graceful shutdown handling
@@ -27,14 +30,23 @@ const { authenticateToken } = require('./middleware/auth');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Trust proxy for rate limiting
+app.set('trust proxy', 1);
+
 // TODO: Add request logging with unique request IDs
 // TODO: Add performance monitoring middleware
 
 // Security middleware - TODO: Configure CSP headers for production
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
+  origin: [
+    process.env.FRONTEND_URL || 'http://localhost:3000',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
   // TODO: Add more specific CORS configuration for production
 }));
 

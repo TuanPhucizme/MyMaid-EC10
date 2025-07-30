@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { maids, maidStats } from '../data/maids';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
 import Badge from './ui/Badge';
@@ -36,7 +37,9 @@ const SkillBar = ({ skill }) => {
 
 const MaidCard = ({ maid, index }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
   const { ref, hasIntersected } = useIntersectionObserver();
+  const navigate = useNavigate();
   
   const cardRef = useGSAP((gsap, element) => {
     if (hasIntersected) {
@@ -71,9 +74,23 @@ const MaidCard = ({ maid, index }) => {
     }
   }, [hasIntersected]);
 
+  const handleContact = () => {
+    navigate('/services', { state: { selectedMaid: maid.id } });
+  };
+
+  const handleViewProfile = () => {
+    // Navigate to a detailed profile page or open modal
+    console.log('View profile for:', maid.name);
+  };
+
+  const handleFavorite = (e) => {
+    e.stopPropagation();
+    setIsFavorite(!isFavorite);
+  };
+
   return (
     <div ref={ref}>
-      <Card ref={cardRef} className="h-full hover:shadow-large transition-all duration-300">
+      <Card ref={cardRef} className="h-full hover:shadow-large transition-all duration-300 cursor-pointer" onClick={handleViewProfile}>
         {/* Header with avatar and basic info */}
         <CardHeader className="pb-4">
           <div className="flex items-start space-x-4">
@@ -189,7 +206,7 @@ const MaidCard = ({ maid, index }) => {
                 <span className="text-neutral-500">/giờ</span>
               </div>
               <button
-                onClick={() => setIsExpanded(!isExpanded)}
+                onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
                 className="text-primary-600 text-sm font-medium hover:text-primary-700"
               >
                 {isExpanded ? 'Thu gọn' : 'Xem thêm'}
@@ -197,14 +214,21 @@ const MaidCard = ({ maid, index }) => {
             </div>
             
             <div className="flex space-x-2">
-              <Button className="flex-1 group">
+              <Button 
+                className="flex-1 group"
+                onClick={(e) => { e.stopPropagation(); handleContact(); }}
+              >
                 Liên hệ
                 <svg className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
               </Button>
-              <Button variant="outline">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <Button 
+                variant="outline"
+                onClick={handleFavorite}
+                className={isFavorite ? 'text-red-500 border-red-500 hover:bg-red-50' : ''}
+              >
+                <svg className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                 </svg>
               </Button>
@@ -218,6 +242,7 @@ const MaidCard = ({ maid, index }) => {
 
 const MaidProfiles = () => {
   const { ref: sectionRef, hasIntersected } = useIntersectionObserver();
+  const navigate = useNavigate();
   
   const titleRef = useGSAP((gsap, element) => {
     if (hasIntersected) {
@@ -237,6 +262,14 @@ const MaidProfiles = () => {
       });
     }
   }, [hasIntersected]);
+
+  const handleViewAllMaids = () => {
+    navigate('/services');
+  };
+
+  const handleBecomePartner = () => {
+    navigate('/partner');
+  };
 
   return (
     <section ref={sectionRef} className="py-20 bg-neutral-50">
@@ -284,10 +317,18 @@ const MaidProfiles = () => {
         </div>
 
         {/* CTA */}
-        <div className="text-center mt-16">
-          <Button size="lg" variant="outline">
+        <div className="text-center mt-16 space-y-4">
+          <Button size="lg" variant="outline" onClick={handleViewAllMaids}>
             Xem tất cả người giúp việc
           </Button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button variant="ghost" onClick={handleBecomePartner}>
+              Trở thành đối tác
+            </Button>
+            <Button variant="ghost" onClick={() => navigate('/about-us')}>
+              Tìm hiểu thêm
+            </Button>
+          </div>
         </div>
       </div>
     </section>

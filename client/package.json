@@ -39,10 +39,12 @@
     "web-vitals": "^3.4.0"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "set PORT=3001 && react-scripts start",
+    "start:3000": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "stop": "taskkill /f /im node.exe 2>nul && netstat -ano | findstr :3001 | findstr LISTENING >nul && for /f \"tokens=5\" %a in ('netstat -ano ^| findstr :3001 ^| findstr LISTENING') do taskkill /f /pid %a 2>nul && echo \"Cleared port 3001\" || echo \"Port 3001 is free\""
   },
   "eslintConfig": {
     "extends": [

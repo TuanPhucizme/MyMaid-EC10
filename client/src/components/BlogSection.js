@@ -1,5 +1,5 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { blogPosts, blogCategories } from '../data/blog';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
 import Badge from './ui/Badge';
@@ -9,6 +9,7 @@ import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
 
 const BlogCard = ({ post, index, featured = false }) => {
   const { ref, hasIntersected } = useIntersectionObserver();
+  const navigate = useNavigate();
   
   const cardRef = useGSAP((gsap, element) => {
     if (hasIntersected) {
@@ -43,9 +44,14 @@ const BlogCard = ({ post, index, featured = false }) => {
     }
   }, [hasIntersected]);
 
+  const handleCardClick = () => {
+    // Navigate to blog detail page
+    navigate(`/blog/${post.id}`);
+  };
+
   return (
     <div ref={ref} className={featured ? 'md:col-span-2' : ''}>
-      <Card ref={cardRef} className="h-full group cursor-pointer hover:shadow-large transition-all duration-300">
+      <Card ref={cardRef} className="h-full group cursor-pointer hover:shadow-large transition-all duration-300" onClick={handleCardClick}>
         <div className="relative overflow-hidden">
           <img 
             src={post.image} 
@@ -125,7 +131,9 @@ const BlogCard = ({ post, index, featured = false }) => {
 };
 
 const BlogSection = () => {
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const { ref: sectionRef, hasIntersected } = useIntersectionObserver();
+  const navigate = useNavigate();
   
   const titleRef = useGSAP((gsap, element) => {
     if (hasIntersected) {
@@ -141,6 +149,20 @@ const BlogSection = () => {
 
   const featuredPosts = blogPosts.filter(post => post.featured);
   const regularPosts = blogPosts.filter(post => !post.featured).slice(0, 4);
+
+  const handleCategoryClick = (categoryId) => {
+    setSelectedCategory(categoryId);
+    navigate('/blog', { state: { category: categoryId } });
+  };
+
+  const handleViewAllPosts = () => {
+    navigate('/blog');
+  };
+
+  const handleNewsletterSignup = () => {
+    // Handle newsletter signup
+    console.log('Newsletter signup');
+  };
 
   return (
     <section ref={sectionRef} className="py-20 bg-white">
@@ -158,11 +180,27 @@ const BlogSection = () => {
 
         {/* Categories */}
         <div ref={categoriesRef} className="flex flex-wrap justify-center gap-4 mb-12">
+          <div 
+            className={`category-item rounded-full px-4 py-2 text-sm font-medium hover:scale-105 transition-transform cursor-pointer ${
+              selectedCategory === 'all' 
+                ? 'bg-primary-600 text-white' 
+                : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+            }`}
+            onClick={() => handleCategoryClick('all')}
+          >
+            Tất cả ({blogPosts.length})
+          </div>
           {blogCategories.map((category, index) => (
-            <div key={category.id} className="category-item">
-              <div className={`${category.color} rounded-full px-4 py-2 text-sm font-medium hover:scale-105 transition-transform cursor-pointer`}>
-                {category.name} ({category.count})
-              </div>
+            <div 
+              key={category.id} 
+              className={`category-item rounded-full px-4 py-2 text-sm font-medium hover:scale-105 transition-transform cursor-pointer ${
+                selectedCategory === category.id 
+                  ? 'bg-primary-600 text-white' 
+                  : category.color
+              }`}
+              onClick={() => handleCategoryClick(category.id)}
+            >
+              {category.name} ({category.count})
             </div>
           ))}
         </div>
@@ -204,19 +242,25 @@ const BlogSection = () => {
               placeholder="Nhập email của bạn"
               className="flex-1 px-4 py-3 rounded-lg border border-neutral-300 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20"
             />
-            <Button>
+            <Button onClick={handleNewsletterSignup}>
               Đăng ký ngay
             </Button>
           </div>
         </div>
 
         {/* CTA */}
-        <div className="text-center mt-16">
-          <Link to="/blog">
-            <Button size="lg" variant="outline">
-              Xem tất cả bài viết
+        <div className="text-center mt-16 space-y-4">
+          <Button size="lg" variant="outline" onClick={handleViewAllPosts}>
+            Xem tất cả bài viết
+          </Button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button variant="ghost" onClick={() => navigate('/services')}>
+              Đặt dịch vụ ngay
             </Button>
-          </Link>
+            <Button variant="ghost" onClick={() => navigate('/about-us')}>
+              Tìm hiểu thêm
+            </Button>
+          </div>
         </div>
       </div>
     </section>
