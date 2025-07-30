@@ -1,4 +1,3 @@
-const jwt = require('jsonwebtoken');
 const { db, collections, firebaseAuth, dbUtils } = require('../config/firebase');
 
 const authenticateToken = async (req, res, next) => {
@@ -8,178 +7,8 @@ const authenticateToken = async (req, res, next) => {
 
     if (!token) {
       return res.status(401).json({ 
-        error: 'Access token required',
-        code: 'TOKEN_MISSING'
-      });
-    }
-
-    // Try Firebase ID token first
-    const firebaseResult = await firebaseAuth.verifyIdToken(token);
-    
-    if (firebaseResult.success) {
-      const { decodedToken } = firebaseResult;
-      const { uid, email } = decodedToken;
-
-      // Get user from Firestore
-      const userResult = await dbUtils.getUserByFirebaseUid(uid);
-      
-      if (!userResult.success) {
-        return res.status(404).json({ 
-          error: 'User not found',
-          code: 'USER_NOT_FOUND'
-        });
-      }
-
-      const user = userResult.user;
-      
-      // Check if user is verified
-      if (!user.isVerified) {
-        return res.status(401).json({ 
-          error: 'Email not verified',
-          code: 'EMAIL_NOT_VERIFIED'
-        });
-      }
-
-      // Add user info to request
-      req.user = {
-        userId: user.id,
-        firebaseUid: uid,
-        email: user.email,
-        ...user
-      };
-
-      return next();
-    }
-
-    // If Firebase token fails, try JWT token (for legacy users)
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      
-      // Check if user still exists in database
-      const userDoc = await db.collection(collections.USERS).doc(decoded.userId).get();
-      
-      if (!userDoc.exists) {
-        return res.status(401).json({ 
-          error: 'User not found',
-          code: 'USER_NOT_FOUND'
-        });
-      }
-
-      const userData = userDoc.data();
-      
-      // Check if user is verified
-      if (!userData.isVerified) {
-        return res.status(401).json({ 
-          error: 'Email not verified',
-          code: 'EMAIL_NOT_VERIFIED'
-        });
-      }
-
-      // Add user info to request
-      req.user = {
-        userId: decoded.userId,
-        email: userData.email,
-        ...userData
-      };
-
-      next();
-    } catch (jwtError) {
-      // Both Firebase and JWT tokens failed
-      if (jwtError.name === 'JsonWebTokenError') {
-        return res.status(401).json({ 
-          error: 'Invalid token',
-          code: 'INVALID_TOKEN'
-        });
-      }
-      
-      if (jwtError.name === 'TokenExpiredError') {
-        return res.status(401).json({ 
-          error: 'Token expired',
-          code: 'TOKEN_EXPIRED'
-        });
-      }
-
-      throw jwtError;
-    }
-
-  } catch (error) {
-    console.error('Auth middleware error:', error);
-    res.status(500).json({ 
-      error: 'Authentication failed',
-      code: 'AUTH_ERROR'
-    });
-  }
-};
-
-const optionalAuth = async (req, res, next) => {
-  try {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (!token) {
-      req.user = null;
-      return next();
-    }
-
-    // Try Firebase ID token first
-    const firebaseResult = await firebaseAuth.verifyIdToken(token);
-    
-    if (firebaseResult.success) {
-      const { decodedToken } = firebaseResult;
-      const { uid } = decodedToken;
-
-      // Get user from Firestore
-      const userResult = await dbUtils.getUserByFirebaseUid(uid);
-      
-      if (userResult.success) {
-        req.user = {
-          userId: userResult.user.id,
-          firebaseUid: uid,
-          ...userResult.user
-        };
-      } else {
-        req.user = null;
-      }
-
-      return next();
-    }
-
-    // If Firebase token fails, try JWT token
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const userDoc = await db.collection(collections.USERS).doc(decoded.userId).get();
-      
-      if (userDoc.exists) {
-        req.user = {
-          userId: decoded.userId,
-          ...userDoc.data()
-        };
-      } else {
-        req.user = null;
-      }
-
-      next();
-    } catch (error) {
-      req.user = null;
-      next();
-    }
-
-  } catch (error) {
-    req.user = null;
-    next();
-  }
-};
-
-// Middleware to require Firebase authentication only
-const requireFirebaseAuth = async (req, res, next) => {
-  try {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (!token) {
-      return res.status(401).json({ 
         error: 'Firebase ID token required',
-        code: 'FIREBASE_TOKEN_MISSING'
+        code: 'TOKEN_MISSING'
       });
     }
 
@@ -194,27 +23,48 @@ const requireFirebaseAuth = async (req, res, next) => {
     }
 
     const { decodedToken } = firebaseResult;
-    const { uid, email } = decodedToken;
+    const { uid, email, email_verified } = decodedToken;
 
-    // Get user from Firestore
-    const userResult = await dbUtils.getUserByFirebaseUid(uid);
-    
-    if (!userResult.success) {
-      return res.status(404).json({ 
-        error: 'User not found',
-        code: 'USER_NOT_FOUND'
-      });
-    }
-
-    const user = userResult.user;
-    
-    // Check if user is verified
-    if (!user.isVerified) {
+    // Kiểm tra email đã được xác thực
+    if (!email_verified) {
       return res.status(401).json({ 
         error: 'Email not verified',
         code: 'EMAIL_NOT_VERIFIED'
       });
     }
+
+    // Tạo hoặc cập nhật user trong Firestore nếu cần
+    let userResult = await dbUtils.getUserByFirebaseUid(uid);
+    
+    if (!userResult.success) {
+      // User chưa tồn tại trong Firestore, tạo mới
+      const userData = {
+        firebaseUid: uid,
+        email: email,
+        firstName: decodedToken.name?.split(' ')[0] || '',
+        lastName: decodedToken.name?.split(' ').slice(1).join(' ') || '',
+        isVerified: email_verified,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        profile: {
+          bio: '',
+          avatar: decodedToken.picture || null
+        },
+        stats: {
+          linksChecked: 0,
+          joinedAt: new Date().toISOString()
+        }
+      };
+
+      const userRef = await db.collection(collections.USERS).add(userData);
+      
+      userResult = {
+        success: true,
+        user: { id: userRef.id, ...userData }
+      };
+    }
+
+    const user = userResult.user;
 
     // Add user info to request
     req.user = {
@@ -234,6 +84,57 @@ const requireFirebaseAuth = async (req, res, next) => {
     });
   }
 };
+
+const optionalAuth = async (req, res, next) => {
+  try {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+      req.user = null;
+      return next();
+    }
+
+    // Verify Firebase ID token
+    const firebaseResult = await firebaseAuth.verifyIdToken(token);
+    
+    if (firebaseResult.success) {
+      const { decodedToken } = firebaseResult;
+      const { uid, email, email_verified } = decodedToken;
+
+      if (email_verified) {
+        // Get user from Firestore
+        const userResult = await dbUtils.getUserByFirebaseUid(uid);
+        
+        if (userResult.success) {
+          req.user = {
+            userId: userResult.user.id,
+            firebaseUid: uid,
+            email: userResult.user.email,
+            ...userResult.user
+          };
+        } else {
+          req.user = null;
+        }
+      } else {
+        req.user = null;
+      }
+    } else {
+      req.user = null;
+    }
+
+    next();
+
+  } catch (error) {
+    req.user = null;
+    next();
+  }
+};
+
+// Middleware chỉ yêu cầu Firebase authentication (alias cho authenticateToken)
+const requireFirebaseAuth = authenticateToken;
+
+
 
 module.exports = {
   authenticateToken,
