@@ -70,7 +70,7 @@ const Hero = () => {
   }, []);
 
   const handleFindMaid = () => {
-    navigate('/services');
+    navigate('/booking');
   };
 
   const handleBecomePartner = () => {

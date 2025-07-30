@@ -15,24 +15,24 @@ const Footer = () => {
 
   const footerLinks = {
     services: [
-      { name: 'Dọn dẹp nhà cửa', path: '/services/cleaning' },
-      { name: 'Giặt ủi', path: '/services/laundry' },
-      { name: 'Chăm sóc trẻ em', path: '/services/childcare' },
-      { name: 'Vệ sinh chuyên sâu', path: '/services/deep-cleaning' },
-      { name: 'Chuyển nhà', path: '/services/moving' }
+      { name: 'Dọn dẹp nhà cửa', path: '/services' },
+      { name: 'Giặt ủi', path: '/services' },
+      { name: 'Chăm sóc trẻ em', path: '/services' },
+      { name: 'Vệ sinh chuyên sâu', path: '/services' },
+      { name: 'Chuyển nhà', path: '/services' }
     ],
     company: [
       { name: 'Về MyMaid', path: '/about-us' },
       { name: 'Tuyển dụng', path: '/careers' },
       { name: 'Tin tức', path: '/news' },
-      { name: 'Liên hệ', path: '/contact' },
+      { name: 'Liên hệ tư vấn', path: '/consultation' },
       { name: 'Đối tác', path: '/partner' }
     ],
     support: [
       { name: 'Trung tâm hỗ trợ', path: '/help' },
       { name: 'Câu hỏi thường gặp', path: '/faq' },
-      { name: 'Chính sách bảo mật', path: '/privacy' },
-      { name: 'Điều khoản sử dụng', path: '/terms' },
+      { name: 'Bảng giá', path: '/pricing' },
+      { name: 'Đặt dịch vụ', path: '/booking' },
       { name: 'Khiếu nại', path: '/complaints' }
     ]
   };

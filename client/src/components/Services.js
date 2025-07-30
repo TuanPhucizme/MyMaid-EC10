@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { services, serviceCategories } from '../data/services';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
 import Badge from './ui/Badge';
@@ -7,6 +8,7 @@ import { useGSAP, animations } from '../hooks/useGSAP';
 import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
 
 const ServiceCard = ({ service, index }) => {
+  const navigate = useNavigate();
   const { ref, hasIntersected } = useIntersectionObserver();
 
   const cardRef = useGSAP((gsap, element) => {
@@ -96,7 +98,10 @@ const ServiceCard = ({ service, index }) => {
             <span className="text-sm text-neutral-500">{service.duration}</span>
           </div>
 
-          <Button className="w-full group">
+          <Button 
+            className="w-full group"
+            onClick={() => navigate('/booking', { state: { serviceType: service.id } })}
+          >
             Đặt ngay
             <svg className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -109,6 +114,7 @@ const ServiceCard = ({ service, index }) => {
 };
 
 const Services = () => {
+  const navigate = useNavigate();
   const { ref: sectionRef, hasIntersected } = useIntersectionObserver();
 
   const titleRef = useGSAP((gsap, element) => {
@@ -159,7 +165,11 @@ const Services = () => {
 
         {/* CTA */}
         <div className="text-center mt-16">
-          <Button size="lg" variant="outline">
+          <Button 
+            size="lg" 
+            variant="outline"
+            onClick={() => navigate('/services')}
+          >
             Xem tất cả dịch vụ
           </Button>
         </div>

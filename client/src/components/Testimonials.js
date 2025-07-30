@@ -252,7 +252,7 @@ const Testimonials = () => {
             <Button variant="ghost" onClick={handleLearnMore}>
               Tìm hiểu thêm về MyMaid
             </Button>
-            <Button variant="ghost" onClick={() => navigate('/services')}>
+            <Button variant="ghost" onClick={() => navigate('/booking')}>
               Đặt dịch vụ ngay
             </Button>
           </div>

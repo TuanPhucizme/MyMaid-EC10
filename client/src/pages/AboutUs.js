@@ -1,8 +1,10 @@
 import React from "react";
+import { useNavigate } from 'react-router-dom';
 import { useGSAP, animations } from '../hooks/useGSAP';
 import Button from '../components/ui/Button';
 
 export default function AboutUs() {
+  const navigate = useNavigate();
   const aboutRef = useGSAP((gsap, element) => {
     animations.fadeInUp(element, '.about-content', 0.2);
     animations.fadeInUp(element, '.about-image', 0.4);
@@ -56,10 +58,19 @@ export default function AboutUs() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button size="lg" className="flex-1">
+              <Button 
+                size="lg" 
+                className="flex-1"
+                onClick={() => navigate('/booking')}
+              >
                 Đặt dịch vụ ngay
               </Button>
-              <Button variant="outline" size="lg" className="flex-1">
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="flex-1"
+                onClick={() => navigate('/consultation')}
+              >
                 Liên hệ tư vấn
               </Button>
             </div>

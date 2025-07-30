@@ -214,15 +214,15 @@ const MaidCard = ({ maid, index }) => {
             </div>
             
             <div className="flex space-x-2">
-              <Button 
-                className="flex-1 group"
-                onClick={(e) => { e.stopPropagation(); handleContact(); }}
-              >
-                Liên hệ
-                <svg className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-              </Button>
+                          <Button 
+              className="flex-1 group"
+              onClick={(e) => { e.stopPropagation(); navigate('/consultation'); }}
+            >
+              Liên hệ
+              <svg className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+            </Button>
               <Button 
                 variant="outline"
                 onClick={handleFavorite}

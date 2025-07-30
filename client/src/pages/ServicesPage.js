@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { services, serviceCategories } from '../data/services';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
@@ -7,6 +8,7 @@ import { useGSAP, animations } from '../hooks/useGSAP';
 import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
 
 const ServiceCard = ({ service, index }) => {
+  const navigate = useNavigate();
   const { ref, hasIntersected } = useIntersectionObserver();
 
   const cardRef = useGSAP((gsap, element) => {
@@ -96,7 +98,10 @@ const ServiceCard = ({ service, index }) => {
             <span className="text-sm text-neutral-500">{service.duration}</span>
           </div>
 
-          <Button className="w-full group">
+          <Button 
+            className="w-full group"
+            onClick={() => navigate('/booking', { state: { serviceType: service.id } })}
+          >
             Đặt ngay
             <svg className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -109,6 +114,7 @@ const ServiceCard = ({ service, index }) => {
 };
 
 const ServicesPage = () => {
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('popular');
@@ -264,10 +270,19 @@ const ServicesPage = () => {
               Đội ngũ chuyên viên của chúng tôi sẵn sàng tư vấn và hỗ trợ bạn chọn dịch vụ phù hợp nhất
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button variant="secondary" size="lg">
+              <Button 
+                variant="secondary" 
+                size="lg"
+                onClick={() => navigate('/consultation')}
+              >
                 Liên hệ tư vấn
               </Button>
-              <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-primary-600">
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="border-white text-white hover:bg-white hover:text-primary-600"
+                onClick={() => navigate('/pricing')}
+              >
                 Xem bảng giá
               </Button>
             </div>
