@@ -13,10 +13,10 @@ import Footer from "./components/Footer";
 
 // Pages
 import PartNer from "./pages/RegisterPartnerPage";
-import AboutUs from "./pages/AboutUs";
-import Blog from "./pages/BlogPage";
 import LogIn from "./pages/LoginPage";
 import Register from "./pages/RegisterPage";
+import PaymentPage from "./pages/PaymentPage";
+import PaymentResultPage from "./pages/PaymentResult";
 
 function App() {
   return (
@@ -37,10 +37,10 @@ function App() {
             }
           />
           <Route path="/partner" element={<PartNer />} />
-          <Route path="/about-us" element={<AboutUs />} />
-          <Route path="/blog" element={<Blog />} />
           <Route path="/login" element={<LogIn />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/payment" element={<PaymentPage />} />
+          <Route path="/payment-result" element={<PaymentResultPage />} />
         </Routes>
 
         <Footer />
