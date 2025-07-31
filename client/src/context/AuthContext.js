@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import Cookies from 'js-cookie';
-import { authAPI } from '../services/api';
+import { firebaseAuth } from '../config/firebase';
 import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
@@ -16,124 +15,182 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [idToken, setIdToken] = useState(null);
 
-  // Check for existing token on app load
+  // Lắng nghe thay đổi auth state từ Firebase
   useEffect(() => {
-    const token = Cookies.get('token');
-    if (token) {
-      // Verify token and get user data
-      authAPI.getProfile()
-        .then(response => {
-          setUser(response.data.user);
-        })
-        .catch(() => {
-          // Token is invalid, remove it
-          Cookies.remove('token');
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    } else {
+    const unsubscribe = firebaseAuth.onAuthStateChange(async (firebaseUser) => {
+      setLoading(true);
+      
+      if (firebaseUser && firebaseUser.emailVerified) {
+        // User đã đăng nhập và email đã được xác thực
+        try {
+          const token = await firebaseUser.getIdToken();
+          setIdToken(token);
+          
+          // Tạo user object từ Firebase user
+          const userData = {
+            id: firebaseUser.uid,
+            firebaseUid: firebaseUser.uid,
+            email: firebaseUser.email,
+            firstName: firebaseUser.displayName?.split(' ')[0] || '',
+            lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
+            isVerified: firebaseUser.emailVerified,
+            profile: {
+              avatar: firebaseUser.photoURL
+            }
+          };
+          
+          setUser(userData);
+        } catch (error) {
+          console.error('Error getting ID token:', error);
+          setUser(null);
+          setIdToken(null);
+        }
+      } else {
+        // User chưa đăng nhập hoặc email chưa xác thực
+        setUser(null);
+        setIdToken(null);
+      }
+      
       setLoading(false);
-    }
+    });
+
+    // Cleanup subscription
+    return () => unsubscribe();
   }, []);
 
+  // Đăng nhập với Firebase Auth
   const login = async (email, password) => {
     try {
-      const response = await authAPI.login(email, password);
-      const { token, user: userData } = response.data;
+      setLoading(true);
+      const result = await firebaseAuth.login(email, password);
       
-      // Store token in cookie (7 days)
-      Cookies.set('token', token, { expires: 7, secure: true, sameSite: 'strict' });
-      
-      setUser(userData);
-      toast.success('Login successful!');
-      
-      return { success: true };
+      if (result.success) {
+        toast.success(result.message);
+        return { success: true };
+      } else {
+        toast.error(result.error);
+        return { success: false, error: result.error };
+      }
     } catch (error) {
-      const message = error.response?.data?.error || 'Login failed';
+      const message = 'Đăng nhập thất bại';
       toast.error(message);
       return { success: false, error: message };
+    } finally {
+      setLoading(false);
     }
   };
 
+  // Đăng ký với Firebase Auth
   const register = async (userData) => {
     try {
-      const response = await authAPI.register(userData);
-      toast.success('Registration successful! Please check your email to verify your account.');
-      return { success: true, data: response.data };
+      setLoading(true);
+      const { email, password, firstName, lastName } = userData;
+      const result = await firebaseAuth.register(email, password, firstName, lastName);
+      
+      if (result.success) {
+        toast.success(result.message);
+        return { success: true };
+      } else {
+        toast.error(result.error);
+        return { success: false, error: result.error };
+      }
     } catch (error) {
-      const message = error.response?.data?.error || 'Registration failed';
+      const message = 'Đăng ký thất bại';
       toast.error(message);
       return { success: false, error: message };
+    } finally {
+      setLoading(false);
     }
   };
 
-  const logout = () => {
-    Cookies.remove('token');
-    setUser(null);
-    toast.success('Logged out successfully');
-  };
-
-  const verifyEmail = async (token) => {
+  // Đăng xuất với Firebase Auth
+  const logout = async () => {
     try {
-      await authAPI.verifyEmail(token);
-      toast.success('Email verified successfully! You can now log in.');
-      return { success: true };
+      setLoading(true);
+      const result = await firebaseAuth.logout();
+      
+      if (result.success) {
+        toast.success(result.message);
+        return { success: true };
+      } else {
+        toast.error(result.error);
+        return { success: false, error: result.error };
+      }
     } catch (error) {
-      const message = error.response?.data?.error || 'Email verification failed';
+      console.error('Logout error:', error);
+      toast.error('Đăng xuất thất bại');
+      return { success: false, error: 'Đăng xuất thất bại' };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Gửi lại email xác thực
+  const resendEmailVerification = async () => {
+    try {
+      if (user) {
+        const result = await firebaseAuth.resendEmailVerification(user);
+        
+        if (result.success) {
+          toast.success(result.message);
+          return { success: true };
+        } else {
+          toast.error(result.error);
+          return { success: false, error: result.error };
+        }
+      } else {
+        const message = 'Không tìm thấy user để gửi email xác thực';
+        toast.error(message);
+        return { success: false, error: message };
+      }
+    } catch (error) {
+      const message = 'Gửi email xác thực thất bại';
       toast.error(message);
       return { success: false, error: message };
     }
   };
 
+  // Quên mật khẩu với Firebase Auth
   const forgotPassword = async (email) => {
     try {
-      await authAPI.forgotPassword(email);
-      toast.success('Password reset link sent to your email');
-      return { success: true };
+      const result = await firebaseAuth.sendPasswordReset(email);
+      
+      if (result.success) {
+        toast.success(result.message);
+        return { success: true };
+      } else {
+        toast.error(result.error);
+        return { success: false, error: result.error };
+      }
     } catch (error) {
-      const message = error.response?.data?.error || 'Failed to send reset email';
+      const message = 'Gửi email đặt lại mật khẩu thất bại';
       toast.error(message);
       return { success: false, error: message };
     }
   };
 
-  const resetPassword = async (token, newPassword) => {
+  // Lấy ID token hiện tại
+  const getCurrentIdToken = async () => {
     try {
-      await authAPI.resetPassword(token, newPassword);
-      toast.success('Password reset successfully! You can now log in.');
-      return { success: true };
+      const result = await firebaseAuth.getCurrentIdToken();
+      return result;
     } catch (error) {
-      const message = error.response?.data?.error || 'Password reset failed';
-      toast.error(message);
-      return { success: false, error: message };
-    }
-  };
-
-  const updateProfile = async (profileData) => {
-    try {
-      const response = await authAPI.updateProfile(profileData);
-      setUser(response.data.user);
-      toast.success('Profile updated successfully');
-      return { success: true, data: response.data };
-    } catch (error) {
-      const message = error.response?.data?.error || 'Profile update failed';
-      toast.error(message);
-      return { success: false, error: message };
+      return { success: false, error: error.message };
     }
   };
 
   const value = {
     user,
     loading,
+    idToken,
     login,
     register,
     logout,
-    verifyEmail,
+    resendEmailVerification,
     forgotPassword,
-    resetPassword,
-    updateProfile
+    getCurrentIdToken
   };
 
   return (

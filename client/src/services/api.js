@@ -1,5 +1,5 @@
 import axios from 'axios';
-import Cookies from 'js-cookie';
+import { firebaseAuth } from '../config/firebase';
 
 // Create axios instance
 const api = axios.create({
@@ -7,12 +7,16 @@ const api = axios.create({
   timeout: 10000,
 });
 
-// Request interceptor to add auth token
+// Request interceptor to add Firebase ID token
 api.interceptors.request.use(
-  (config) => {
-    const token = Cookies.get('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+  async (config) => {
+    try {
+      const result = await firebaseAuth.getCurrentIdToken();
+      if (result.success && result.idToken) {
+        config.headers.Authorization = `Bearer ${result.idToken}`;
+      }
+    } catch (error) {
+      console.error('Error getting Firebase token:', error);
     }
     return config;
   },
@@ -24,25 +28,24 @@ api.interceptors.request.use(
 // Response interceptor to handle auth errors
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
-      Cookies.remove('token');
+      // Token expired or invalid, sign out from Firebase
+      try {
+        await firebaseAuth.logout();
+      } catch (logoutError) {
+        console.error('Error during auto logout:', logoutError);
+      }
       window.location.href = '/login';
     }
     return Promise.reject(error);
   }
 );
 
-// Auth API endpoints
+// Auth API endpoints (chỉ giữ lại những endpoint cần thiết)
 export const authAPI = {
-  register: (userData) => api.post('/auth/register', userData),
-  login: (email, password) => api.post('/auth/login', { email, password }),
-  verifyEmail: (token) => api.post('/auth/verify-email', { token }),
-  forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
-  resetPassword: (token, newPassword) => api.post('/auth/reset-password', { token, newPassword }),
-  getProfile: () => api.get('/users/profile'),
-  updateProfile: (profileData) => api.put('/users/profile', profileData),
+  // Các endpoint này sẽ được xử lý bởi Firebase Auth ở frontend
+  // Chỉ giữ lại các endpoint cần tương tác với backend data
 };
 
 // User API endpoints

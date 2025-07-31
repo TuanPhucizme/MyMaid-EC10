@@ -22,6 +22,7 @@ pids
 *.pid
 *.seed
 *.pid.lock
+.mymaid-pids.json
 
 # Coverage directory used by tools like istanbul
 coverage/

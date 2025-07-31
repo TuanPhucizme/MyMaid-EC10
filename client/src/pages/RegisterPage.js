@@ -6,6 +6,10 @@ import * as yup from 'yup';
 import { useAuth } from '../context/AuthContext';
 import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 import styled from 'styled-components';
+import ErrorMessage from '../components/ErrorMessage';
+import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator';
+import PasswordRequirements from '../components/PasswordRequirements';
+import PasswordInfo from '../components/PasswordInfo';
 
 const RegisterContainer = styled.div`
   min-height: calc(120vh - 4rem);
@@ -104,7 +108,7 @@ const PasswordToggle = styled.button`
   }
 `;
 
-const ErrorMessage = styled.span`
+const FormErrorMessage = styled.span`
   color: #ef4444;
   font-size: 0.875rem;
   margin-top: 0.25rem;
@@ -169,7 +173,11 @@ const schema = yup.object({
     .required('Email is required'),
   password: yup
     .string()
-    .min(6, 'Password must be at least 6 characters')
+    .min(8, 'Password must be at least 8 characters')
+    .matches(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .matches(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .matches(/\d/, 'Password must contain at least one number')
+    .matches(/[!@#$%^&*(),.?":{}|<>]/, 'Password must contain at least one special character')
     .required('Password is required'),
   confirmPassword: yup
     .string()
@@ -183,6 +191,8 @@ const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [passwordValue, setPasswordValue] = useState('');
 
   const {
     register,
@@ -194,12 +204,32 @@ const RegisterPage = () => {
 
   const onSubmit = async (data) => {
     setIsLoading(true);
+    setError(''); // Clear previous errors
     try {
       const { confirmPassword, ...userData } = data;
+      
+      // Kiểm tra độ mạnh mật khẩu trước khi đăng ký
+      const password = data.password;
+      const hasUpperCase = /[A-Z]/.test(password);
+      const hasLowerCase = /[a-z]/.test(password);
+      const hasNumbers = /\d/.test(password);
+      const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+      const isLongEnough = password.length >= 8;
+      
+      if (!isLongEnough || !hasUpperCase || !hasLowerCase || !hasNumbers || !hasSpecialChar) {
+        setError('Mật khẩu phải đáp ứng tất cả yêu cầu bảo mật');
+        setIsLoading(false);
+        return;
+      }
+      
       const result = await registerUser(userData);
       if (result.success) {
         navigate('/login');
+      } else {
+        setError(result.error);
       }
+    } catch (err) {
+      setError('Đăng ký thất bại. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }
@@ -214,6 +244,11 @@ const RegisterPage = () => {
         </RegisterHeader>
 
         <Form onSubmit={handleSubmit(onSubmit)}>
+          <ErrorMessage 
+            message={error} 
+            onClose={() => setError('')}
+            show={!!error}
+          />
           <InputRow>
             <InputGroup>
               <InputIcon>
@@ -226,7 +261,7 @@ const RegisterPage = () => {
                 {...register('firstName')}
               />
               {errors.firstName && (
-                <ErrorMessage>{errors.firstName.message}</ErrorMessage>
+                <FormErrorMessage>{errors.firstName.message}</FormErrorMessage>
               )}
             </InputGroup>
 
@@ -241,7 +276,7 @@ const RegisterPage = () => {
                 {...register('lastName')}
               />
               {errors.lastName && (
-                <ErrorMessage>{errors.lastName.message}</ErrorMessage>
+                <FormErrorMessage>{errors.lastName.message}</FormErrorMessage>
               )}
             </InputGroup>
           </InputRow>
@@ -257,7 +292,7 @@ const RegisterPage = () => {
               {...register('email')}
             />
             {errors.email && (
-              <ErrorMessage>{errors.email.message}</ErrorMessage>
+              <FormErrorMessage>{errors.email.message}</FormErrorMessage>
             )}
           </InputGroup>
 
@@ -270,6 +305,10 @@ const RegisterPage = () => {
               placeholder="Create password"
               error={errors.password}
               {...register('password')}
+              onChange={(e) => {
+                setPasswordValue(e.target.value);
+                register('password').onChange(e);
+              }}
             />
             <PasswordToggle
               type="button"
@@ -278,8 +317,11 @@ const RegisterPage = () => {
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </PasswordToggle>
             {errors.password && (
-              <ErrorMessage>{errors.password.message}</ErrorMessage>
+              <FormErrorMessage>{errors.password.message}</FormErrorMessage>
             )}
+            {!passwordValue && <PasswordInfo />}
+            {passwordValue && <PasswordStrengthIndicator password={passwordValue} />}
+            {passwordValue && <PasswordRequirements password={passwordValue} />}
           </InputGroup>
 
           <InputGroup>
@@ -299,7 +341,7 @@ const RegisterPage = () => {
               {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </PasswordToggle>
             {errors.confirmPassword && (
-              <ErrorMessage>{errors.confirmPassword.message}</ErrorMessage>
+              <FormErrorMessage>{errors.confirmPassword.message}</FormErrorMessage>
             )}
           </InputGroup>
 

@@ -1,8 +1,11 @@
 import React, { useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import Button from './ui/Button';
 import { useGSAP, animations } from '../hooks/useGSAP';
 
 const Hero = () => {
+  const navigate = useNavigate();
+
   const heroRef = useGSAP((gsap, element) => {
     const tl = gsap.timeline();
     
@@ -66,6 +69,18 @@ const Hero = () => {
     });
   }, []);
 
+  const handleFindMaid = () => {
+    navigate('/booking');
+  };
+
+  const handleBecomePartner = () => {
+    navigate('/partner');
+  };
+
+  const handleLearnMore = () => {
+    navigate('/about-us');
+  };
+
   return (
     <section ref={heroRef} className="relative min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 overflow-hidden">
       {/* Background decorative elements */}
@@ -101,15 +116,46 @@ const Hero = () => {
             </div>
 
             <div className="hero-buttons mt-10 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <Button size="xl" className="group">
+              <Button 
+                size="xl" 
+                className="group"
+                onClick={handleFindMaid}
+              >
                 Tìm người giúp việc
                 <svg className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </Button>
-              <Button variant="outline" size="xl">
+              <Button 
+                variant="outline" 
+                size="xl"
+                onClick={handleBecomePartner}
+              >
                 Trở thành đối tác
               </Button>
+            </div>
+
+            {/* Additional CTA */}
+            <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+              <Button 
+                variant="ghost" 
+                size="lg"
+                onClick={handleLearnMore}
+                className="group"
+              >
+                Tìm hiểu thêm
+                <svg className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </Button>
+              <Link to="/blog">
+                <Button variant="ghost" size="lg" className="group">
+                  Xem mẹo vặt
+                  <svg className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </Button>
+              </Link>
             </div>
 
             {/* Stats */}
@@ -137,11 +183,12 @@ const Hero = () => {
               <img 
                 src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&h=600&fit=crop"
                 alt="Professional cleaning service"
-                className="w-full h-auto rounded-3xl shadow-2xl"
+                className="w-full h-auto rounded-3xl shadow-2xl cursor-pointer hover:scale-105 transition-transform duration-300"
+                onClick={handleFindMaid}
               />
               
               {/* Floating cards */}
-              <div className="absolute -top-6 -left-6 bg-white rounded-2xl shadow-lg p-4 floating-1">
+              <div className="absolute -top-6 -left-6 bg-white rounded-2xl shadow-lg p-4 floating-1 cursor-pointer hover:shadow-xl transition-shadow">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
                     <span className="text-green-600 text-xl">✓</span>
@@ -153,7 +200,7 @@ const Hero = () => {
                 </div>
               </div>
 
-              <div className="absolute -bottom-6 -right-6 bg-white rounded-2xl shadow-lg p-4 floating-2">
+              <div className="absolute -bottom-6 -right-6 bg-white rounded-2xl shadow-lg p-4 floating-2 cursor-pointer hover:shadow-xl transition-shadow">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
                     <span className="text-yellow-600 text-xl">⭐</span>
@@ -165,7 +212,7 @@ const Hero = () => {
                 </div>
               </div>
 
-              <div className="absolute top-1/2 -right-8 bg-white rounded-2xl shadow-lg p-4 floating-3">
+              <div className="absolute top-1/2 -right-8 bg-white rounded-2xl shadow-lg p-4 floating-3 cursor-pointer hover:shadow-xl transition-shadow">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-primary-600">24/7</div>
                   <div className="text-xs text-neutral-500">Hỗ trợ</div>
@@ -175,6 +222,13 @@ const Hero = () => {
 
             {/* Background decoration */}
             <div className="absolute inset-0 bg-gradient-to-br from-primary-100 to-secondary-100 rounded-3xl transform rotate-3 scale-105 opacity-20"></div>
+          </div>
+        </div>
+
+        {/* Scroll indicator */}
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+          <div className="w-6 h-10 border-2 border-neutral-400 rounded-full flex justify-center">
+            <div className="w-1 h-3 bg-neutral-400 rounded-full mt-2 animate-pulse"></div>
           </div>
         </div>
       </div>

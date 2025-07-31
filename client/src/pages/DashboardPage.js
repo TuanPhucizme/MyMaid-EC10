@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { userAPI } from '../services/api';
-import { Search, BarChart3, Clock, TrendingUp, ExternalLink } from 'lucide-react';
+import { Calendar, Clock, Star, Users, MapPin, Phone, Mail } from 'lucide-react';
 import styled from 'styled-components';
 import LoadingSpinner from '../components/LoadingSpinner';
 
@@ -81,7 +81,7 @@ const ContentGrid = styled.div`
   }
 `;
 
-const RecentLinksCard = styled.div`
+const RecentBookingsCard = styled.div`
   background: white;
   border-radius: 0.75rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -92,7 +92,7 @@ const CardHeader = styled.div`
   padding: 1.5rem;
   border-bottom: 1px solid #e5e7eb;
   display: flex;
-  justify-content: between;
+  justify-content: space-between;
   align-items: center;
 `;
 
@@ -106,7 +106,7 @@ const CardContent = styled.div`
   padding: 1.5rem;
 `;
 
-const LinkItem = styled.div`
+const BookingItem = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -118,18 +118,17 @@ const LinkItem = styled.div`
   }
 `;
 
-const LinkInfo = styled.div`
+const BookingInfo = styled.div`
   flex: 1;
 `;
 
-const LinkUrl = styled.div`
+const ServiceName = styled.div`
   font-weight: 500;
   color: #1a202c;
   margin-bottom: 0.25rem;
-  word-break: break-all;
 `;
 
-const LinkMeta = styled.div`
+const BookingMeta = styled.div`
   font-size: 0.875rem;
   color: #6b7280;
   display: flex;
@@ -137,21 +136,21 @@ const LinkMeta = styled.div`
   gap: 1rem;
 `;
 
-const CredibilityScore = styled.div`
+const BookingStatus = styled.div`
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   font-size: 0.875rem;
   font-weight: 500;
   background: ${props => {
-    if (props.score >= 80) return '#dcfce7';
-    if (props.score >= 60) return '#fef3c7';
-    if (props.score >= 40) return '#fed7aa';
+    if (props.status === 'completed') return '#dcfce7';
+    if (props.status === 'confirmed') return '#dbeafe';
+    if (props.status === 'pending') return '#fef3c7';
     return '#fecaca';
   }};
   color: ${props => {
-    if (props.score >= 80) return '#166534';
-    if (props.score >= 60) return '#92400e';
-    if (props.score >= 40) return '#c2410c';
+    if (props.status === 'completed') return '#166534';
+    if (props.status === 'confirmed') return '#1e40af';
+    if (props.status === 'pending') return '#92400e';
     return '#dc2626';
   }};
 `;
@@ -216,6 +215,26 @@ const EmptyState = styled.div`
   color: #6b7280;
 `;
 
+const ContactInfo = styled.div`
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+`;
+
+const ContactItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  color: #6b7280;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+`;
+
 const DashboardPage = () => {
   const { data: dashboardData, isLoading, error } = useQuery(
     'dashboard',
@@ -226,36 +245,74 @@ const DashboardPage = () => {
   );
 
   if (isLoading) {
-    return <LoadingSpinner fullScreen text="Loading dashboard..." />;
+    return <LoadingSpinner fullScreen text="Đang tải dashboard..." />;
   }
 
   if (error) {
     return (
       <DashboardContainer>
         <div className="card">
-          <p>Error loading dashboard data. Please try again.</p>
+          <p>Lỗi khi tải dữ liệu dashboard. Vui lòng thử lại.</p>
         </div>
       </DashboardContainer>
     );
   }
 
-  const { user, stats, recentLinks } = dashboardData?.data || {};
+  const { user, stats, recentBookings } = dashboardData?.data || {};
+
+  // Mock data cho MyMaid
+  const mockStats = {
+    totalBookings: 12,
+    activeBookings: 3,
+    totalSpent: 2500000,
+    averageRating: 4.8
+  };
+
+  const mockRecentBookings = [
+    {
+      id: 1,
+      serviceName: 'Dọn dẹp nhà cửa',
+      date: '2024-01-15',
+      time: '09:00',
+      status: 'confirmed',
+      maidName: 'Chị Nguyễn Thị Mai',
+      price: 150000
+    },
+    {
+      id: 2,
+      serviceName: 'Chăm sóc trẻ em',
+      date: '2024-01-12',
+      time: '14:00',
+      status: 'completed',
+      maidName: 'Chị Trần Thị Hoa',
+      price: 200000
+    },
+    {
+      id: 3,
+      serviceName: 'Nấu ăn',
+      date: '2024-01-10',
+      time: '18:00',
+      status: 'completed',
+      maidName: 'Chị Lê Thị Lan',
+      price: 180000
+    }
+  ];
 
   return (
     <DashboardContainer>
       <DashboardHeader>
-        <WelcomeTitle>Welcome back, {user?.firstName}!</WelcomeTitle>
-        <WelcomeSubtitle>Here's your fact-checking activity overview</WelcomeSubtitle>
+        <WelcomeTitle>Chào mừng trở lại, {user?.firstName || 'Quý khách'}!</WelcomeTitle>
+        <WelcomeSubtitle>Tổng quan hoạt động dịch vụ giúp việc của bạn</WelcomeSubtitle>
       </DashboardHeader>
 
       <StatsGrid>
         <StatCard>
           <StatIcon>
-            <Search size={24} />
+            <Calendar size={24} />
           </StatIcon>
           <StatContent>
-            <StatValue>{stats?.totalLinksChecked || 0}</StatValue>
-            <StatLabel>Total Links Checked</StatLabel>
+            <StatValue>{mockStats.totalBookings}</StatValue>
+            <StatLabel>Tổng số đặt dịch vụ</StatLabel>
           </StatContent>
         </StatCard>
 
@@ -264,78 +321,138 @@ const DashboardPage = () => {
             <Clock size={24} />
           </StatIcon>
           <StatContent>
-            <StatValue>{stats?.linksThisWeek || 0}</StatValue>
-            <StatLabel>This Week</StatLabel>
+            <StatValue>{mockStats.activeBookings}</StatValue>
+            <StatLabel>Đang hoạt động</StatLabel>
           </StatContent>
         </StatCard>
 
         <StatCard>
           <StatIcon bgColor="#dcfce7" color="#16a34a">
-            <TrendingUp size={24} />
+            <Star size={24} />
           </StatIcon>
           <StatContent>
-            <StatValue>{stats?.averageCredibilityScore || 0}%</StatValue>
-            <StatLabel>Avg. Credibility Score</StatLabel>
+            <StatValue>{mockStats.averageRating}</StatValue>
+            <StatLabel>Đánh giá trung bình</StatLabel>
+          </StatContent>
+        </StatCard>
+
+        <StatCard>
+          <StatIcon bgColor="#fce7f3" color="#ec4899">
+            <Users size={24} />
+          </StatIcon>
+          <StatContent>
+            <StatValue>{mockStats.totalSpent.toLocaleString()}đ</StatValue>
+            <StatLabel>Tổng chi phí</StatLabel>
           </StatContent>
         </StatCard>
       </StatsGrid>
 
       <ContentGrid>
-        <RecentLinksCard>
+        <RecentBookingsCard>
           <CardHeader>
-            <CardTitle>Recent Link Checks</CardTitle>
+            <CardTitle>Đặt dịch vụ gần đây</CardTitle>
           </CardHeader>
           <CardContent>
-            {recentLinks && recentLinks.length > 0 ? (
-              recentLinks.map((link) => (
-                <LinkItem key={link.id}>
-                  <LinkInfo>
-                    <LinkUrl>{link.metadata?.title || link.url}</LinkUrl>
-                    <LinkMeta>
-                      <span>{new Date(link.checkedAt).toLocaleDateString()}</span>
+            {mockRecentBookings && mockRecentBookings.length > 0 ? (
+              mockRecentBookings.map((booking) => (
+                <BookingItem key={booking.id}>
+                  <BookingInfo>
+                    <ServiceName>{booking.serviceName}</ServiceName>
+                    <BookingMeta>
+                      <span>{new Date(booking.date).toLocaleDateString('vi-VN')}</span>
                       <span>•</span>
-                      <span>{link.metadata?.domain}</span>
-                    </LinkMeta>
-                  </LinkInfo>
-                  <CredibilityScore score={link.credibilityScore}>
-                    {link.credibilityScore}%
-                  </CredibilityScore>
-                </LinkItem>
+                      <span>{booking.time}</span>
+                      <span>•</span>
+                      <span>{booking.maidName}</span>
+                    </BookingMeta>
+                  </BookingInfo>
+                  <div style={{ textAlign: 'right' }}>
+                    <BookingStatus status={booking.status}>
+                      {booking.status === 'completed' ? 'Hoàn thành' :
+                       booking.status === 'confirmed' ? 'Đã xác nhận' :
+                       booking.status === 'pending' ? 'Chờ xác nhận' : 'Đã hủy'}
+                    </BookingStatus>
+                    <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                      {booking.price.toLocaleString()}đ
+                    </div>
+                  </div>
+                </BookingItem>
               ))
             ) : (
               <EmptyState>
-                <p>No links checked yet.</p>
-                <Link to="/check-link" className="btn btn-primary" style={{ marginTop: '1rem' }}>
-                  Check Your First Link
+                <p>Chưa có đặt dịch vụ nào.</p>
+                <Link to="/booking" className="btn btn-primary" style={{ marginTop: '1rem' }}>
+                  Đặt dịch vụ ngay
                 </Link>
               </EmptyState>
             )}
           </CardContent>
-        </RecentLinksCard>
+        </RecentBookingsCard>
 
-        <QuickActionsCard>
-          <CardTitle style={{ marginBottom: '1.5rem' }}>Quick Actions</CardTitle>
-          
-          <ActionButton to="/check-link">
-            <ActionIcon>
-              <Search size={20} />
-            </ActionIcon>
-            <ActionContent>
-              <ActionTitle>Check New Link</ActionTitle>
-              <ActionDescription>Verify a news article or information source</ActionDescription>
-            </ActionContent>
-          </ActionButton>
+        <div>
+          <QuickActionsCard>
+            <CardTitle style={{ marginBottom: '1.5rem' }}>Thao tác nhanh</CardTitle>
+            
+            <ActionButton to="/booking">
+              <ActionIcon>
+                <Calendar size={20} />
+              </ActionIcon>
+              <ActionContent>
+                <ActionTitle>Đặt dịch vụ mới</ActionTitle>
+                <ActionDescription>Đặt người giúp việc cho nhu cầu của bạn</ActionDescription>
+              </ActionContent>
+            </ActionButton>
 
-          <ActionButton to="/profile">
-            <ActionIcon>
-              <BarChart3 size={20} />
-            </ActionIcon>
-            <ActionContent>
-              <ActionTitle>View Profile</ActionTitle>
-              <ActionDescription>Update your account settings</ActionDescription>
-            </ActionContent>
-          </ActionButton>
-        </QuickActionsCard>
+            <ActionButton to="/consultation">
+              <ActionIcon>
+                <Phone size={20} />
+              </ActionIcon>
+              <ActionContent>
+                <ActionTitle>Liên hệ tư vấn</ActionTitle>
+                <ActionDescription>Nhận tư vấn miễn phí về dịch vụ</ActionDescription>
+              </ActionContent>
+            </ActionButton>
+
+            <ActionButton to="/pricing">
+              <ActionIcon>
+                <Star size={20} />
+              </ActionIcon>
+              <ActionContent>
+                <ActionTitle>Xem bảng giá</ActionTitle>
+                <ActionDescription>Tham khảo giá dịch vụ chi tiết</ActionDescription>
+              </ActionContent>
+            </ActionButton>
+
+            <ActionButton to="/profile">
+              <ActionIcon>
+                <Users size={20} />
+              </ActionIcon>
+              <ActionContent>
+                <ActionTitle>Hồ sơ cá nhân</ActionTitle>
+                <ActionDescription>Cập nhật thông tin tài khoản</ActionDescription>
+              </ActionContent>
+            </ActionButton>
+          </QuickActionsCard>
+
+          <ContactInfo>
+            <CardTitle style={{ marginBottom: '1rem' }}>Thông tin liên hệ</CardTitle>
+            
+            <ContactItem>
+              <Phone size={16} />
+              <span>Hotline: 1900 1234</span>
+            </ContactItem>
+            
+            <ContactItem>
+              <Mail size={16} />
+              <span>Email: support@mymaid.vn</span>
+            </ContactItem>
+            
+            <ContactItem>
+              <MapPin size={16} />
+              <span>Địa chỉ: 123 Đường ABC, Quận 1, TP.HCM</span>
+            </ContactItem>
+          </ContactInfo>
+        </div>
       </ContentGrid>
     </DashboardContainer>
   );
