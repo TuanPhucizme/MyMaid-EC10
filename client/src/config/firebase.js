@@ -61,9 +61,32 @@ export const firebaseAuth = {
         message: 'Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.'
       };
     } catch (error) {
+      // Cải thiện error handling với thông báo tiếng Việt
+      let errorMessage = 'Đăng ký thất bại';
+      
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          errorMessage = 'Email đã được sử dụng. Vui lòng chọn email khác';
+          break;
+        case 'auth/invalid-email':
+          errorMessage = 'Email không hợp lệ';
+          break;
+        case 'auth/weak-password':
+          errorMessage = 'Mật khẩu quá yếu. Vui lòng chọn mật khẩu mạnh hơn (ít nhất 6 ký tự)';
+          break;
+        case 'auth/operation-not-allowed':
+          errorMessage = 'Đăng ký bằng email không được hỗ trợ. Vui lòng liên hệ admin';
+          break;
+        case 'auth/too-many-requests':
+          errorMessage = 'Quá nhiều lần thử đăng ký. Vui lòng thử lại sau';
+          break;
+        default:
+          errorMessage = error.message || 'Đăng ký thất bại';
+      }
+      
       return { 
         success: false, 
-        error: error.message,
+        error: errorMessage,
         code: error.code
       };
     }
@@ -94,9 +117,38 @@ export const firebaseAuth = {
         message: 'Đăng nhập thành công!'
       };
     } catch (error) {
+      // Cải thiện error handling với thông báo tiếng Việt
+      let errorMessage = 'Đăng nhập thất bại';
+      
+      switch (error.code) {
+        case 'auth/invalid-credential':
+          errorMessage = 'Email hoặc mật khẩu không đúng';
+          break;
+        case 'auth/user-not-found':
+          errorMessage = 'Tài khoản không tồn tại. Vui lòng đăng ký trước';
+          break;
+        case 'auth/wrong-password':
+          errorMessage = 'Mật khẩu không đúng';
+          break;
+        case 'auth/invalid-email':
+          errorMessage = 'Email không hợp lệ';
+          break;
+        case 'auth/too-many-requests':
+          errorMessage = 'Quá nhiều lần thử đăng nhập. Vui lòng thử lại sau';
+          break;
+        case 'auth/user-disabled':
+          errorMessage = 'Tài khoản đã bị vô hiệu hóa';
+          break;
+        case 'auth/operation-not-allowed':
+          errorMessage = 'Phương thức đăng nhập không được hỗ trợ';
+          break;
+        default:
+          errorMessage = error.message || 'Đăng nhập thất bại';
+      }
+      
       return { 
         success: false, 
-        error: error.message,
+        error: errorMessage,
         code: error.code
       };
     }
@@ -111,9 +163,20 @@ export const firebaseAuth = {
         message: 'Đăng xuất thành công!'
       };
     } catch (error) {
+      // Cải thiện error handling cho logout
+      let errorMessage = 'Đăng xuất thất bại';
+      
+      switch (error.code) {
+        case 'auth/no-current-user':
+          errorMessage = 'Không có người dùng đang đăng nhập';
+          break;
+        default:
+          errorMessage = error.message || 'Đăng xuất thất bại';
+      }
+      
       return { 
         success: false, 
-        error: error.message 
+        error: errorMessage 
       };
     }
   },
@@ -127,9 +190,26 @@ export const firebaseAuth = {
         message: 'Email đặt lại mật khẩu đã được gửi!'
       };
     } catch (error) {
+      // Cải thiện error handling cho password reset
+      let errorMessage = 'Gửi email đặt lại mật khẩu thất bại';
+      
+      switch (error.code) {
+        case 'auth/user-not-found':
+          errorMessage = 'Email không tồn tại trong hệ thống';
+          break;
+        case 'auth/invalid-email':
+          errorMessage = 'Email không hợp lệ';
+          break;
+        case 'auth/too-many-requests':
+          errorMessage = 'Quá nhiều lần thử. Vui lòng thử lại sau';
+          break;
+        default:
+          errorMessage = error.message || 'Gửi email đặt lại mật khẩu thất bại';
+      }
+      
       return { 
         success: false, 
-        error: error.message 
+        error: errorMessage 
       };
     }
   },

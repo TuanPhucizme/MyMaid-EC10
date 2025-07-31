@@ -6,6 +6,7 @@ import * as yup from 'yup';
 import { useAuth } from '../context/AuthContext';
 import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 import styled from 'styled-components';
+import ErrorMessage from '../components/ErrorMessage';
 
 const RegisterContainer = styled.div`
   min-height: calc(100vh - 4rem);
@@ -104,7 +105,7 @@ const PasswordToggle = styled.button`
   }
 `;
 
-const ErrorMessage = styled.span`
+const FormErrorMessage = styled.span`
   color: #ef4444;
   font-size: 0.875rem;
   margin-top: 0.25rem;
@@ -183,6 +184,7 @@ const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const {
     register,
@@ -194,12 +196,17 @@ const RegisterPage = () => {
 
   const onSubmit = async (data) => {
     setIsLoading(true);
+    setError(''); // Clear previous errors
     try {
       const { confirmPassword, ...userData } = data;
       const result = await registerUser(userData);
       if (result.success) {
         navigate('/login');
+      } else {
+        setError(result.error);
       }
+    } catch (err) {
+      setError('Đăng ký thất bại. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }
@@ -214,6 +221,11 @@ const RegisterPage = () => {
         </RegisterHeader>
 
         <Form onSubmit={handleSubmit(onSubmit)}>
+          <ErrorMessage 
+            message={error} 
+            onClose={() => setError('')}
+            show={!!error}
+          />
           <InputRow>
             <InputGroup>
               <InputIcon>
@@ -226,7 +238,7 @@ const RegisterPage = () => {
                 {...register('firstName')}
               />
               {errors.firstName && (
-                <ErrorMessage>{errors.firstName.message}</ErrorMessage>
+                <FormErrorMessage>{errors.firstName.message}</FormErrorMessage>
               )}
             </InputGroup>
 
@@ -241,7 +253,7 @@ const RegisterPage = () => {
                 {...register('lastName')}
               />
               {errors.lastName && (
-                <ErrorMessage>{errors.lastName.message}</ErrorMessage>
+                <FormErrorMessage>{errors.lastName.message}</FormErrorMessage>
               )}
             </InputGroup>
           </InputRow>
@@ -257,7 +269,7 @@ const RegisterPage = () => {
               {...register('email')}
             />
             {errors.email && (
-              <ErrorMessage>{errors.email.message}</ErrorMessage>
+              <FormErrorMessage>{errors.email.message}</FormErrorMessage>
             )}
           </InputGroup>
 
@@ -278,7 +290,7 @@ const RegisterPage = () => {
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </PasswordToggle>
             {errors.password && (
-              <ErrorMessage>{errors.password.message}</ErrorMessage>
+              <FormErrorMessage>{errors.password.message}</FormErrorMessage>
             )}
           </InputGroup>
 
@@ -299,7 +311,7 @@ const RegisterPage = () => {
               {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </PasswordToggle>
             {errors.confirmPassword && (
-              <ErrorMessage>{errors.confirmPassword.message}</ErrorMessage>
+              <FormErrorMessage>{errors.confirmPassword.message}</FormErrorMessage>
             )}
           </InputGroup>
 

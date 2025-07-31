@@ -6,6 +6,7 @@ import * as yup from 'yup';
 import { useAuth } from '../context/AuthContext';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import styled from 'styled-components';
+import ErrorMessage from '../components/ErrorMessage';
 
 const LoginContainer = styled.div`
   min-height: calc(100vh - 4rem);
@@ -94,7 +95,7 @@ const PasswordToggle = styled.button`
   }
 `;
 
-const ErrorMessage = styled.span`
+const FormErrorMessage = styled.span`
   color: #ef4444;
   font-size: 0.875rem;
   margin-top: 0.25rem;
@@ -160,6 +161,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const {
     register,
@@ -171,11 +173,16 @@ const LoginPage = () => {
 
   const onSubmit = async (data) => {
     setIsLoading(true);
+    setError(''); // Clear previous errors
     try {
       const result = await login(data.email, data.password);
       if (result.success) {
         navigate('/dashboard');
+      } else {
+        setError(result.error);
       }
+    } catch (err) {
+      setError('Đăng nhập thất bại. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }
@@ -190,6 +197,11 @@ const LoginPage = () => {
         </LoginHeader>
 
         <Form onSubmit={handleSubmit(onSubmit)}>
+          <ErrorMessage 
+            message={error} 
+            onClose={() => setError('')}
+            show={!!error}
+          />
           <InputGroup>
             <InputIcon>
               <Mail size={20} />
@@ -201,7 +213,7 @@ const LoginPage = () => {
               {...register('email')}
             />
             {errors.email && (
-              <ErrorMessage>{errors.email.message}</ErrorMessage>
+              <FormErrorMessage>{errors.email.message}</FormErrorMessage>
             )}
           </InputGroup>
 
@@ -222,7 +234,7 @@ const LoginPage = () => {
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </PasswordToggle>
             {errors.password && (
-              <ErrorMessage>{errors.password.message}</ErrorMessage>
+              <FormErrorMessage>{errors.password.message}</FormErrorMessage>
             )}
           </InputGroup>
 

@@ -254,7 +254,7 @@ const BlogSection = () => {
             Xem tất cả bài viết
           </Button>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button variant="ghost" onClick={() => navigate('/booking')}>
+            <Button variant="ghost" onClick={() => navigate('/services')}>
               Đặt dịch vụ ngay
             </Button>
             <Button variant="ghost" onClick={() => navigate('/about-us')}>

@@ -25,9 +25,6 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
 import CheckLinkPage from "./pages/CheckLinkPage";
-import BookingPage from "./pages/BookingPage";
-import ConsultationPage from "./pages/ConsultationPage";
-import PricingPage from "./pages/PricingPage";
 
 function App() {
   return (
@@ -60,9 +57,6 @@ function App() {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/check-link" element={<CheckLinkPage />} />
-          <Route path="/booking" element={<BookingPage />} />
-          <Route path="/consultation" element={<ConsultationPage />} />
-          <Route path="/pricing" element={<PricingPage />} />
         </Routes>
 
         <Footer />
