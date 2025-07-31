@@ -7,6 +7,9 @@ import { useAuth } from '../context/AuthContext';
 import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 import styled from 'styled-components';
 import ErrorMessage from '../components/ErrorMessage';
+import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator';
+import PasswordRequirements from '../components/PasswordRequirements';
+import PasswordInfo from '../components/PasswordInfo';
 
 const RegisterContainer = styled.div`
   min-height: calc(100vh - 4rem);
@@ -170,7 +173,11 @@ const schema = yup.object({
     .required('Email is required'),
   password: yup
     .string()
-    .min(6, 'Password must be at least 6 characters')
+    .min(8, 'Password must be at least 8 characters')
+    .matches(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .matches(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .matches(/\d/, 'Password must contain at least one number')
+    .matches(/[!@#$%^&*(),.?":{}|<>]/, 'Password must contain at least one special character')
     .required('Password is required'),
   confirmPassword: yup
     .string()
@@ -185,6 +192,7 @@ const RegisterPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [passwordValue, setPasswordValue] = useState('');
 
   const {
     register,
@@ -199,6 +207,21 @@ const RegisterPage = () => {
     setError(''); // Clear previous errors
     try {
       const { confirmPassword, ...userData } = data;
+      
+      // Kiểm tra độ mạnh mật khẩu trước khi đăng ký
+      const password = data.password;
+      const hasUpperCase = /[A-Z]/.test(password);
+      const hasLowerCase = /[a-z]/.test(password);
+      const hasNumbers = /\d/.test(password);
+      const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+      const isLongEnough = password.length >= 8;
+      
+      if (!isLongEnough || !hasUpperCase || !hasLowerCase || !hasNumbers || !hasSpecialChar) {
+        setError('Mật khẩu phải đáp ứng tất cả yêu cầu bảo mật');
+        setIsLoading(false);
+        return;
+      }
+      
       const result = await registerUser(userData);
       if (result.success) {
         navigate('/login');
@@ -282,6 +305,10 @@ const RegisterPage = () => {
               placeholder="Create password"
               error={errors.password}
               {...register('password')}
+              onChange={(e) => {
+                setPasswordValue(e.target.value);
+                register('password').onChange(e);
+              }}
             />
             <PasswordToggle
               type="button"
@@ -292,6 +319,9 @@ const RegisterPage = () => {
             {errors.password && (
               <FormErrorMessage>{errors.password.message}</FormErrorMessage>
             )}
+            {!passwordValue && <PasswordInfo />}
+            {passwordValue && <PasswordStrengthIndicator password={passwordValue} />}
+            {passwordValue && <PasswordRequirements password={passwordValue} />}
           </InputGroup>
 
           <InputGroup>
