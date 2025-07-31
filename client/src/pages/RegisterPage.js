@@ -8,12 +8,12 @@ import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 import styled from 'styled-components';
 
 const RegisterContainer = styled.div`
-  min-height: calc(100vh - 4rem);
+  min-height: calc(120vh - 4rem);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 2rem 1rem;
-  background: #f8fafc;
+  background: #edf0f4ff;
 `;
 
 const RegisterCard = styled.div`
@@ -209,8 +209,8 @@ const RegisterPage = () => {
     <RegisterContainer>
       <RegisterCard>
         <RegisterHeader>
-          <RegisterTitle>Create Account</RegisterTitle>
-          <RegisterSubtitle>Join FactCheck to start verifying information</RegisterSubtitle>
+          <RegisterTitle>Đăng Ký</RegisterTitle>
+          {/* <RegisterSubtitle>Tham gia FactCheck để bắt đầu xác minh thông tin</RegisterSubtitle> */}
         </RegisterHeader>
 
         <Form onSubmit={handleSubmit(onSubmit)}>

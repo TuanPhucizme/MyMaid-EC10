@@ -8,7 +8,7 @@ import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import styled from 'styled-components';
 
 const LoginContainer = styled.div`
-  min-height: calc(100vh - 4rem);
+  min-height: calc(120vh - 4rem);
   display: flex;
   align-items: center;
   justify-content: center;
