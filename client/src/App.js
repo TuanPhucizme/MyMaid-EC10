@@ -25,6 +25,7 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
 import CheckLinkPage from "./pages/CheckLinkPage";
+import BookingPage from "./pages/BookingPage";
 function App() {
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -55,8 +56,9 @@ function App() {
           <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/check-link" element={<CheckLinkPage />} />        
           <Route path="/payment" element={<PaymentPage />} />
-          <Route path="/payment-result" element={<PaymentResultPage />}
-          </Routes>
+          <Route path="/payment-result" element={<PaymentResultPage />} />
+          <Route path="/booking" element={<BookingPage />} />
+      </Routes>
 
         <Footer />
       </div>
