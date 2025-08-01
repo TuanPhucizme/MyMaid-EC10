@@ -12,7 +12,7 @@ const BookingPage = () => {
     serviceType: location.state?.serviceType || '',
     date: '',
     time: '',
-    duration: '2',
+    area: 'small', // Thêm 'area' với giá trị mặc định
     address: '',
     phone: '',
     name: '',
@@ -36,12 +36,18 @@ const BookingPage = () => {
   }, [hasIntersected]);
 
   const serviceTypes = [
-    { id: 'cleaning', name: 'Dọn dẹp nhà cửa', price: 150000, icon: '🏠' },
-    { id: 'laundry', name: 'Giặt ủi', price: 100000, icon: '👕' },
+    { id: 'cleaning', name: 'Dọn dẹp nhà cửa', price: 220000, icon: '🧹' },
+    { id: 'deep-cleaning', name: 'Tổng vệ sinh', price: 660000, icon: '✨' },
+    { id: 'moving-house', name: 'Chuyển nhà', price: 300000, icon: '🏠' },
+    { id: 'airconditioner-cleaning', name: 'Vệ sinh máy lạnh', price: 250000, icon: '❄️' },
     { id: 'childcare', name: 'Chăm sóc trẻ em', price: 200000, icon: '👶' },
-    { id: 'cooking', name: 'Nấu ăn', price: 180000, icon: '🍳' },
-    { id: 'elderly-care', name: 'Chăm sóc người già', price: 250000, icon: '👴' },
-    { id: 'deep-cleaning', name: 'Vệ sinh chuyên sâu', price: 300000, icon: '🧹' }
+  ];
+
+  const areaOptions = [
+    { id: 'small', label: 'Nhỏ (< 50m² / 1-2 phòng)', duration: 2 },
+    { id: 'medium', label: 'Vừa (50-80m² / 2-3 phòng)', duration: 4 },
+    { id: 'large', label: 'Lớn (80-120m² / 3-4 phòng)', duration: 6 },
+    { id: 'extra-large', label: 'Rất lớn (> 120m²)', duration: 8 },
   ];
 
   const timeSlots = [
@@ -68,8 +74,12 @@ const BookingPage = () => {
     const selectedService = serviceTypes.find(s => s.id === formData.serviceType);
     if (!selectedService) return 0;
     
+    // Tính toán giá dựa trên diện tích và lấy ra thời lượng tương ứng
+    const selectedArea = areaOptions.find(a => a.id === formData.area);
+    const duration = selectedArea ? selectedArea.duration : 2; // Mặc định là 2 giờ nếu không tìm thấy
+
     const basePrice = selectedService.price;
-    const durationMultiplier = parseInt(formData.duration) / 2;
+    const durationMultiplier = duration / 2;
     const frequencyDiscount = formData.frequency === 'weekly' ? 0.9 : 
                              formData.frequency === 'monthly' ? 0.8 : 1;
     
@@ -94,17 +104,37 @@ const BookingPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const bookingDetails = {
+      service: {
+        id: selectedService.id,
+        name: selectedService.name,
+        icon: selectedService.icon,
+      },
+      schedule: {
+        date: formData.date,
+        time: formData.time,
+        duration: formData.duration,
+        frequency: formData.frequency,
+      },
+      contact: {
+        name: formData.name,
+        phone: formData.phone,
+        email: formData.email,
+        address: formData.address,
+        notes: formData.notes,
+      },
+      summary: {
+        totalPrice: totalPrice,
+        orderDescription: `Thanh toan cho dich vu ${selectedService.name}`
+      }
+    };
     setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
-      alert('Đặt dịch vụ thành công! Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.');
-      navigate('/dashboard');
-    }, 2000);
+    // chuyến hướng dữ liệu và người dùng đến trang payment
+    navigate('/payment', { state: { bookingDetails: bookingDetails } });
   };
 
   const selectedService = serviceTypes.find(s => s.id === formData.serviceType);
+  const selectedAreaInfo = areaOptions.find(a => a.id === formData.area);
   const totalPrice = calculatePrice();
 
   return (
@@ -114,7 +144,7 @@ const BookingPage = () => {
           {/* Header */}
           <div className="text-center mb-12">
             <h1 className="text-4xl lg:text-5xl font-bold text-neutral-900 mb-4">
-              Đặt Dịch Vụ
+              Thanh Toán
             </h1>
             <p className="text-xl text-neutral-600 max-w-2xl mx-auto">
               Chọn dịch vụ phù hợp và đặt lịch ngay hôm nay để được phục vụ bởi đội ngũ chuyên nghiệp
@@ -147,6 +177,7 @@ const BookingPage = () => {
             {/* Main Form */}
             <div className="lg:col-span-2">
               <Card className="p-8">
+                {/* Step 1 */}
                 {currentStep === 1 && (
                   <div>
                     <h2 className="text-2xl font-bold text-neutral-900 mb-6">
@@ -180,6 +211,7 @@ const BookingPage = () => {
                   </div>
                 )}
 
+                {/* Step 2 */}
                 {currentStep === 2 && (
                   <div>
                     <h2 className="text-2xl font-bold text-neutral-900 mb-6">
@@ -216,21 +248,22 @@ const BookingPage = () => {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-neutral-700 mb-2">
-                          Thời lượng
-                        </label>
-                        <select
-                          name="duration"
-                          value={formData.duration}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                        >
-                          <option value="2">2 giờ</option>
-                          <option value="4">4 giờ</option>
-                          <option value="6">6 giờ</option>
-                          <option value="8">8 giờ</option>
-                        </select>
-                      </div>
+                            <label className="block text-sm font-medium text-neutral-700 mb-2">
+                              Diện tích / Quy mô
+                            </label>
+                            <select
+                              name="area" // Đổi name thành "area"
+                              value={formData.area} // value là formData.area
+                              onChange={handleInputChange}
+                              className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            >
+                              {areaOptions.map(option => (
+                                <option key={option.id} value={option.id}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                       <div>
                         <label className="block text-sm font-medium text-neutral-700 mb-2">
                           Tần suất
@@ -358,7 +391,7 @@ const BookingPage = () => {
                   Tóm Tắt Đơn Hàng
                 </h3>
                 
-                {selectedService && (
+                {selectedService && selectedAreaInfo && ( // ✅ BƯỚC 5: CẬP NHẬT TÓM TẮT
                   <div className="space-y-4">
                     <div className="flex items-center space-x-3 p-3 bg-neutral-50 rounded-lg">
                       <span className="text-2xl">{selectedService.icon}</span>
@@ -366,8 +399,9 @@ const BookingPage = () => {
                         <p className="font-semibold text-neutral-900">
                           {selectedService.name}
                         </p>
+                        {/* Hiển thị thời gian được quy đổi */}
                         <p className="text-sm text-neutral-600">
-                          {formData.duration} giờ
+                          Quy mô: {selectedAreaInfo.label}
                         </p>
                       </div>
                     </div>
@@ -375,7 +409,7 @@ const BookingPage = () => {
                     {formData.date && (
                       <div className="p-3 bg-neutral-50 rounded-lg">
                         <p className="text-sm text-neutral-600">Ngày: {formData.date}</p>
-                        <p className="text-sm text-neutral-600">Giờ: {formData.time}</p>
+                        <p className="text-sm text-neutral-600">Lúc: {formData.time}</p>
                       </div>
                     )}
 
@@ -385,8 +419,8 @@ const BookingPage = () => {
                         <span>{selectedService.price.toLocaleString()}đ</span>
                       </div>
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-neutral-600">Thời lượng:</span>
-                        <span>{formData.duration} giờ</span>
+                        <span className="text-neutral-600">Ước tính:</span>
+                        <span>{selectedAreaInfo.duration} giờ</span>
                       </div>
                       {formData.frequency !== 'one-time' && (
                         <div className="flex justify-between items-center mb-2">
