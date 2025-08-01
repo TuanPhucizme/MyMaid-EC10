@@ -192,8 +192,8 @@ const LoginPage = () => {
     <LoginContainer>
       <LoginCard>
         <LoginHeader>
-          <LoginTitle>Welcome</LoginTitle>
-          <LoginSubtitle>Sign in to your MyMaid account</LoginSubtitle>
+          <LoginTitle>Chào Mừng Đến Với MyMaid</LoginTitle>
+          <LoginSubtitle>Đăng nhập vào tài khoản MyMaid của bạn</LoginSubtitle>
         </LoginHeader>
 
         <Form onSubmit={handleSubmit(onSubmit)}>
@@ -208,7 +208,7 @@ const LoginPage = () => {
             </InputIcon>
             <Input
               type="email"
-              placeholder="Enter your email"
+              placeholder="Nhập email của bạn"
               error={errors.email}
               {...register('email')}
             />
@@ -223,7 +223,7 @@ const LoginPage = () => {
             </InputIcon>
             <Input
               type={showPassword ? 'text' : 'password'}
-              placeholder="Enter your password"
+              placeholder="Nhập mật khẩu của bạn"
               error={errors.password}
               {...register('password')}
             />
@@ -245,18 +245,18 @@ const LoginPage = () => {
                 Signing in...
               </>
             ) : (
-              'Sign In'
+              'Đăng Nhập'
             )}
           </SubmitButton>
         </Form>
 
         <LoginFooter>
           <FooterLink to="/forgot-password">
-            Forgot your password?
+            Quên mật khẩu?
           </FooterLink>
           <div>
-            Don't have an account?{' '}
-            <FooterLink to="/register">Sign up here</FooterLink>
+            Bạn chưa có tài khoản?{' '}
+            <FooterLink to="/register">Đăng ký tại đây</FooterLink>
           </div>
         </LoginFooter>
       </LoginCard>

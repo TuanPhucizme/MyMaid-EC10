@@ -256,7 +256,7 @@ const RegisterPage = () => {
               </InputIcon>
               <Input
                 type="text"
-                placeholder="First name"
+                placeholder="Họ Và Tên Đệm"
                 error={errors.firstName}
                 {...register('firstName')}
               />
@@ -271,7 +271,7 @@ const RegisterPage = () => {
               </InputIcon>
               <Input
                 type="text"
-                placeholder="Last name"
+                placeholder="Tên"
                 error={errors.lastName}
                 {...register('lastName')}
               />
@@ -287,7 +287,7 @@ const RegisterPage = () => {
             </InputIcon>
             <Input
               type="email"
-              placeholder="Enter your email"
+              placeholder="Nhập địa chỉ email của bạn"
               error={errors.email}
               {...register('email')}
             />
@@ -302,7 +302,7 @@ const RegisterPage = () => {
             </InputIcon>
             <Input
               type={showPassword ? 'text' : 'password'}
-              placeholder="Create password"
+              placeholder="Tạo mật khẩu"
               error={errors.password}
               {...register('password')}
               onChange={(e) => {
@@ -330,7 +330,7 @@ const RegisterPage = () => {
             </InputIcon>
             <Input
               type={showConfirmPassword ? 'text' : 'password'}
-              placeholder="Confirm password"
+              placeholder="Xác nhận lại mật khẩu"
               error={errors.confirmPassword}
               {...register('confirmPassword')}
             />
@@ -349,17 +349,17 @@ const RegisterPage = () => {
             {isLoading ? (
               <>
                 <div className="spinner" style={{ width: '1rem', height: '1rem' }} />
-                Creating account...
+                Đang Tạo Tài Khoản...
               </>
             ) : (
-              'Create Account'
+              'Tạo Tài Khoản'
             )}
           </SubmitButton>
         </Form>
 
         <RegisterFooter>
-          Already have an account?{' '}
-          <FooterLink to="/login">Sign in here</FooterLink>
+          Đã Có Tài Khoản Trước Đó?{' '}
+          <FooterLink to="/login">Đăng nhập tại đây</FooterLink>
         </RegisterFooter>
       </RegisterCard>
     </RegisterContainer>

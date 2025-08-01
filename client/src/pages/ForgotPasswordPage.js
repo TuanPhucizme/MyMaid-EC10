@@ -193,20 +193,20 @@ const ForgotPasswordPage = () => {
             <IconContainer>
               <Send size={32} />
             </IconContainer>
-            <Title>Check Your Email</Title>
+            <Title>Kiểm Tra Email Của Bạn</Title>
             <Subtitle>
-              We've sent a password reset link to <strong>{getValues('email')}</strong>
+              Chúng tôi đã gửi liên kết đặt lại mật khẩu đến <strong>{getValues('email')}</strong>
             </Subtitle>
           </Header>
 
           <SuccessMessage>
-            If an account with that email exists, you'll receive a password reset link shortly.
+            Nếu tài khoản với email đó tồn tại, bạn sẽ nhận được liên kết đặt lại mật khẩu trong thời gian sớm nhất.
           </SuccessMessage>
 
           <Footer>
             <BackLink to="/login">
               <ArrowLeft size={16} />
-              Back to Login
+              Quay lại trang đăng nhập
             </BackLink>
           </Footer>
         </ForgotPasswordCard>
@@ -221,9 +221,9 @@ const ForgotPasswordPage = () => {
           <IconContainer>
             <Mail size={32} />
           </IconContainer>
-          <Title>Forgot Password?</Title>
+          <Title>Quên Mật Khẩu?</Title>
           <Subtitle>
-            Enter your email address and we'll send you a link to reset your password.
+            Nhập địa chỉ email của bạn và chúng tôi sẽ gửi cho bạn một liên kết để đặt lại mật khẩu.
           </Subtitle>
         </Header>
 
@@ -247,12 +247,12 @@ const ForgotPasswordPage = () => {
             {isLoading ? (
               <>
                 <div className="spinner" style={{ width: '1rem', height: '1rem' }} />
-                Sending...
+                Đang Gửi...
               </>
             ) : (
               <>
                 <Send size={20} />
-                Send Reset Link
+                Gửi Liên Kết
               </>
             )}
           </SubmitButton>
@@ -261,7 +261,7 @@ const ForgotPasswordPage = () => {
         <Footer>
           <BackLink to="/login">
             <ArrowLeft size={16} />
-            Back to Login
+            Quay lại trang đăng nhập
           </BackLink>
         </Footer>
       </ForgotPasswordCard>
