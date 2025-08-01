@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { CreditCard, DollarSign, FileText } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
@@ -79,6 +79,10 @@ const PaymentDetailPage = () => {
   // Lấy dữ liệu booking từ state của location
   const bookingDetails = location.state?.bookingDetails;
 
+  useEffect(() => {
+    localStorage.setItem('bookingDetails', JSON.stringify(bookingDetails));
+  }, [bookingDetails]);
+
   // Nếu không có dữ liệu, có thể điều hướng về trang trước đó
   if (!bookingDetails) {
     // Xử lý trường hợp người dùng truy cập trực tiếp vào trang thanh toán
@@ -86,7 +90,7 @@ const PaymentDetailPage = () => {
   }
 
   // Bây giờ bạn có thể sử dụng dữ liệu này để hiển thị và tạo thanh toán
-  const { service, summary, contact } = bookingDetails;
+  const { service, summary, contact, schedule } = bookingDetails;
 
   const handlePayment = () => {
     fetch('http://localhost:3030/api/payment/create_payment_url', {
@@ -101,7 +105,31 @@ const PaymentDetailPage = () => {
         bankCode: ''
       })
     })
-    // ... logic fetch như cũ
+    .then(res => {
+      if (!res.ok) {
+      // Nếu server trả về lỗi, ném ra lỗi để nhảy vào .catch
+      throw new Error('Lỗi từ server: ' + res.status);
+      }
+      return res.json();
+      })
+      .then(data => {
+      // Kiểm tra xem server có trả về paymentUrl không
+      if (data && data.paymentUrl) {
+      // Lưu thông tin booking vào localStorage để sử dụng sau này
+      localStorage.setItem('bookingDetails', JSON.stringify(bookingDetails));
+      // Nếu có, chuyển hướng người dùng đến URL đó
+      window.location.href = data.paymentUrl;
+      } else {
+      // Nếu không, thông báo lỗi
+      console.error('Không nhận được URL thanh toán từ server.');
+      alert('Không thể lấy được URL thanh toán. Vui lòng kiểm tra lại.');
+      }
+      })
+      .catch(err => {
+      // Bắt lỗi mạng hoặc lỗi từ server
+      console.error('Lỗi khi tạo yêu cầu thanh toán:', err);
+      alert('Có lỗi xảy ra khi kết nối đến máy chủ thanh toán. Vui lòng thử lại sau.');
+    });
   };
   
   return (
@@ -122,7 +150,39 @@ const PaymentDetailPage = () => {
           <IconWrapper>{/* Icon */}</IconWrapper>
           <InfoText>
             <Label>Khách hàng</Label>
-            <Value>{contact.name} - {contact.phone}</Value>
+            <Value>{contact.name}</Value>
+          </InfoText>
+        </InfoRow>
+
+        <InfoRow>
+          <IconWrapper>{/* Icon */}</IconWrapper>
+          <InfoText>
+            <Label>Địa chỉ</Label>
+            <Value>{contact.address}</Value>
+          </InfoText>
+        </InfoRow>
+
+        <InfoRow>
+          <IconWrapper>{/* Icon */}</IconWrapper>
+          <InfoText>
+            <Label>Số điện thoại</Label>
+            <Value>{contact.phone}</Value>
+          </InfoText>
+        </InfoRow>
+
+        <InfoRow>
+          <IconWrapper>{/* Icon */}</IconWrapper>
+          <InfoText>
+            <Label>Lịch trình</Label>
+            <Value>{schedule.date} - {schedule.time} - {schedule.duration} giờ</Value>
+          </InfoText>
+        </InfoRow>
+
+        <InfoRow>
+          <IconWrapper>{/* Icon */}</IconWrapper>
+          <InfoText>
+            <Label>Ghi chú</Label>
+            <Value>{contact.notes}</Value>
           </InfoText>
         </InfoRow>
 

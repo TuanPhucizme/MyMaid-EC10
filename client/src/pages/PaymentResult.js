@@ -123,7 +123,6 @@ const getErrorMessage = (code) => {
     }
 }
 
-
 const PaymentResultPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -140,13 +139,27 @@ const PaymentResultPage = () => {
       transactionNo: params.get('vnp_TransactionNo'),
       payDate: params.get('vnp_PayDate'),
       orderInfo: params.get('vnp_OrderInfo'),
-      responseCode: responseCode,
+      responseCode,
     };
-    
+
     setPaymentInfo(info);
     setIsSuccess(responseCode === '00');
 
+    if (responseCode === '00') {
+      localStorage.removeItem('bookingDetails'); // Xoá khi thanh toán thành công
+    }
   }, [location]);
+
+  const handleRetry = () => {
+    const storedBooking = localStorage.getItem('bookingDetails');
+    if (storedBooking) {
+      // Chuyển hướng về trang thanh toán với dữ liệu đã lưu
+      navigate('/payment', { state: { bookingDetails: JSON.parse(storedBooking) } });
+    } else {
+      alert('Không tìm thấy dữ liệu đặt hàng. Vui lòng đặt lại dịch vụ.');
+      navigate('/booking');
+    }
+  };
 
   if (!paymentInfo) {
     return <PaymentContainer>Đang tải kết quả...</PaymentContainer>;
@@ -215,8 +228,7 @@ const PaymentResultPage = () => {
                 <Value>{formatCurrency(paymentInfo.amount)}</Value>
               </InfoText>
             </InfoRow>
-
-            <ActionButton onClick={() => navigate('/payment')}>Thử lại thanh toán</ActionButton>
+            <ActionButton onClick={handleRetry}>Thử lại thanh toán</ActionButton>
           </>
         )}
       </PaymentCard>
