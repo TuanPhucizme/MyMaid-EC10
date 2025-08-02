@@ -11,6 +11,7 @@ import MaidProfiles from "./components/MaidProfiles";
 import Testimonials from "./components/Testimonials";
 import BlogSection from "./components/BlogSection";
 import Footer from "./components/Footer";
+import ChatBotWidget from "./components/ChatBotWidget";
 
 // Pages
 import PartNer from "./pages/RegisterPartnerPage";
@@ -59,7 +60,7 @@ function App() {
           <Route path="/payment-result" element={<PaymentResultPage />} />
           <Route path="/booking" element={<BookingPage />} />
       </Routes>
-
+            <ChatBotWidget />
         <Footer />
       </div>
   );

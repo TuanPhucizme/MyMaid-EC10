@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Shield, Users, BarChart3 } from 'lucide-react';
 import styled from 'styled-components';
+import ChatBotWidget from '../components/ChatBotWidget';
 
 // TODO: Implement responsive design for mobile devices
 // TODO: Add loading states and error handling
@@ -230,13 +231,14 @@ const HomePage = () => {
           </FeaturesGrid>
         </FeaturesContainer>
       </FeaturesSection>
-
+      
       {/* TODO: Add additional sections:
           - Testimonials
           - Statistics/metrics
           - Call-to-action footer
           - Newsletter signup
       */}
+    <ChatBotWidget />
     </>
   );
 };
