@@ -26,6 +26,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
 import CheckLinkPage from "./pages/CheckLinkPage";
 import BookingPage from "./pages/BookingPage";
+import UpdateInformationPage from "./pages/UpdateInformation";
 function App() {
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -58,6 +59,7 @@ function App() {
           <Route path="/payment" element={<PaymentPage />} />
           <Route path="/payment-result" element={<PaymentResultPage />} />
           <Route path="/booking" element={<BookingPage />} />
+          <Route path="/update-information" element={<UpdateInformationPage />} />
       </Routes>
 
         <Footer />

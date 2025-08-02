@@ -22,7 +22,7 @@
     "gsap": "^3.13.0",
     "js-cookie": "^3.0.5",
     "lottie-react": "^2.4.1",
-    "lucide-react": "^0.263.1",
+    "lucide-react": "^0.536.0",
     "postcss": "^8.5.6",
     "react": "^18.2.0",
     "react-bootstrap": "^2.10.10",
@@ -44,7 +44,8 @@
   },
   "scripts": {
     "start": "set PORT=3000 && react-scripts start",
-    "start:3000": "react-scripts start",    "build": "react-scripts build",
+    "start:3000": "react-scripts start",
+    "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "stop": "taskkill /f /im node.exe 2>nul && netstat -ano | findstr :3000 | findstr LISTENING >nul && for /f \"tokens=5\" %a in ('netstat -ano ^| findstr :3000 ^| findstr LISTENING') do taskkill /f /pid %a 2>nul && echo \"Cleared port 3000\" || echo \"Port 3000 is free\""

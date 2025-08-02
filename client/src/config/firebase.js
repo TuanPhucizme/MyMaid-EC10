@@ -3,17 +3,21 @@
  * @desc Cấu hình Firebase cho frontend với Firebase Auth
  */
 
-import { initializeApp } from 'firebase/app';
-import { 
-  getAuth, 
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
+import {
   createUserWithEmailAndPassword,
+  getAuth, 
+  GoogleAuthProvider,
+  onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
   sendEmailVerification,
   sendPasswordResetEmail,
   updateProfile,
-  onAuthStateChanged
 } from 'firebase/auth';
+
+import { getStorage } from "firebase/storage";
 
 // Firebase config - Lấy từ Firebase Console > Project Settings > General > Web app
 const firebaseConfig = {
@@ -35,10 +39,13 @@ if (!firebaseConfig.apiKey) {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-
+// Initialize Firebase Firestore and get a reference to the service
+export const db = getFirestore(app);
+export const storage = getStorage(app);
 // Initialize Firebase Auth and get a reference to the service
 export const auth = getAuth(app);
-
+// Import GoogleAuthProvider for Google Sign-In
+export const googleProvider = new GoogleAuthProvider();
 // Auth functions
 export const firebaseAuth = {
   // Đăng ký với email và password
