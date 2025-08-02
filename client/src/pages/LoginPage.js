@@ -177,7 +177,7 @@ const LoginPage = () => {
     try {
       const result = await login(data.email, data.password);
       if (result.success) {
-        navigate('/dashboard');
+        navigate('/');
       } else {
         setError(result.error);
       }

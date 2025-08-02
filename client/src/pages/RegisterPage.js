@@ -174,10 +174,10 @@ const schema = yup.object({
   password: yup
     .string()
     .min(8, 'Password must be at least 8 characters')
-    .matches(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .matches(/[a-z]/, 'Password must contain at least one lowercase letter')
-    .matches(/\d/, 'Password must contain at least one number')
-    .matches(/[!@#$%^&*(),.?":{}|<>]/, 'Password must contain at least one special character')
+    // .matches(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    // .matches(/[a-z]/, 'Password must contain at least one lowercase letter')
+    // .matches(/\d/, 'Password must contain at least one number')
+    // .matches(/[!@#$%^&*(),.?":{}|<>]/, 'Password must contain at least one special character')
     .required('Password is required'),
   confirmPassword: yup
     .string()
@@ -206,31 +206,13 @@ const RegisterPage = () => {
     setIsLoading(true);
     setError(''); // Clear previous errors
     try {
-      const { confirmPassword, ...userData } = data;
-      
-      // Kiểm tra độ mạnh mật khẩu trước khi đăng ký
-      const password = data.password;
-      const hasUpperCase = /[A-Z]/.test(password);
-      const hasLowerCase = /[a-z]/.test(password);
-      const hasNumbers = /\d/.test(password);
-      const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-      const isLongEnough = password.length >= 8;
-      
-      if (!isLongEnough || !hasUpperCase || !hasLowerCase || !hasNumbers || !hasSpecialChar) {
-        setError('Mật khẩu phải đáp ứng tất cả yêu cầu bảo mật');
-        setIsLoading(false);
-        return;
+      const { confirmPassword, ...registrationData } = data;
+      sessionStorage.setItem('registrationData', JSON.stringify(registrationData));
+      navigate('/update-information');
       }
-      
-      const result = await registerUser(userData);
-      if (result.success) {
-        navigate('/login');
-      } else {
-        setError(result.error);
-      }
-    } catch (err) {
-      setError('Đăng ký thất bại. Vui lòng thử lại.');
-    } finally {
+    catch (err) {
+      console.error("Lỗi khi xử lý bước 1:", err);
+      setError('Đã có lỗi xảy ra. Vui lòng thử lại.');
       setIsLoading(false);
     }
   };
@@ -239,8 +221,8 @@ const RegisterPage = () => {
     <RegisterContainer>
       <RegisterCard>
         <RegisterHeader>
-          <RegisterTitle>Đăng Ký</RegisterTitle>
-          {/* <RegisterSubtitle>Tham gia FactCheck để bắt đầu xác minh thông tin</RegisterSubtitle> */}
+          <RegisterTitle>Tạo Tài Khoản</RegisterTitle>
+          <RegisterSubtitle>Bắt đầu với thông tin cơ bản</RegisterSubtitle>
         </RegisterHeader>
 
         <Form onSubmit={handleSubmit(onSubmit)}>
@@ -251,114 +233,66 @@ const RegisterPage = () => {
           />
           <InputRow>
             <InputGroup>
-              <InputIcon>
-                <User size={20} />
-              </InputIcon>
-              <Input
-                type="text"
-                placeholder="Họ Và Tên Đệm"
-                error={errors.firstName}
-                {...register('firstName')}
-              />
-              {errors.firstName && (
-                <FormErrorMessage>{errors.firstName.message}</FormErrorMessage>
-              )}
+              <InputIcon><User size={20} /></InputIcon>
+              <Input type="text" placeholder="Họ Và Tên Đệm" error={!!errors.firstName} {...register('firstName')} />
+              {errors.firstName && <FormErrorMessage>{errors.firstName.message}</FormErrorMessage>}
             </InputGroup>
-
             <InputGroup>
-              <InputIcon>
-                <User size={20} />
-              </InputIcon>
-              <Input
-                type="text"
-                placeholder="Tên"
-                error={errors.lastName}
-                {...register('lastName')}
-              />
-              {errors.lastName && (
-                <FormErrorMessage>{errors.lastName.message}</FormErrorMessage>
-              )}
+              <InputIcon><User size={20} /></InputIcon>
+              <Input type="text" placeholder="Tên" error={!!errors.lastName} {...register('lastName')} />
+              {errors.lastName && <FormErrorMessage>{errors.lastName.message}</FormErrorMessage>}
             </InputGroup>
           </InputRow>
 
           <InputGroup>
-            <InputIcon>
-              <Mail size={20} />
-            </InputIcon>
-            <Input
-              type="email"
-              placeholder="Nhập địa chỉ email của bạn"
-              error={errors.email}
-              {...register('email')}
-            />
-            {errors.email && (
-              <FormErrorMessage>{errors.email.message}</FormErrorMessage>
-            )}
+            <InputIcon><Mail size={20} /></InputIcon>
+            <Input type="email" placeholder="Nhập địa chỉ email của bạn" error={!!errors.email} {...register('email')} />
+            {errors.email && <FormErrorMessage>{errors.email.message}</FormErrorMessage>}
           </InputGroup>
 
           <InputGroup>
-            <InputIcon>
-              <Lock size={20} />
-            </InputIcon>
+            <InputIcon><Lock size={20} /></InputIcon>
             <Input
               type={showPassword ? 'text' : 'password'}
               placeholder="Tạo mật khẩu"
-              error={errors.password}
+              error={!!errors.password}
               {...register('password')}
               onChange={(e) => {
                 setPasswordValue(e.target.value);
-                register('password').onChange(e);
+                register('password').onChange(e); // Đảm bảo react-hook-form vẫn nhận được sự kiện
               }}
             />
-            <PasswordToggle
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-            >
+            <PasswordToggle type="button" onClick={() => setShowPassword(!showPassword)}>
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </PasswordToggle>
-            {errors.password && (
-              <FormErrorMessage>{errors.password.message}</FormErrorMessage>
-            )}
+            {errors.password && <FormErrorMessage>{errors.password.message}</FormErrorMessage>}
             {!passwordValue && <PasswordInfo />}
             {passwordValue && <PasswordStrengthIndicator password={passwordValue} />}
             {passwordValue && <PasswordRequirements password={passwordValue} />}
           </InputGroup>
 
+          {/* ✅ TRƯỜNG XÁC NHẬN MẬT KHẨU ĐƯỢC GIỮ NGUYÊN */}
           <InputGroup>
-            <InputIcon>
-              <Lock size={20} />
-            </InputIcon>
+            <InputIcon><Lock size={20} /></InputIcon>
             <Input
               type={showConfirmPassword ? 'text' : 'password'}
               placeholder="Xác nhận lại mật khẩu"
-              error={errors.confirmPassword}
+              error={!!errors.confirmPassword}
               {...register('confirmPassword')}
             />
-            <PasswordToggle
-              type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            >
+            <PasswordToggle type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
               {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </PasswordToggle>
-            {errors.confirmPassword && (
-              <FormErrorMessage>{errors.confirmPassword.message}</FormErrorMessage>
-            )}
+            {errors.confirmPassword && <FormErrorMessage>{errors.confirmPassword.message}</FormErrorMessage>}
           </InputGroup>
 
           <SubmitButton type="submit" disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <div className="spinner" style={{ width: '1rem', height: '1rem' }} />
-                Đang Tạo Tài Khoản...
-              </>
-            ) : (
-              'Tạo Tài Khoản'
-            )}
+            {isLoading ? 'Đang xử lý...' : 'Tiếp Tục'}
           </SubmitButton>
         </Form>
 
         <RegisterFooter>
-          Đã Có Tài Khoản Trước Đó?{' '}
+          Đã có tài khoản?{' '}
           <FooterLink to="/login">Đăng nhập tại đây</FooterLink>
         </RegisterFooter>
       </RegisterCard>

@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { useAuth } from '../context/AuthContext';
-import { User, Mail, Calendar, Edit3, Save, X } from 'lucide-react';
+import { User, Mail, Phone, Calendar, Edit3, Save, X, Globe, Users, VenusAndMars } from 'lucide-react';
 import styled from 'styled-components';
 
+import { auth, db } from '../config/firebase'; // Đảm bảo đường dẫn đúng
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+
+// STYLED COMPONENTS
 const ProfileContainer = styled.div`
   max-width: 800px;
   margin: 0 auto;
@@ -65,28 +69,6 @@ const UserName = styled.h2`
 const UserEmail = styled.p`
   color: #6b7280;
   margin-bottom: 1rem;
-`;
-
-const UserStats = styled.div`
-  display: flex;
-  justify-content: center;
-  gap: 2rem;
-  margin-top: 1rem;
-`;
-
-const StatItem = styled.div`
-  text-align: center;
-`;
-
-const StatValue = styled.div`
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: #1a202c;
-`;
-
-const StatLabel = styled.div`
-  font-size: 0.875rem;
-  color: #6b7280;
 `;
 
 const ProfileDetails = styled.div`
@@ -192,7 +174,7 @@ const Label = styled.label`
 
 const Input = styled.input`
   padding: 0.75rem;
-  border: 2px solid ${props => props.error ? '#ef4444' : '#d1d5db'};
+  border: 2px solid ${(props) => (props.error ? '#ef4444' : '#d1d5db')};
   border-radius: 0.375rem;
   font-size: 1rem;
   transition: border-color 0.2s;
@@ -206,7 +188,7 @@ const Input = styled.input`
 
 const TextArea = styled.textarea`
   padding: 0.75rem;
-  border: 2px solid ${props => props.error ? '#ef4444' : '#d1d5db'};
+  border: 2px solid ${(props) => (props.error ? '#ef4444' : '#d1d5db')};
   border-radius: 0.375rem;
   font-size: 1rem;
   resize: vertical;
@@ -232,72 +214,110 @@ const FormActions = styled.div`
 `;
 
 const schema = yup.object({
-  firstName: yup
-    .string()
-    .min(2, 'First name must be at least 2 characters')
-    .max(50, 'First name cannot exceed 50 characters')
-    .required('First name is required'),
-  lastName: yup
-    .string()
-    .min(2, 'Last name must be at least 2 characters')
-    .max(50, 'Last name cannot exceed 50 characters')
-    .required('Last name is required'),
-  bio: yup
-    .string()
-    .max(500, 'Bio cannot exceed 500 characters')
+  name: yup.string().min(3, 'Tên phải có ít nhất 3 ký tự').max(50).required('Họ và tên là bắt buộc'),
+  phone: yup.string().matches(/(84|0[3|5|7|8|9])+([0-9]{8})\b/g, 'Số điện thoại không hợp lệ').optional(),
+  address: yup.string().max(200, 'Địa chỉ không quá 200 ký tự').optional(),
+  gender: yup.string().oneOf(['male', 'female', 'other'], 'Giới tính không hợp lệ').optional(),
 });
 
 const ProfilePage = () => {
-  const { user, updateProfile } = useAuth();
+  const navigate = useNavigate();
+  const [profileData, setProfileData] = useState(null);
+  const [originalData, setOriginalData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // State cho việc tải dữ liệu ban đầu
+  const [isSaving, setIsSaving] = useState(false); // State cho việc lưu
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-    reset
+    reset,
   } = useForm({
     resolver: yupResolver(schema),
-    defaultValues: {
-      firstName: user?.firstName || '',
-      lastName: user?.lastName || '',
-      bio: user?.profile?.bio || ''
-    }
   });
 
-  const onSubmit = async (data) => {
-    setIsLoading(true);
-    try {
-      const result = await updateProfile(data);
-      if (result.success) {
-        setIsEditing(false);
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        const userDocRef = doc(db, "users", user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (userDocSnap.exists()) {
+          const data = userDocSnap.data();
+          setProfileData(data);
+          setOriginalData(data);
+          reset(data);
+        } else {
+          setError("Không tìm thấy hồ sơ người dùng.");
+        }
+      } else {
+        navigate('/login');
       }
-    } finally {
       setIsLoading(false);
+    });
+    return () => unsubscribe();
+  }, [navigate, reset]);
+
+  const onSubmit = async (data) => {
+    setIsSaving(true);
+    setError('');
+    setSuccess('');
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        const userDocRef = doc(db, "users", user.uid);
+        const dataToUpdate = {
+          name: data.name,
+          phone: data.phone || "", // Gửi chuỗi rỗng nếu null
+          address: data.address || "",
+          gender: data.gender || "",
+        };
+        await updateDoc(userDocRef, dataToUpdate);
+        
+        const updatedData = { ...profileData, ...dataToUpdate };
+        setProfileData(updatedData);
+        setOriginalData(updatedData);
+        
+        setIsEditing(false);
+        setSuccess('Hồ sơ đã được cập nhật thành công!');
+      }
+    } catch (err) {
+      console.error("Lỗi khi cập nhật hồ sơ:", err);
+      setError("Không thể cập nhật hồ sơ. Vui lòng thử lại.");
+    } finally {
+      setIsSaving(false);
     }
   };
-
   const handleCancel = () => {
-    reset({
-      firstName: user?.firstName || '',
-      lastName: user?.lastName || '',
-      bio: user?.profile?.bio || ''
-    });
+    reset(originalData); // Khôi phục lại giá trị gốc cho form
     setIsEditing(false);
   };
 
   const getInitials = () => {
-    if (!user) return 'U';
-    return `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase();
+    if (!profileData?.name) return '?';
+    const nameParts = profileData.name.split(' ');
+    const firstNameInitial = nameParts[0]?.[0] || '';
+    const lastNameInitial = nameParts.length > 1 ? nameParts[nameParts.length - 1]?.[0] : '';
+    return `${firstNameInitial}${lastNameInitial}`.toUpperCase();
   };
 
-  if (!user) {
+  if (!isLoading && !profileData) {
     return (
       <ProfileContainer>
         <div className="card">
-          <p>Loading profile...</p>
+          <p>Đang tải dữ liệu...</p>
         </div>
+      </ProfileContainer>
+    );
+  }
+
+    if (!profileData) {
+    return (
+      <ProfileContainer>
+        <ErrorMessage message={error || "Không thể tải dữ liệu hồ sơ."} />
       </ProfileContainer>
     );
   }
@@ -305,49 +325,39 @@ const ProfilePage = () => {
   return (
     <ProfileContainer>
       <ProfileHeader>
-        <ProfileTitle>Profile Settings</ProfileTitle>
-        <ProfileSubtitle>Manage your account information and preferences</ProfileSubtitle>
+        <ProfileTitle>Hồ sơ của tôi</ProfileTitle>
+        <ProfileSubtitle>
+          Quản lý thông tin cá nhân của bạn
+        </ProfileSubtitle>
       </ProfileHeader>
 
       <ProfileCard>
         <ProfileInfo>
-          <Avatar>
-            {getInitials()}
-          </Avatar>
-          <UserName>{user.firstName} {user.lastName}</UserName>
-          <UserEmail>{user.email}</UserEmail>
-          <UserStats>
-            <StatItem>
-              <StatValue>{user.stats?.linksChecked || 0}</StatValue>
-              <StatLabel>Links Checked</StatLabel>
-            </StatItem>
-            <StatItem>
-              <StatValue>
-                {user.stats?.joinedAt ? 
-                  new Date(user.stats.joinedAt).toLocaleDateString() : 
-                  'Unknown'
-                }
-              </StatValue>
-              <StatLabel>Member Since</StatLabel>
-            </StatItem>
-          </UserStats>
+          <Avatar>{getInitials()}</Avatar>
+          <UserName>
+            {profileData.name || 'Người dùng'}
+          </UserName>
+          <UserEmail>{profileData.email}</UserEmail>
         </ProfileInfo>
 
         <ProfileDetails>
           <SectionHeader>
-            <SectionTitle>Personal Information</SectionTitle>
+            <SectionTitle>Thông tin cá nhân</SectionTitle>
             {!isEditing && (
               <EditButton onClick={() => setIsEditing(true)}>
                 <Edit3 size={16} />
-                Edit Profile
+                Chỉnh sửa hồ sơ
               </EditButton>
             )}
           </SectionHeader>
 
+          {success && <p style={{ color: 'green', marginBottom: '1rem' }}>{success}</p>}
+          {error && <ErrorMessage message={error} onClose={() => setError('')} show={!!error} />}
+
           {isEditing ? (
             <Form onSubmit={handleSubmit(onSubmit)}>
               <FormGroup>
-                <Label htmlFor="firstName">First Name</Label>
+                <Label htmlFor="firstName">Họ</Label>
                 <Input
                   id="firstName"
                   type="text"
@@ -360,7 +370,7 @@ const ProfilePage = () => {
               </FormGroup>
 
               <FormGroup>
-                <Label htmlFor="lastName">Last Name</Label>
+                <Label htmlFor="lastName">Tên</Label>
                 <Input
                   id="lastName"
                   type="text"
@@ -373,77 +383,88 @@ const ProfilePage = () => {
               </FormGroup>
 
               <FormGroup>
-                <Label htmlFor="bio">Bio</Label>
-                <TextArea
-                  id="bio"
-                  placeholder="Tell us about yourself..."
-                  error={errors.bio}
-                  {...register('bio')}
+                <Label htmlFor="gender">Giới tính</Label>
+                <select id="gender" {...register('gender')} style={{ padding: '0.75rem', border: '2px solid #d1d5db', borderRadius: '0.375rem' }}>
+                  <option value="">-- Chọn giới tính --</option>
+                  <option value="male">Nam</option>
+                  <option value="female">Nữ</option>
+                  <option value="other">Khác</option>
+                </select>
+                {errors.gender && <ErrorMessage>{errors.gender.message}</ErrorMessage>}
+              </FormGroup>
+
+              <FormGroup>
+                <Label htmlFor="phone">Số điện thoại</Label>
+                <Input
+                  id="phone"
+                  type="text"
+                  error={errors.phone}
+                  {...register('phone')}
                 />
-                {errors.bio && (
-                  <ErrorMessage>{errors.bio.message}</ErrorMessage>
-                )}
+                {errors.phone && <ErrorMessage>{errors.phone.message}</ErrorMessage>}
+              </FormGroup>
+
+              <FormGroup>
+                <Label htmlFor="address">Địa chỉ</Label>
+                <TextArea id="address" placeholder="Nhập địa chỉ của bạn..." error={!!errors.address} {...register('address')} />
+                {errors.address && <ErrorMessage>{errors.address.message}</ErrorMessage>}
               </FormGroup>
 
               <FormActions>
-                <CancelButton type="button" onClick={handleCancel}>
-                  <X size={16} />
-                  Cancel
-                </CancelButton>
-                <EditButton type="submit" disabled={isLoading}>
-                  <Save size={16} />
-                  {isLoading ? 'Saving...' : 'Save Changes'}
+                <CancelButton type="button" onClick={handleCancel}><X size={16} /> Hủy</CancelButton>
+                <EditButton type="submit" disabled={isSaving}>
+                  <Save size={16} /> {isSaving ? 'Đang lưu...' : 'Lưu Thay Đổi'}
                 </EditButton>
               </FormActions>
             </Form>
           ) : (
             <>
-              <DetailItem>
-                <DetailIcon>
-                  <User size={20} />
-                </DetailIcon>
+               <DetailItem>
+                <DetailIcon><User size={20} /></DetailIcon>
                 <DetailContent>
-                  <DetailLabel>Full Name</DetailLabel>
-                  <DetailValue>{user.firstName} {user.lastName}</DetailValue>
+                  <DetailLabel>Họ và tên</DetailLabel>
+                  <DetailValue>{profileData.name}</DetailValue>
                 </DetailContent>
               </DetailItem>
-
               <DetailItem>
-                <DetailIcon>
-                  <Mail size={20} />
-                </DetailIcon>
+                <DetailIcon><VenusAndMars size={20} /></DetailIcon>
                 <DetailContent>
-                  <DetailLabel>Email Address</DetailLabel>
-                  <DetailValue>{user.email}</DetailValue>
+                  <DetailLabel>Giới tính</DetailLabel>
+                  <DetailValue>{profileData.gender}</DetailValue>
                 </DetailContent>
               </DetailItem>
-
               <DetailItem>
-                <DetailIcon>
-                  <Calendar size={20} />
-                </DetailIcon>
+                <DetailIcon><Mail size={20} /></DetailIcon>
                 <DetailContent>
-                  <DetailLabel>Member Since</DetailLabel>
+                  <DetailLabel>Email</DetailLabel>
+                  <DetailValue>{profileData.email}</DetailValue>
+                </DetailContent>
+              </DetailItem>
+              <DetailItem>
+                <DetailIcon><Phone size={20} /></DetailIcon>
+                <DetailContent>
+                  <DetailLabel>Số điện thoại</DetailLabel>
+                  <DetailValue>{profileData.phone}</DetailValue>
+                </DetailContent>
+              </DetailItem>
+              <DetailItem>
+                <DetailIcon><Globe size={20} /></DetailIcon>
+                <DetailContent>
+                  <DetailLabel>Địa chỉ</DetailLabel>
+                  <DetailValue>{profileData.address}</DetailValue>
+                </DetailContent>
+              </DetailItem>
+              <DetailItem>
+                <DetailIcon><Calendar size={20} /></DetailIcon>
+                <DetailContent>
+                  <DetailLabel>Ngày tham gia</DetailLabel>
                   <DetailValue>
-                    {user.createdAt ? 
-                      new Date(user.createdAt).toLocaleDateString() : 
-                      'Unknown'
-                    }
+                    {profileData.createdAt
+                      ? profileData.createdAt.toDate().toLocaleDateString('vi-VN')
+                      : 'Không rõ'}
                   </DetailValue>
                 </DetailContent>
               </DetailItem>
-
-              {user.profile?.bio && (
-                <DetailItem>
-                  <DetailIcon>
-                    <Edit3 size={20} />
-                  </DetailIcon>
-                  <DetailContent>
-                    <DetailLabel>Bio</DetailLabel>
-                    <DetailValue>{user.profile.bio}</DetailValue>
-                  </DetailContent>
-                </DetailItem>
-              )}
             </>
           )}
         </ProfileDetails>
