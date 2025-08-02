@@ -19,29 +19,54 @@ app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Route VNPay
+// Router: VNPay
 app.use('/api/payment', vnpayRouter);
 
-// Route Chatbot Gemini
+// Chatbot Gemini Setup
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const chatSessions = new Map(); // Lưu session theo userId
 
+// Route: Chat Gemini
 app.post('/chat', async (req, res) => {
-  const { message } = req.body;
+  let { userId, message } = req.body;
+
+  // Nếu không có userId thì tạo mặc định để test
+  if (!userId) {
+    userId = 'guest-user';
+  }
+
+  if (!message) {
+    return res.status(400).json({ reply: '⚠️ Vui lòng nhập câu hỏi.' });
+  }
 
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-    const result = await model.generateContent(message);
+    // Nếu chưa có session thì tạo mới
+    if (!chatSessions.has(userId)) {
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+
+      const chat = model.startChat({
+        history: [], // Lịch sử trống ban đầu
+        generationConfig: {
+          temperature: 0.7,
+        },
+      });
+
+      chatSessions.set(userId, chat);
+    }
+
+    const chat = chatSessions.get(userId);
+    const result = await chat.sendMessage(message);
     const response = await result.response;
     const text = response.text();
 
     res.json({ reply: text });
   } catch (error) {
     console.error('❌ Gemini Error:', error.message);
-    res.status(500).json({ reply: '❌ Lỗi khi phản hồi từ AI. Vui lòng thử lại.' });
+    res.status(500).json({ reply: '❌ Đã xảy ra lỗi AI. Thử lại sau.' });
   }
 });
 
-// Start Server
+// Start server
 app.listen(PORT, () => {
-  console.log(`✅ Server is running at http://localhost:${PORT}`);
+  console.log(`✅ Server đang chạy tại http://localhost:${PORT}`);
 });
