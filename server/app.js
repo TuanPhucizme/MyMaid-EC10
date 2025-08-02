@@ -49,6 +49,16 @@ app.post('/chat', async (req, res) => {
         generationConfig: {
           temperature: 0.7,
         },
+        systemInstruction: {
+            parts: [
+              {
+                text: `Bạn là trợ lý ảo của MyMaid — nền tảng cung cấp dịch vụ dọn dẹp nhà chuyên nghiệp.
+        Bạn chỉ tư vấn về các dịch vụ như dọn dẹp theo giờ, theo ngày, theo nhóm hoặc cá nhân.
+        Nếu người dùng hỏi điều không liên quan, hãy trả lời: "Tôi chỉ hỗ trợ về dịch vụ của MyMaid. Bạn có muốn tìm hiểu thêm không?"`,
+              },
+            ],
+            role: 'user',
+          },
       });
 
       chatSessions.set(userId, chat);
