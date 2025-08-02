@@ -1,11 +1,18 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { useQuery } from 'react-query';
-import { userAPI } from '../services/api';
-import { Calendar, Clock, Star, Users, MapPin, Phone, Mail } from 'lucide-react';
+//-------------------------------------------------------------------------------------//
+// dành riêng cho partner để cập nhật công việc, quản lý dịch vụ và theo dõi đánh giá. //
+//-------------------------------------------------------------------------------------//
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Calendar, Clock, Star, Users, DollarSign, ListChecks, Bell } from 'lucide-react';
 import styled from 'styled-components';
 import LoadingSpinner from '../components/LoadingSpinner';
 
+// ✅ 1. IMPORT CÁC HÀM TỪ FIREBASE
+import { auth, db } from '../config/firebase';
+import { doc, getDoc, collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+
+// --- Các styled-components được tái sử dụng và tùy chỉnh ---
 const DashboardContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
@@ -20,12 +27,6 @@ const WelcomeTitle = styled.h1`
   font-size: 2rem;
   font-weight: bold;
   color: #1a202c;
-  margin-bottom: 0.5rem;
-`;
-
-const WelcomeSubtitle = styled.p`
-  color: #6b7280;
-  font-size: 1.125rem;
 `;
 
 const StatsGrid = styled.div`
@@ -75,13 +76,16 @@ const ContentGrid = styled.div`
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 2rem;
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
+  @media (max-width: 768px) { grid-template-columns: 1fr; }
 `;
 
-const RecentBookingsCard = styled.div`
+const MainContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+`;
+
+const Card = styled.div`
   background: white;
   border-radius: 0.75rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -91,9 +95,6 @@ const RecentBookingsCard = styled.div`
 const CardHeader = styled.div`
   padding: 1.5rem;
   border-bottom: 1px solid #e5e7eb;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 `;
 
 const CardTitle = styled.h2`
@@ -112,10 +113,7 @@ const BookingItem = styled.div`
   align-items: center;
   padding: 1rem 0;
   border-bottom: 1px solid #f3f4f6;
-
-  &:last-child {
-    border-bottom: none;
-  }
+  &:last-child { border-bottom: none; }
 `;
 
 const BookingInfo = styled.div`
@@ -131,9 +129,6 @@ const ServiceName = styled.div`
 const BookingMeta = styled.div`
   font-size: 0.875rem;
   color: #6b7280;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
 `;
 
 const BookingStatus = styled.div`
@@ -141,72 +136,22 @@ const BookingStatus = styled.div`
   border-radius: 9999px;
   font-size: 0.875rem;
   font-weight: 500;
-  background: ${props => {
-    if (props.status === 'completed') return '#dcfce7';
-    if (props.status === 'confirmed') return '#dbeafe';
-    if (props.status === 'pending') return '#fef3c7';
-    return '#fecaca';
-  }};
-  color: ${props => {
-    if (props.status === 'completed') return '#166534';
-    if (props.status === 'confirmed') return '#1e40af';
-    if (props.status === 'pending') return '#92400e';
-    return '#dc2626';
-  }};
+  background: ${props => props.bgColor};
+  color: ${props => props.color};
 `;
 
-const QuickActionsCard = styled.div`
-  background: white;
-  border-radius: 0.75rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
-`;
-
-const ActionButton = styled(Link)`
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 1rem;
-  border: 2px solid #e5e7eb;
-  border-radius: 0.5rem;
-  text-decoration: none;
-  color: #374151;
-  transition: all 0.2s;
-  margin-bottom: 1rem;
-
-  &:hover {
-    border-color: #3b82f6;
-    background: #f8fafc;
+const PriceTable = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+  th, td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb;
   }
-
-  &:last-child {
-    margin-bottom: 0;
+  th {
+    background-color: #f9fafb;
+    font-weight: 500;
   }
-`;
-
-const ActionIcon = styled.div`
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 0.5rem;
-  background: #e0e7ff;
-  color: #3b82f6;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const ActionContent = styled.div`
-  flex: 1;
-`;
-
-const ActionTitle = styled.div`
-  font-weight: 500;
-  margin-bottom: 0.25rem;
-`;
-
-const ActionDescription = styled.div`
-  font-size: 0.875rem;
-  color: #6b7280;
 `;
 
 const EmptyState = styled.div`
@@ -215,247 +160,160 @@ const EmptyState = styled.div`
   color: #6b7280;
 `;
 
-const ContactInfo = styled.div`
-  background: white;
-  border-radius: 0.75rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
-  margin-top: 1.5rem;
-`;
 
-const ContactItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-  color: #6b7280;
+const PartnerDashboardPage = () => {
+  const navigate = useNavigate();
+  
+  const [partner, setPartner] = useState(null); 
+  const [userProfile, setUserProfile] = useState(null);
+  const [newJobs, setNewJobs] = useState([]);
+  const [jobHistory, setJobHistory] = useState([]);
+  const [stats, setStats] = useState({ revenueThisMonth: 0, completedJobs: 0 });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  &:last-child {
-    margin-bottom: 0;
-  }
-`;
 
-const DashboardPage = () => {
-  const { data: dashboardData, isLoading, error } = useQuery(
-    'dashboard',
-    userAPI.getDashboard,
-    {
-      refetchOnWindowFocus: false,
-    }
-  );
+  // Dữ liệu bảng giá (có thể lấy từ Firestore sau này)
+  const priceConversion = [
+    { serviceName: 'Dọn dẹp nhà cửa', customerPrice: 150000, commission: 0.2 },
+    { serviceName: 'Chăm sóc trẻ em', customerPrice: 200000, commission: 0.25 },
+    { serviceName: 'Nấu ăn', customerPrice: 180000, commission: 0.2 },
+  ];
+
+  useEffect(() => {
+    // Lắng nghe trạng thái đăng nhập để đảm bảo auth đã sẵn sàng
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            // BƯỚC 1: Người dùng đã đăng nhập, chúng ta có `user` object.
+            // Lấy `user.uid`.
+            console.log("UID của người dùng đang đăng nhập:", user.uid);
+
+            // BƯỚC 2: Dùng UID để tạo tham chiếu trực tiếp đến document của họ.
+            const userDocRef = doc(db, "users", user.uid);
+
+            // BƯỚC 3: Lấy dữ liệu từ document đó.
+            const userDocSnap = await getDoc(userDocRef);
+
+            if (userDocSnap.exists()) {
+                console.log("Dữ liệu hồ sơ từ Firestore:", userDocSnap.data());
+                setUserProfile(userDocSnap.data());
+            } else {
+                console.log("Không tìm thấy hồ sơ người dùng trong Firestore!");
+            }
+        } else {
+            // Người dùng đã đăng xuất
+            console.log("Không có người dùng nào đăng nhập.");
+        }
+        setIsLoading(false);
+    });
+
+    // Dọn dẹp listener khi component bị hủy
+    return () => unsubscribe();
+  }, []); // Mảng rỗng đảm bảo useEffect chỉ chạy 1 lần
 
   if (isLoading) {
-    return <LoadingSpinner fullScreen text="Đang tải dashboard..." />;
+    return <LoadingSpinner fullScreen text="Đang tải dữ liệu đối tác..." />;
   }
 
   if (error) {
-    return (
-      <DashboardContainer>
-        <div className="card">
-          <p>Lỗi khi tải dữ liệu dashboard. Vui lòng thử lại.</p>
-        </div>
-      </DashboardContainer>
-    );
+    return <DashboardContainer><p>Lỗi: {error}</p></DashboardContainer>;
   }
-
-  const { user, stats, recentBookings } = dashboardData?.data || {};
-
-  // Mock data cho MyMaid
-  const mockStats = {
-    totalBookings: 12,
-    activeBookings: 3,
-    totalSpent: 2500000,
-    averageRating: 4.8
-  };
-
-  const mockRecentBookings = [
-    {
-      id: 1,
-      serviceName: 'Dọn dẹp nhà cửa',
-      date: '2024-01-15',
-      time: '09:00',
-      status: 'confirmed',
-      maidName: 'Chị Nguyễn Thị Mai',
-      price: 150000
-    },
-    {
-      id: 2,
-      serviceName: 'Chăm sóc trẻ em',
-      date: '2024-01-12',
-      time: '14:00',
-      status: 'completed',
-      maidName: 'Chị Trần Thị Hoa',
-      price: 200000
-    },
-    {
-      id: 3,
-      serviceName: 'Nấu ăn',
-      date: '2024-01-10',
-      time: '18:00',
-      status: 'completed',
-      maidName: 'Chị Lê Thị Lan',
-      price: 180000
-    }
-  ];
 
   return (
     <DashboardContainer>
       <DashboardHeader>
-        <WelcomeTitle>Chào mừng trở lại, {user?.firstName || 'Quý khách'}!</WelcomeTitle>
-        <WelcomeSubtitle>Tổng quan hoạt động dịch vụ giúp việc của bạn</WelcomeSubtitle>
+        <WelcomeTitle>Chào mừng, {partner?.name || 'Đối tác'}!</WelcomeTitle>
       </DashboardHeader>
 
       <StatsGrid>
         <StatCard>
-          <StatIcon>
-            <Calendar size={24} />
-          </StatIcon>
+          <StatIcon bgColor="#dcfce7" color="#16a34a"><DollarSign size={24} /></StatIcon>
           <StatContent>
-            <StatValue>{mockStats.totalBookings}</StatValue>
-            <StatLabel>Tổng số đặt dịch vụ</StatLabel>
+            <StatValue>{stats.revenueThisMonth.toLocaleString()}đ</StatValue>
+            <StatLabel>Doanh thu tháng này</StatLabel>
           </StatContent>
         </StatCard>
-
         <StatCard>
-          <StatIcon bgColor="#fef3c7" color="#d97706">
-            <Clock size={24} />
-          </StatIcon>
+          <StatIcon bgColor="#e0e7ff" color="#3b82f6"><ListChecks size={24} /></StatIcon>
           <StatContent>
-            <StatValue>{mockStats.activeBookings}</StatValue>
-            <StatLabel>Đang hoạt động</StatLabel>
+            <StatValue>{stats.completedJobs}</StatValue>
+            <StatLabel>Dịch vụ hoàn thành (tháng)</StatLabel>
           </StatContent>
         </StatCard>
-
         <StatCard>
-          <StatIcon bgColor="#dcfce7" color="#16a34a">
-            <Star size={24} />
-          </StatIcon>
+          <StatIcon bgColor="#fef3c7" color="#d97706"><Bell size={24} /></StatIcon>
           <StatContent>
-            <StatValue>{mockStats.averageRating}</StatValue>
-            <StatLabel>Đánh giá trung bình</StatLabel>
-          </StatContent>
-        </StatCard>
-
-        <StatCard>
-          <StatIcon bgColor="#fce7f3" color="#ec4899">
-            <Users size={24} />
-          </StatIcon>
-          <StatContent>
-            <StatValue>{mockStats.totalSpent.toLocaleString()}đ</StatValue>
-            <StatLabel>Tổng chi phí</StatLabel>
+            <StatValue>{newJobs.length}</StatValue>
+            <StatLabel>Dịch vụ mới được giao</StatLabel>
           </StatContent>
         </StatCard>
       </StatsGrid>
 
       <ContentGrid>
-        <RecentBookingsCard>
-          <CardHeader>
-            <CardTitle>Đặt dịch vụ gần đây</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {mockRecentBookings && mockRecentBookings.length > 0 ? (
-              mockRecentBookings.map((booking) => (
-                <BookingItem key={booking.id}>
+        <MainContent>
+          {/* Dịch vụ mới */}
+          <Card>
+            <CardHeader><CardTitle>Dịch vụ mới được giao</CardTitle></CardHeader>
+            <CardContent>
+              {newJobs.length > 0 ? newJobs.map(job => (
+                <BookingItem key={job.id}>
                   <BookingInfo>
-                    <ServiceName>{booking.serviceName}</ServiceName>
-                    <BookingMeta>
-                      <span>{new Date(booking.date).toLocaleDateString('vi-VN')}</span>
-                      <span>•</span>
-                      <span>{booking.time}</span>
-                      <span>•</span>
-                      <span>{booking.maidName}</span>
-                    </BookingMeta>
+                    <ServiceName>{job.service.name}</ServiceName>
+                    <BookingMeta>{new Date(job.schedule.date).toLocaleDateString('vi-VN')} - {job.schedule.time}</BookingMeta>
+                    <BookingMeta>Khách hàng: {job.userName}</BookingMeta>
                   </BookingInfo>
-                  <div style={{ textAlign: 'right' }}>
-                    <BookingStatus status={booking.status}>
-                      {booking.status === 'completed' ? 'Hoàn thành' :
-                       booking.status === 'confirmed' ? 'Đã xác nhận' :
-                       booking.status === 'pending' ? 'Chờ xác nhận' : 'Đã hủy'}
-                    </BookingStatus>
-                    <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem' }}>
-                      {booking.price.toLocaleString()}đ
-                    </div>
-                  </div>
+                  <Link to={`/booking-details/${job.id}`} className="btn">Xem chi tiết</Link>
                 </BookingItem>
-              ))
-            ) : (
-              <EmptyState>
-                <p>Chưa có đặt dịch vụ nào.</p>
-                <Link to="/booking" className="btn btn-primary" style={{ marginTop: '1rem' }}>
-                  Đặt dịch vụ ngay
-                </Link>
-              </EmptyState>
-            )}
-          </CardContent>
-        </RecentBookingsCard>
+              )) : <EmptyState>Không có dịch vụ nào mới.</EmptyState>}
+            </CardContent>
+          </Card>
 
-        <div>
-          <QuickActionsCard>
-            <CardTitle style={{ marginBottom: '1.5rem' }}>Thao tác nhanh</CardTitle>
-            
-            <ActionButton to="/booking">
-              <ActionIcon>
-                <Calendar size={20} />
-              </ActionIcon>
-              <ActionContent>
-                <ActionTitle>Đặt dịch vụ mới</ActionTitle>
-                <ActionDescription>Đặt người giúp việc cho nhu cầu của bạn</ActionDescription>
-              </ActionContent>
-            </ActionButton>
+          {/* Lịch sử dịch vụ */}
+          <Card>
+            <CardHeader><CardTitle>Lịch sử dịch vụ</CardTitle></CardHeader>
+            <CardContent>
+              {jobHistory.length > 0 ? jobHistory.map(job => (
+                <BookingItem key={job.id}>
+                  <BookingInfo>
+                    <ServiceName>{job.service.name}</ServiceName>
+                    <BookingMeta>{new Date(job.schedule.date).toLocaleDateString('vi-VN')}</BookingMeta>
+                  </BookingInfo>
+                  <BookingStatus 
+                    bgColor={job.status === 'completed' ? '#dcfce7' : '#fecaca'}
+                    color={job.status === 'completed' ? '#166534' : '#b91c1c'}
+                  >
+                    {job.status === 'completed' ? 'Hoàn thành' : 'Đã hủy'}
+                  </BookingStatus>
+                </BookingItem>
+              )) : <EmptyState>Chưa có lịch sử dịch vụ.</EmptyState>}
+            </CardContent>
+          </Card>
+        </MainContent>
 
-            <ActionButton to="/consultation">
-              <ActionIcon>
-                <Phone size={20} />
-              </ActionIcon>
-              <ActionContent>
-                <ActionTitle>Liên hệ tư vấn</ActionTitle>
-                <ActionDescription>Nhận tư vấn miễn phí về dịch vụ</ActionDescription>
-              </ActionContent>
-            </ActionButton>
-
-            <ActionButton to="/pricing">
-              <ActionIcon>
-                <Star size={20} />
-              </ActionIcon>
-              <ActionContent>
-                <ActionTitle>Xem bảng giá</ActionTitle>
-                <ActionDescription>Tham khảo giá dịch vụ chi tiết</ActionDescription>
-              </ActionContent>
-            </ActionButton>
-
-            <ActionButton to="/profile">
-              <ActionIcon>
-                <Users size={20} />
-              </ActionIcon>
-              <ActionContent>
-                <ActionTitle>Hồ sơ cá nhân</ActionTitle>
-                <ActionDescription>Cập nhật thông tin tài khoản</ActionDescription>
-              </ActionContent>
-            </ActionButton>
-          </QuickActionsCard>
-
-          <ContactInfo>
-            <CardTitle style={{ marginBottom: '1rem' }}>Thông tin liên hệ</CardTitle>
-            
-            <ContactItem>
-              <Phone size={16} />
-              <span>Hotline: 1900 1234</span>
-            </ContactItem>
-            
-            <ContactItem>
-              <Mail size={16} />
-              <span>Email: support@mymaid.vn</span>
-            </ContactItem>
-            
-            <ContactItem>
-              <MapPin size={16} />
-              <span>Địa chỉ: 123 Đường ABC, Quận 1, TP.HCM</span>
-            </ContactItem>
-          </ContactInfo>
-        </div>
+        {/* Bảng giá */}
+        <aside>
+          <Card>
+            <CardHeader><CardTitle>Bảng giá & Hoa hồng</CardTitle></CardHeader>
+            <CardContent>
+              <PriceTable>
+                <thead>
+                  <tr><th>Dịch vụ</th><th>Thu nhập</th></tr>
+                </thead>
+                <tbody>
+                  {priceConversion.map(item => (
+                    <tr key={item.serviceName}>
+                      <td>{item.serviceName}</td>
+                      <td>{(item.customerPrice * (1 - item.commission)).toLocaleString()}đ</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </PriceTable>
+            </CardContent>
+          </Card>
+        </aside>
       </ContentGrid>
     </DashboardContainer>
   );
 };
 
-export default DashboardPage;
+export default PartnerDashboardPage;
