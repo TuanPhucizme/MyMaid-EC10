@@ -75,37 +75,37 @@ RATE_LIMIT_MAX_REQUESTS=100
 Trong Firestore Database, chọn tab **Rules** và cập nhật:
 
 ```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Users collection
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.firebaseUid;
-      allow create: if request.auth != null;
-    }
-    
-    // Links collection
-    match /links/{linkId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null;
-    }
-    
-    // Verification tokens
-    match /verification_tokens/{tokenId} {
-      allow read, write: if request.auth != null;
-    }
-    
-    // Password reset tokens
-    match /password_reset_tokens/{tokenId} {
-      allow read, write: if request.auth != null;
-    }
-    
-    // User sessions
-    match /user_sessions/{sessionId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.firebaseUid;
+  rules_version = '2';
+  service cloud.firestore {
+    match /databases/{database}/documents {
+      // Users collection
+      match /users/{userId} {
+        allow read, write: if request.auth != null && request.auth.uid == resource.data.firebaseUid;
+        allow create: if request.auth != null;
+      }
+      
+      // Links collection
+      match /links/{linkId} {
+        allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+        allow create: if request.auth != null;
+      }
+      
+      // Verification tokens
+      match /verification_tokens/{tokenId} {
+        allow read, write: if request.auth != null;
+      }
+      
+      // Password reset tokens
+      match /password_reset_tokens/{tokenId} {
+        allow read, write: if request.auth != null;
+      }
+      
+      // User sessions
+      match /user_sessions/{sessionId} {
+        allow read, write: if request.auth != null && request.auth.uid == resource.data.firebaseUid;
+      }
     }
   }
-}
 ```
 
 ### 7. Cài đặt Dependencies
