@@ -4,6 +4,8 @@ const bodyParser = require('body-parser');
 const vnpayRouter = require('./routes/payment');
 const cors = require('cors');
 
+const userRoutes = require('./routes/userRoutes');
+
 const app = express();
 const PORT = 3030;
 
@@ -14,8 +16,9 @@ app.use(express.urlencoded({ extended: true })); // Cho phép đọc từ form
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+app.use('/api/users', userRoutes);
 app.use('/api/payment', vnpayRouter);
 
 app.listen(PORT, () => {
-  console.log(`✅ VNPay server is running at http://localhost:${PORT}`);
+  console.log(`server is running at http://localhost:${PORT}`);
 });
