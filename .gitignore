@@ -114,3 +114,6 @@ firestore-debug.log
 # Temporary files
 tmp/
 temp/
+
+#serviceAccount
+server/serviceAccountKey.json

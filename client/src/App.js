@@ -27,6 +27,7 @@ import VerifyEmailPage from "./pages/VerifyEmailPage";
 import CheckLinkPage from "./pages/CheckLinkPage";
 import BookingPage from "./pages/BookingPage";
 import UpdateInformationPage from "./pages/UpdateInformation";
+import BookingDetailPage from "./pages/BookingDetailPage";
 function App() {
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -60,6 +61,8 @@ function App() {
           <Route path="/payment-result" element={<PaymentResultPage />} />
           <Route path="/booking" element={<BookingPage />} />
           <Route path="/update-information" element={<UpdateInformationPage />} />
+          <Route path="/booking-details/:bookingId" element={<BookingDetailPage />} />
+          <Route path="*" element={<h1 className="text-center text-2xl">404 - Page Not Found</h1>} />
       </Routes>
 
         <Footer />
