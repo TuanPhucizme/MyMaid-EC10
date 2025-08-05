@@ -3,13 +3,18 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { useAuth } from '../context/AuthContext';
 import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 import styled from 'styled-components';
+
+import { useAuth } from '../context/AuthContext';
 import ErrorMessage from '../components/ErrorMessage';
 import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator';
 import PasswordRequirements from '../components/PasswordRequirements';
 import PasswordInfo from '../components/PasswordInfo';
+
+import { auth, db } from '../config/firebase';
+import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
 
 const RegisterContainer = styled.div`
   min-height: calc(120vh - 4rem);
@@ -204,15 +209,41 @@ const RegisterPage = () => {
 
   const onSubmit = async (data) => {
     setIsLoading(true);
-    setError(''); // Clear previous errors
+    setError('');
     try {
-      const { confirmPassword, ...registrationData } = data;
-      sessionStorage.setItem('registrationData', JSON.stringify(registrationData));
-      navigate('/update-information');
+      // A. Tạo tài khoản trong Firebase Authentication
+      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+      const user = userCredential.user;
+
+      // B. TẠO HỒ SƠ TẠM THỜI TRONG FIRESTORE
+      // Dùng collection 'mm_users' như bạn đã yêu cầu
+      await setDoc(doc(db, "mm_users", user.uid), {
+        name: `${data.firstName} ${data.lastName}`,
+        email: data.email,
+        role: 'customer',
+        status: 'pending_verification', // Trạng thái chờ xác thực
+        createdAt: new Date(),
+      });
+
+      // C. GỬI EMAIL XÁC THỰC VỚI ACTION LINK
+      const actionCodeSettings = {
+        url: 'http://localhost:3000/update-information', // URL sẽ chuyển đến sau khi xác thực
+        handleCodeInApp: true,
+      };
+      await sendEmailVerification(user, actionCodeSettings);
+
+      // D. THÔNG BÁO CHO NGƯỜI DÙNG
+      alert('Đăng ký thành công! Vui lòng kiểm tra hộp thư email của bạn để xác thực tài khoản và hoàn tất hồ sơ.');
+      navigate('/login');
+
+    } catch (err) {
+      console.error("Lỗi khi đăng ký:", err);
+      if (err.code === 'auth/email-already-in-use') {
+        setError('Email này đã được sử dụng.');
+      } else {
+        setError('Đã có lỗi xảy ra. Vui lòng thử lại.');
       }
-    catch (err) {
-      console.error("Lỗi khi xử lý bước 1:", err);
-      setError('Đã có lỗi xảy ra. Vui lòng thử lại.');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -270,8 +301,6 @@ const RegisterPage = () => {
             {passwordValue && <PasswordStrengthIndicator password={passwordValue} />}
             {passwordValue && <PasswordRequirements password={passwordValue} />}
           </InputGroup>
-
-          {/* ✅ TRƯỜNG XÁC NHẬN MẬT KHẨU ĐƯỢC GIỮ NGUYÊN */}
           <InputGroup>
             <InputIcon><Lock size={20} /></InputIcon>
             <Input

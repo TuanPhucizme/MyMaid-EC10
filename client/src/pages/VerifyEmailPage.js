@@ -5,6 +5,9 @@ import { CheckCircle, XCircle, Mail, ArrowRight } from 'lucide-react';
 import styled from 'styled-components';
 import LoadingSpinner from '../components/LoadingSpinner';
 
+import { auth } from '../config/firebase';
+import { applyActionCode } from 'firebase/auth';
+
 const VerifyContainer = styled.div`
   min-height: calc(100vh - 4rem);
   display: flex;
@@ -73,9 +76,9 @@ const VerifyEmailPage = () => {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    const token = searchParams.get('token');
-    
-    if (!token) {
+    const oobCode = searchParams.get('oobCode');
+
+    if (!oobCode) {
       setStatus('error');
       setMessage('Invalid verification link. Please check your email for the correct link.');
       return;
@@ -83,22 +86,19 @@ const VerifyEmailPage = () => {
 
     const verify = async () => {
       try {
-        const result = await verifyEmail(token);
-        if (result.success) {
-          setStatus('success');
-          setMessage('Your email has been successfully verified! You can now log in to your account.');
-        } else {
-          setStatus('error');
-          setMessage(result.error || 'Email verification failed. Please try again.');
-        }
+        // ✅ 3. GỌI HÀM applyActionCode CỦA FIREBASE
+        await applyActionCode(auth, oobCode);
+        setStatus('success');
+        setMessage('Email của bạn đã được xác thực thành công! Bây giờ bạn có thể đăng nhập.');
       } catch (error) {
         setStatus('error');
-        setMessage('An unexpected error occurred. Please try again later.');
+        setMessage('Link xác thực không hợp lệ hoặc đã hết hạn. Vui lòng thử đăng ký lại.');
+        console.error("Lỗi xác thực email:", error);
       }
     };
 
     verify();
-  }, [searchParams, verifyEmail]);
+  }, [searchParams]);
 
   const renderContent = () => {
     switch (status) {

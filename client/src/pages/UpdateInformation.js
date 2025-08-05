@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import {useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import styled from 'styled-components';
-import { Phone, Home, User as GenderIcon } from 'lucide-react';
+import {Phone} from 'lucide-react';
 import ErrorMessage from '../components/ErrorMessage';
-import LoadingSpinner from '../components/LoadingSpinner';
 
 import { auth, db } from '../config/firebase';
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, updateDoc } from "firebase/firestore"; // Chỉ cần updateDoc
 
 // --- Styled Components (có thể tái sử dụng từ RegisterPage) ---
 const UpdateContainer = styled.div`
@@ -53,20 +51,6 @@ const Form = styled.form`
   gap: 1.5rem;
 `;
 
-const InputRow = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-
-  @media (max-width: 480px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const InputGroup = styled.div`
-  position: relative;
-`;
-
 const InputIcon = styled.div`
   position: absolute;
   left: 0.75rem;
@@ -92,14 +76,6 @@ const Input = styled.input`
   &::placeholder {
     color: #9ca3af;
   }
-`;
-
-
-const FormErrorMessage = styled.span`
-  color: #ef4444;
-  font-size: 0.875rem;
-  margin-top: 0.25rem;
-  display: block;
 `;
 
 const Label = styled.label`
@@ -140,21 +116,6 @@ const SubmitButton = styled.button`
   }
 `;
 
-const UpdateFooter = styled.div`
-  text-align: center;
-  margin-top: 1.5rem;
-`;
-
-const FooterLink = styled(Link)`
-  color: #3b82f6;
-  text-decoration: none;
-  font-size: 0.875rem;
-
-  &:hover {
-    text-decoration: underline;
-  }
-`;
-
 const schema = yup.object({
   phone: yup.string().matches(/(84|0[3|5|7|8|9])+([0-9]{8})\b/g, 'Số điện thoại không hợp lệ').required('Số điện thoại là bắt buộc'),
   address: yup.string().min(5, 'Địa chỉ phải có ít nhất 5 ký tự').required('Địa chỉ là bắt buộc'),
@@ -165,7 +126,7 @@ const UpdateInformationPage = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [step1Data, setStep1Data] = useState(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   const {
     register,
@@ -175,73 +136,68 @@ const UpdateInformationPage = () => {
     resolver: yupResolver(schema)
   });
 
-  // 1. LẤY DỮ LIỆU TỪ BƯỚC 1 KHI TẢI TRANG
   useEffect(() => {
-    const storedData = sessionStorage.getItem('registrationData');
-    if (storedData) {
-      setStep1Data(JSON.parse(storedData));
-    } else {
-      // Nếu không có dữ liệu, người dùng không thể ở trang này
-      alert("Vui lòng hoàn tất bước đăng ký đầu tiên.");
-      navigate('/register');
-    }
+    const unsubscribe = auth.onAuthStateChanged(user => {
+      if (!user) {
+        // Nếu không có ai đăng nhập, không cho phép ở lại trang này
+        navigate('/login');
+      } else if (!user.emailVerified) {
+        // Nếu email chưa xác thực, cũng không cho phép
+        alert("Vui lòng xác thực email của bạn trước.");
+        navigate('/login');
+      }
+      // Nếu đã đăng nhập và xác thực, dừng loading
+      setIsAuthLoading(false);
+    });
+    return () => unsubscribe();
   }, [navigate]);
 
-  // 2. HÀM SUBMIT CUỐI CÙNG
-  const onSubmit = async (dataStep2) => {
+const onSubmit = async (data) => {
     setIsLoading(true);
     setError('');
     try {
-      // 3. KẾT HỢP DỮ LIỆU TỪ 2 BƯỚC
-      const finalUserData = { ...step1Data, ...dataStep2 };
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error("Không tìm thấy người dùng. Vui lòng đăng nhập lại.");
+      }
 
-      // 4. THỰC HIỆN LOGIC FIREBASE
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        finalUserData.email,
-        finalUserData.password
-      );
-      const user = userCredential.user;
+      // A. TẠO THAM CHIẾU ĐẾN DOCUMENT CỦA USER
+      const userDocRef = doc(db, "mm_users", user.uid);
 
-      // Tạo hồ sơ trong Firestore
-      await setDoc(doc(db, "users", user.uid), {
-        name: `${finalUserData.firstName} ${finalUserData.lastName}`,
-        email: finalUserData.email,
-        phone: finalUserData.phone,
-        address: finalUserData.address,
-        gender: finalUserData.gender,
-        role: 'customer',
-        createdAt: new Date(),
+      // B. CẬP NHẬT HỒ SƠ VỚI THÔNG TIN MỚI
+      await updateDoc(userDocRef, {
+        phone: data.phone,
+        address: data.address,
+        gender: data.gender,
+        status: 'active', // Cập nhật trạng thái thành "hoạt động"
       });
 
-      // 5. DỌN DẸP VÀ HOÀN TẤT
-      sessionStorage.removeItem('registrationData');
-      alert('Tạo tài khoản thành công! Vui lòng đăng nhập để tiếp tục.');
-      navigate('/login');
+      // C. HOÀN TẤT
+      alert('Cập nhật hồ sơ thành công! Chào mừng bạn đến với MyMaid.');
+      navigate('/'); // Chuyển đến trang chủ
 
     } catch (err) {
-      console.error("Lỗi khi tạo tài khoản:", err);
-      if (err.code === 'auth/email-already-in-use') {
-        setError('Email này đã tồn tại. Vui lòng quay lại và sử dụng email khác.');
-      } else {
-        setError('Đã có lỗi xảy ra. Vui lòng thử lại.');
-      }
+      console.error("Lỗi khi cập nhật thông tin:", err);
+      setError('Đã có lỗi xảy ra. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Hiển thị loading trong khi chờ useEffect kiểm tra
-  if (!step1Data) {
-    return <LoadingSpinner fullScreen />;
+  if (!isAuthLoading) {
+  return (
+      <div className="card">
+        <p>Đang tải dữ liệu...</p>
+      </div>
+    );  
   }
 
   return (
     <UpdateContainer>
       <UpdateCard>
         <UpdateHeader>
-          <UpdateTitle>Cập nhật thông tin</UpdateTitle>
-          <UpdateSubtitle>cá nhân</UpdateSubtitle>
+          <UpdateTitle>Hoàn Tất Hồ Sơ</UpdateTitle>
+          <UpdateSubtitle>Vui lòng cung cấp thêm một vài thông tin cá nhân</UpdateSubtitle>
         </UpdateHeader>
         <FormGroup>
         <Label>Giới tính</Label>
