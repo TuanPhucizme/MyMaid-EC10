@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, Navigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useAuth } from '../context/AuthContext';
-import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
+import { User, Mail, Phone, Home, CreditCard } from 'lucide-react';
 import styled from 'styled-components';
 import LoadingSpinner from '../components/LoadingSpinner';
 
@@ -159,7 +159,7 @@ const FooterLink = styled(Link)`
 `;
 // ✅ THÊM CCCD & ẢNH ĐẠI DIỆN VÀO SCHEMA
 const schema = yup.object({
-  phone: yup.string().matches(/^\d{10}$/, "Số điện thoại phải gồm 10 chữ số").required("Số điện thoại là bắt buộc"),
+  phone: yup.string().matches(/(84|0[3|5|7|8|9])+([0-9]{8})\b/g, "Số điện thoại phải hợp lệ").required("Số điện thoại là bắt buộc"),
   address: yup.string().min(5, "Địa chỉ phải có ít nhất 5 ký tự").max(100).required("Địa chỉ là bắt buộc"),
   cccd: yup.string().matches(/^\d{12}$/, "CCCD phải gồm đúng 12 chữ số").required("Số CCCD là bắt buộc"),
   avatar: yup.mixed().test("required", "Ảnh đại diện là bắt buộc", value => value && value.length > 0),
@@ -185,7 +185,7 @@ const RegisterPartnerPage = () => {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
-        const userDocRef = doc(db, "users", user.uid);
+        const userDocRef = doc(db, "mm_users", user.uid);
         const userDocSnap = await getDoc(userDocRef);
         if (userDocSnap.exists()) {
           const userData = userDocSnap.data();
@@ -219,13 +219,9 @@ const onSubmit = async (data) => {
     setError('');
 
     try {
-      // BƯỚC A: UPLOAD ẢNH LÊN FIREBASE STORAGE
       const avatarFile = data.avatar[0];
-      // Tạo một tham chiếu đến vị trí lưu file, ví dụ: 'avatars/USER_UID.jpg'
       const avatarRef = ref(storage, `avatars/${currentUser.uid}`);
       await uploadBytes(avatarRef, avatarFile);
-
-      // BƯỚC B: LẤY URL CỦA ẢNH VỪA UPLOAD
       const photoURL = await getDownloadURL(avatarRef);
 
       // BƯỚC C: CẬP NHẬT DOCUMENT TRONG FIRESTORE
@@ -263,74 +259,58 @@ const onSubmit = async (data) => {
     return null; 
   }
 
-  return (
+ return (
     <RegisterContainer>
       <RegisterCard>
         <RegisterHeader>
-          <RegisterTitle>Đăng Kí Đối Tác</RegisterTitle>
-          <RegisterSubtitle>Tham gia Cùng MyMaid</RegisterSubtitle>
+          <RegisterTitle>Đăng Ký Đối Tác</RegisterTitle>
+          <RegisterSubtitle>Hoàn tất hồ sơ để bắt đầu nhận việc</RegisterSubtitle>
         </RegisterHeader>
 
         <Form onSubmit={handleSubmit(onSubmit)}>
-          <InputRow>
-            <InputGroup>
-              <InputIcon><User size={20} /></InputIcon>
-              <Input placeholder="First name" error={errors.firstName} {...register('firstName')} />
-              {errors.firstName && <ErrorMessage>{errors.firstName.message}</ErrorMessage>}
-            </InputGroup>
+          <ErrorMessage message={error} onClose={() => setError('')} show={!!error} />
 
-            <InputGroup>
-              <InputIcon><User size={20} /></InputIcon>
-              <Input placeholder="Last name" error={errors.lastName} {...register('lastName')} />
-              {errors.lastName && <ErrorMessage>{errors.lastName.message}</ErrorMessage>}
-            </InputGroup>
-          </InputRow>
-
+          {/* Hiển thị thông tin không thể sửa */}
+          <InputGroup>
+            <InputIcon><User size={20} /></InputIcon>
+            <Input value={`${currentUser.lastname} ${currentUser.firstname}`} readOnly disabled />
+          </InputGroup>
           <InputGroup>
             <InputIcon><Mail size={20} /></InputIcon>
-            <Input type="email" placeholder="Email" error={errors.email} {...register('email')} />
-            {errors.email && <ErrorMessage>{errors.email.message}</ErrorMessage>}
+            <Input value={currentUser.email || ''} readOnly disabled />
           </InputGroup>
 
+          {/* Các trường cần điền */}
           <InputGroup>
-            <InputIcon><Mail size={20} /></InputIcon>
-            <Input placeholder="Số Điện Thoại" error={errors.phone} {...register('phone')} />
+            <InputIcon><Phone size={20} /></InputIcon>
+            <Input placeholder="Số Điện Thoại" error={!!errors.phone} {...register('phone')} />
             {errors.phone && <ErrorMessage>{errors.phone.message}</ErrorMessage>}
           </InputGroup>
-
           <InputGroup>
-            <InputIcon><Lock size={20} /></InputIcon>
-            <Input placeholder='Địa chỉ Thường Trú' error={errors.address} {...register('address')} />
+            <InputIcon><Home size={20} /></InputIcon>
+            <Input placeholder='Địa chỉ Thường Trú' error={!!errors.address} {...register('address')} />
             {errors.address && <ErrorMessage>{errors.address.message}</ErrorMessage>}
           </InputGroup>
-
-          {/* CCCD */}
           <InputGroup>
-            <InputIcon><User size={20} /></InputIcon>
-            <Input placeholder="Số CCCD" error={errors.cccd} {...register("cccd")} />
+            <InputIcon><CreditCard size={20} /></InputIcon>
+            <Input placeholder="Số CCCD" error={!!errors.cccd} {...register("cccd")} />
             {errors.cccd && <ErrorMessage>{errors.cccd.message}</ErrorMessage>}
           </InputGroup>
-
-          {/* Ảnh đại diện */}
           <InputGroup>
-            <InputIcon><User size={20} /></InputIcon>
-            <input
+            <label style={{ fontSize: '0.875rem', color: '#374151', marginBottom: '0.5rem', display: 'block' }}>Ảnh chân dung</label>
+            <Input
               type="file"
               accept="image/*"
+              error={!!errors.avatar}
               {...register("avatar")}
-              style={{ paddingLeft: "2.5rem" }}
             />
             {errors.avatar && <ErrorMessage>{errors.avatar.message}</ErrorMessage>}
           </InputGroup>
 
-          <InputGroup>
-            <SubmitButton type="submit" disabled={isLoading}>
-              {isLoading ? "Đang tạo tài khoản..." : "Tạo tài khoản"}
-            </SubmitButton>
-          </InputGroup>
-
+          <SubmitButton type="submit" disabled={isLoading}>
+            {isLoading ? "Đang gửi hồ sơ..." : "Hoàn Tất Đăng Ký"}
+          </SubmitButton>
         </Form>
-
       </RegisterCard>
     </RegisterContainer>
   );
