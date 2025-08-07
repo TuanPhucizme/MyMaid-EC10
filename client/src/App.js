@@ -13,7 +13,6 @@ import Testimonials from "./components/Testimonials";
 import BlogSection from "./components/BlogSection";
 import Footer from "./components/Footer";
 import AuthRedirect from "./components/AuthRedirect";
-import FirebaseDebug from "./components/FirebaseDebug";
 import VerificationBanner from "./components/VerificationBanner";
 
 // Pages
@@ -28,6 +27,7 @@ import ProfilePage from "./pages/ProfilePage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
+import EmailVerificationHandler from "./pages/EmailVerificationHandler";
 import CheckLinkPage from "./pages/CheckLinkPage";
 import BookingPage from "./pages/BookingPage";
 import UpdateInformationPage from "./pages/UpdateInformation";
@@ -70,8 +70,9 @@ function App() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/verify-email" element={<VerifyEmailPage />} />
-            <Route path="/check-link" element={<CheckLinkPage />} />        
+                         <Route path="/verify-email" element={<VerifyEmailPage />} />
+             <Route path="/email-verification" element={<EmailVerificationHandler />} />
+             <Route path="/check-link" element={<CheckLinkPage />} />        
             <Route path="/payment" element={<PaymentPage />} />
             <Route path="/payment-result" element={<PaymentResultPage />} />
             <Route path="/booking" element={<BookingPage />} />
@@ -81,9 +82,8 @@ function App() {
         </Routes>
       </AuthRedirect>
 
-        <Footer />
-        <FirebaseDebug />
-      </div>
+                 <Footer />
+       </div>
   );
 }
 

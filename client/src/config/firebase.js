@@ -77,7 +77,7 @@ export const firebaseAuth = {
       
       // Gửi email xác thực với action code settings
       const actionCodeSettings = {
-        url: `${window.location.origin}/verify-email`,
+        url: `${window.location.origin}/email-verification`,
         handleCodeInApp: true,
       };
       
