@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { User, Phone, Calendar, Edit3, Save, X, Globe, VenusAndMars } from 'lucide-react';
+import { User, Phone, Calendar, Edit3, Save, X, Globe } from 'lucide-react';
 import styled from 'styled-components';
 
 import { auth, db } from '../config/firebase'; // Đảm bảo đường dẫn đúng
@@ -258,7 +258,7 @@ const DisplayProfile = ({ profile }) => (
       </DetailContent>
     </DetailItem>
     <DetailItem>
-      <DetailIcon><VenusAndMars size={20} /></DetailIcon>
+              <DetailIcon><User size={20} /></DetailIcon>
       <DetailContent>
         <DetailLabel>Giới tính</DetailLabel>
         <DetailValue>

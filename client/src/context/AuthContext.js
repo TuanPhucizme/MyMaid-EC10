@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { firebaseAuth } from '../config/firebase';
+import { firebaseAuth, db } from '../config/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
@@ -28,8 +29,11 @@ export const AuthProvider = ({ children }) => {
           const token = await firebaseUser.getIdToken();
           setIdToken(token);
           
-          // Tạo user object từ Firebase user
-          const userData = {
+          // Lấy thông tin user từ Firestore
+          const userDocRef = doc(db, "mm_users", firebaseUser.uid);
+          const userDocSnap = await getDoc(userDocRef);
+          
+          let userData = {
             id: firebaseUser.uid,
             firebaseUid: firebaseUser.uid,
             email: firebaseUser.email,
@@ -40,6 +44,19 @@ export const AuthProvider = ({ children }) => {
               avatar: firebaseUser.photoURL
             }
           };
+
+          // Nếu có data trong Firestore, merge với userData
+          if (userDocSnap.exists()) {
+            const firestoreData = userDocSnap.data();
+            userData = {
+              ...userData,
+              ...firestoreData,
+              needsProfileSetup: !firestoreData.phone || !firestoreData.address || !firestoreData.gender || firestoreData.status === 'pending_verification'
+            };
+          } else {
+            // Nếu chưa có trong Firestore, đánh dấu cần setup profile
+            userData.needsProfileSetup = true;
+          }
           
           setUser(userData);
         } catch (error) {
@@ -90,15 +107,13 @@ export const AuthProvider = ({ children }) => {
       const result = await firebaseAuth.register(email, password, firstName, lastName);
       
       if (result.success) {
-        toast.success(result.message);
-        return { success: true };
+        // Không hiển thị toast ở đây, để RegisterPage tự handle
+        return { success: true, message: result.message };
       } else {
-        toast.error(result.error);
         return { success: false, error: result.error };
       }
     } catch (error) {
       const message = 'Đăng ký thất bại';
-      toast.error(message);
       return { success: false, error: message };
     } finally {
       setLoading(false);

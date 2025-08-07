@@ -177,6 +177,8 @@ const LoginPage = () => {
     try {
       const result = await login(data.email, data.password);
       if (result.success) {
+        // Sẽ được xử lý bởi AuthContext's useEffect để redirect đúng chỗ
+        // Tạm thời navigate về home, AuthContext sẽ redirect nếu cần setup profile
         navigate('/');
       } else {
         setError(result.error);

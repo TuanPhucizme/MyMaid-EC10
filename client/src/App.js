@@ -11,6 +11,7 @@ import MaidProfiles from "./components/MaidProfiles";
 import Testimonials from "./components/Testimonials";
 import BlogSection from "./components/BlogSection";
 import Footer from "./components/Footer";
+import AuthRedirect from "./components/AuthRedirect";
 
 // Pages
 import PartNer from "./pages/RegisterPartnerPage";
@@ -32,38 +33,40 @@ function App() {
   return (
     <div className="min-h-screen bg-neutral-50">
       <Header />
-
-      <Routes>
-          <Route
-            path="/"
-            element={
-              <main>
-                <Hero />
-                <Services />
-                <MaidProfiles />
-                <Testimonials />
-                <BlogSection />
-              </main>
-            }
-          />
-          <Route path="/home" element={<HomePage />} />
-          <Route path="/services" element={<ServicesPage />} />
-          <Route path="/partner" element={<PartNer />} />
-          <Route path="/login" element={<LogIn />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route path="/verify-email" element={<VerifyEmailPage />} />
-          <Route path="/check-link" element={<CheckLinkPage />} />        
-          <Route path="/payment" element={<PaymentPage />} />
-          <Route path="/payment-result" element={<PaymentResultPage />} />
-          <Route path="/booking" element={<BookingPage />} />
-          <Route path="/update-information" element={<UpdateInformationPage />} />
-          <Route path="/booking-details/:bookingId" element={<BookingDetailPage />} />
-          <Route path="*" element={<h1 className="text-center text-2xl">404 - Page Not Found</h1>} />
-      </Routes>
+      
+      <AuthRedirect>
+        <Routes>
+            <Route
+              path="/"
+              element={
+                <main>
+                  <Hero />
+                  <Services />
+                  <MaidProfiles />
+                  <Testimonials />
+                  <BlogSection />
+                </main>
+              }
+            />
+            <Route path="/home" element={<HomePage />} />
+            <Route path="/services" element={<ServicesPage />} />
+            <Route path="/partner" element={<PartNer />} />
+            <Route path="/login" element={<LogIn />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
+            <Route path="/check-link" element={<CheckLinkPage />} />        
+            <Route path="/payment" element={<PaymentPage />} />
+            <Route path="/payment-result" element={<PaymentResultPage />} />
+            <Route path="/booking" element={<BookingPage />} />
+            <Route path="/update-information" element={<UpdateInformationPage />} />
+            <Route path="/booking-details/:bookingId" element={<BookingDetailPage />} />
+            <Route path="*" element={<h1 className="text-center text-2xl">404 - Page Not Found</h1>} />
+        </Routes>
+      </AuthRedirect>
 
         <Footer />
       </div>

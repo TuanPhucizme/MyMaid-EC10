@@ -4,7 +4,7 @@
  */
 
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, doc, setDoc } from "firebase/firestore";
 import {
   createUserWithEmailAndPassword,
   getAuth, 
@@ -57,6 +57,15 @@ export const firebaseAuth = {
       // Cập nhật display name
       await updateProfile(user, {
         displayName: `${firstName} ${lastName}`
+      });
+
+      // Tạo hồ sơ tạm thời trong Firestore
+      await setDoc(doc(db, "mm_users", user.uid), {
+        name: `${firstName} ${lastName}`,
+        email: email,
+        role: 'customer',
+        status: 'pending_verification', // Trạng thái chờ xác thực
+        createdAt: new Date(),
       });
       
       // Gửi email xác thực
