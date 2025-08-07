@@ -11,6 +11,7 @@ import ErrorMessage from '../components/ErrorMessage';
 import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator';
 import PasswordRequirements from '../components/PasswordRequirements';
 import PasswordInfo from '../components/PasswordInfo';
+import { testFirebaseConnection } from '../utils/firebaseTest';
 
 const fadeIn = keyframes`
   from {
@@ -149,7 +150,7 @@ const InputIcon = styled.div`
 const Input = styled.input`
   width: 100%;
   padding: 1rem 1rem 1rem 3rem;
-  border: 2px solid ${props => props.error ? '#ef4444' : '#e5e7eb'};
+  border: 2px solid ${props => props.$error ? '#ef4444' : '#e5e7eb'};
   border-radius: 1rem;
   font-size: 1rem;
   font-weight: 500;
@@ -213,7 +214,7 @@ const FormErrorMessage = styled.span`
 
 // Fixed height container for password components to prevent layout shift
 const PasswordComponentsContainer = styled.div`
-  min-height: ${props => props.hasPassword ? '180px' : '60px'};
+  min-height: ${props => props.$hasPassword ? '180px' : '60px'};
   transition: min-height 0.3s ease;
   overflow: visible;
   margin-top: 0.75rem;
@@ -342,11 +343,7 @@ const schema = yup.object({
     .required('Email là bắt buộc'),
   password: yup
     .string()
-    .min(8, 'Mật khẩu phải có ít nhất 8 ký tự')
-    .matches(/[A-Z]/, 'Mật khẩu phải có ít nhất 1 chữ hoa')
-    .matches(/[a-z]/, 'Mật khẩu phải có ít nhất 1 chữ thường')
-    .matches(/\d/, 'Mật khẩu phải có ít nhất 1 số')
-    .matches(/[!@#$%^&*(),.?":{}|<>]/, 'Mật khẩu phải có ít nhất 1 ký tự đặc biệt')
+    .min(6, 'Mật khẩu phải có ít nhất 6 ký tự')
     .required('Mật khẩu là bắt buộc'),
   confirmPassword: yup
     .string()
@@ -381,6 +378,11 @@ const RegisterPage = () => {
     setSuccess(false);
     
     try {
+      // Test Firebase connection first
+      console.log('Testing Firebase connection...');
+      const testResult = await testFirebaseConnection();
+      console.log('Firebase test result:', testResult);
+      
       const result = await registerUser({
         firstName: data.firstName,
         lastName: data.lastName,
@@ -390,10 +392,11 @@ const RegisterPage = () => {
 
       if (result.success) {
         setSuccess(true);
-        setTimeout(() => {
-          navigate('/login');
-        }, 3000);
+        // Hiển thị thông báo chi tiết hơn
+        console.log('Registration successful, email verification sent');
+        // Không tự động chuyển hướng, để user đọc thông báo
       } else {
+        console.error('Registration failed:', result);
         setError(result.error || 'Đăng ký thất bại. Vui lòng thử lại.');
       }
     } catch (err) {
@@ -410,14 +413,42 @@ const RegisterPage = () => {
         <RegisterCard>
           <SuccessMessage>
             <CheckCircle size={24} />
-            Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.
+            Đăng ký thành công! 🎉
           </SuccessMessage>
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ color: '#6b7280', marginBottom: '1rem' }}>
-              Bạn sẽ được chuyển hướng đến trang đăng nhập sau 3 giây...
+          <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+            <p style={{ color: '#059669', fontWeight: '600', marginBottom: '0.5rem' }}>
+              ✅ Email xác thực đã được gửi!
             </p>
-            <Link to="/login" style={{ color: '#667eea', textDecoration: 'none', fontWeight: 600 }}>
-              Hoặc click vào đây để đăng nhập ngay
+            <p style={{ color: '#6b7280', marginBottom: '1rem', fontSize: '0.9rem' }}>
+              Vui lòng kiểm tra hộp thư email của bạn và nhấp vào liên kết xác thực để hoàn tất đăng ký.
+            </p>
+            <div style={{ 
+              background: '#f3f4f6', 
+              padding: '1rem', 
+              borderRadius: '0.5rem',
+              marginBottom: '1rem',
+              fontSize: '0.875rem',
+              color: '#374151'
+            }}>
+              <p style={{ marginBottom: '0.5rem' }}><strong>Lưu ý:</strong></p>
+              <ul style={{ textAlign: 'left', margin: 0, paddingLeft: '1rem' }}>
+                <li>Kiểm tra cả thư mục Spam/Junk nếu không thấy email</li>
+                <li>Email có thể mất vài phút để đến</li>
+                <li>Sau khi xác thực, bạn có thể đăng nhập bình thường</li>
+              </ul>
+            </div>
+            <Link to="/login" style={{ 
+              background: '#3b82f6',
+              color: 'white',
+              border: 'none',
+              padding: '0.75rem 1.5rem',
+              borderRadius: '0.5rem',
+              cursor: 'pointer',
+              fontWeight: '600',
+              textDecoration: 'none',
+              display: 'inline-block'
+            }}>
+              Đi đến trang đăng nhập
             </Link>
           </div>
         </RegisterCard>
@@ -449,7 +480,7 @@ const RegisterPage = () => {
                 <Input 
                   type="text" 
                   placeholder="Họ Và Tên Đệm" 
-                  error={!!errors.firstName} 
+                  $error={!!errors.firstName} 
                   {...register('firstName')} 
                 />
               </InputWrapper>
@@ -464,7 +495,7 @@ const RegisterPage = () => {
                 <Input 
                   type="text" 
                   placeholder="Tên" 
-                  error={!!errors.lastName} 
+                  $error={!!errors.lastName} 
                   {...register('lastName')} 
                 />
               </InputWrapper>
@@ -480,7 +511,7 @@ const RegisterPage = () => {
               <Input 
                 type="email" 
                 placeholder="Nhập địa chỉ email của bạn" 
-                error={!!errors.email} 
+                $error={!!errors.email} 
                 {...register('email')} 
               />
             </InputWrapper>
@@ -495,7 +526,7 @@ const RegisterPage = () => {
               <Input
                 type={showPassword ? 'text' : 'password'}
                 placeholder="Tạo mật khẩu"
-                error={!!errors.password}
+                $error={!!errors.password}
                 {...register('password')}
               />
               <PasswordToggle 
@@ -508,7 +539,7 @@ const RegisterPage = () => {
             {errors.password && <FormErrorMessage>{errors.password.message}</FormErrorMessage>}
             
             {/* Fixed height container to prevent layout shift */}
-            <PasswordComponentsContainer hasPassword={!!watchedPassword}>
+                            <PasswordComponentsContainer $hasPassword={!!watchedPassword}>
               {!watchedPassword && (
                 <PasswordComponentWrapper>
                   <PasswordInfo />
@@ -535,7 +566,7 @@ const RegisterPage = () => {
               <Input
                 type={showConfirmPassword ? 'text' : 'password'}
                 placeholder="Xác nhận lại mật khẩu"
-                error={!!errors.confirmPassword}
+                $error={!!errors.confirmPassword}
                 {...register('confirmPassword')}
               />
               <PasswordToggle 

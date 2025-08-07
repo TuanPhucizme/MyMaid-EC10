@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import "./index.css";
 import { Routes, Route } from "react-router-dom";
+import { useAuth } from "./context/AuthContext";
 
 // Components
 import Header from "./components/Header";
@@ -12,6 +13,8 @@ import Testimonials from "./components/Testimonials";
 import BlogSection from "./components/BlogSection";
 import Footer from "./components/Footer";
 import AuthRedirect from "./components/AuthRedirect";
+import FirebaseDebug from "./components/FirebaseDebug";
+import VerificationBanner from "./components/VerificationBanner";
 
 // Pages
 import PartNer from "./pages/RegisterPartnerPage";
@@ -30,8 +33,18 @@ import BookingPage from "./pages/BookingPage";
 import UpdateInformationPage from "./pages/UpdateInformation";
 import BookingDetailPage from "./pages/BookingDetailPage";
 function App() {
+  const { user } = useAuth();
+  const [showVerificationBanner, setShowVerificationBanner] = useState(true);
+
   return (
     <div className="min-h-screen bg-neutral-50">
+      {user && !user.emailVerified && showVerificationBanner && (
+        <VerificationBanner 
+          user={user} 
+          onClose={() => setShowVerificationBanner(false)}
+        />
+      )}
+      
       <Header />
       
       <AuthRedirect>
@@ -69,6 +82,7 @@ function App() {
       </AuthRedirect>
 
         <Footer />
+        <FirebaseDebug />
       </div>
   );
 }

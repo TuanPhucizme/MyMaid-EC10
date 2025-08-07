@@ -64,21 +64,21 @@ const RequirementsTitle = styled.div`
 const RequirementsIcon = styled.div`
   display: flex;
   align-items: center;
-  color: ${props => props.allMet ? '#10b981' : '#6b7280'};
+  color: ${props => props.$allMet ? '#10b981' : '#6b7280'};
   transition: all 0.3s ease;
 `;
 
 const ChevronIcon = styled.div`
   color: #9ca3af;
   transition: transform 0.3s ease;
-  transform: rotate(${props => props.isOpen ? '180deg' : '0deg'});
+  transform: rotate(${props => props.$isOpen ? '180deg' : '0deg'});
 `;
 
 const RequirementsList = styled.div`
-  max-height: ${props => props.isOpen ? '200px' : '0'};
+  max-height: ${props => props.$isOpen ? '200px' : '0'};
   overflow: hidden;
   transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  animation: ${props => props.isOpen ? slideDown : 'none'} 0.3s ease-out;
+  animation: ${props => props.$isOpen ? slideDown : 'none'} 0.3s ease-out;
 `;
 
 const RequirementsContent = styled.div`
@@ -91,7 +91,7 @@ const RequirementItem = styled.div`
   gap: 10px;
   font-size: 12px;
   margin-bottom: 8px;
-  color: ${props => props.met ? '#059669' : '#6b7280'};
+  color: ${props => props.$met ? '#059669' : '#6b7280'};
   transition: all 0.3s ease;
   padding: 6px 8px;
   border-radius: 6px;
@@ -112,8 +112,8 @@ const RequirementIcon = styled.div`
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: ${props => props.met ? 'rgba(16, 185, 129, 0.1)' : 'rgba(156, 163, 175, 0.1)'};
-  color: ${props => props.met ? '#10b981' : '#9ca3af'};
+  background: ${props => props.$met ? 'rgba(16, 185, 129, 0.1)' : 'rgba(156, 163, 175, 0.1)'};
+  color: ${props => props.$met ? '#10b981' : '#9ca3af'};
   transition: all 0.3s ease;
   flex-shrink: 0;
 `;
@@ -137,7 +137,7 @@ const ProgressFill = styled.div`
   background: linear-gradient(90deg, #10b981 0%, #059669 100%);
   border-radius: 2px;
   transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  width: ${props => props.progress}%;
+  width: ${props => props.$progress}%;
 `;
 
 const PasswordRequirements = ({ password }) => {
@@ -184,27 +184,27 @@ const PasswordRequirements = ({ password }) => {
       <RequirementsContainer>
         <RequirementsHeader onClick={() => setIsOpen(!isOpen)}>
           <RequirementsTitle>
-            <RequirementsIcon allMet={false}>
+            <RequirementsIcon $allMet={false}>
               <X size={16} />
             </RequirementsIcon>
             Yêu cầu mật khẩu
           </RequirementsTitle>
-          <ChevronIcon isOpen={isOpen}>
+          <ChevronIcon $isOpen={isOpen}>
             <ChevronDown size={16} />
           </ChevronIcon>
         </RequirementsHeader>
-        <RequirementsList isOpen={isOpen}>
+        <RequirementsList $isOpen={isOpen}>
           <RequirementsContent>
             {requirements.map(req => (
-              <RequirementItem key={req.id} met={false}>
-                <RequirementIcon met={false}>
+              <RequirementItem key={req.id} $met={false}>
+                <RequirementIcon $met={false}>
                   <X size={12} />
                 </RequirementIcon>
                 <RequirementText>{req.text}</RequirementText>
               </RequirementItem>
             ))}
             <ProgressBar>
-              <ProgressFill progress={0} />
+              <ProgressFill $progress={0} />
             </ProgressBar>
           </RequirementsContent>
         </RequirementsList>
@@ -216,27 +216,27 @@ const PasswordRequirements = ({ password }) => {
     <RequirementsContainer>
       <RequirementsHeader onClick={() => setIsOpen(!isOpen)}>
         <RequirementsTitle>
-          <RequirementsIcon allMet={allMet}>
+          <RequirementsIcon $allMet={allMet}>
             {allMet ? <Check size={16} /> : <X size={16} />}
           </RequirementsIcon>
           Yêu cầu mật khẩu {allMet && '✓'}
         </RequirementsTitle>
-        <ChevronIcon isOpen={isOpen}>
+        <ChevronIcon $isOpen={isOpen}>
           <ChevronDown size={16} />
         </ChevronIcon>
       </RequirementsHeader>
-      <RequirementsList isOpen={isOpen}>
+      <RequirementsList $isOpen={isOpen}>
         <RequirementsContent>
           {metRequirements.map(req => (
-            <RequirementItem key={req.id} met={req.met}>
-              <RequirementIcon met={req.met}>
+            <RequirementItem key={req.id} $met={req.met}>
+              <RequirementIcon $met={req.met}>
                 {req.met ? <Check size={12} /> : <X size={12} />}
               </RequirementIcon>
               <RequirementText>{req.text}</RequirementText>
             </RequirementItem>
           ))}
           <ProgressBar>
-            <ProgressFill progress={progress} />
+            <ProgressFill $progress={progress} />
           </ProgressBar>
         </RequirementsContent>
       </RequirementsList>

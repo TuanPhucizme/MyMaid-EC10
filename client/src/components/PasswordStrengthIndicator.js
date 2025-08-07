@@ -59,7 +59,7 @@ const shimmer = keyframes`
 const StrengthProgress = styled.div`
   height: 100%;
   background: ${props => {
-    switch (props.strength) {
+    switch (props.$strength) {
       case 'weak': return 'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)';
       case 'medium': return 'linear-gradient(90deg, #f59e0b 0%, #d97706 100%)';
       case 'strong': return 'linear-gradient(90deg, #10b981 0%, #059669 100%)';
@@ -71,7 +71,7 @@ const StrengthProgress = styled.div`
   position: relative;
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   width: ${props => {
-    switch (props.strength) {
+    switch (props.$strength) {
       case 'weak': return '25%';
       case 'medium': return '50%';
       case 'strong': return '75%';
@@ -100,7 +100,7 @@ const StrengthText = styled.div`
   font-size: 13px;
   font-weight: 600;
   color: ${props => {
-    switch (props.strength) {
+    switch (props.$strength) {
       case 'weak': return '#dc2626';
       case 'medium': return '#d97706';
       case 'strong': return '#059669';
@@ -117,7 +117,7 @@ const StrengthIcon = styled.div`
   padding: 4px;
   border-radius: 50%;
   background: ${props => {
-    switch (props.strength) {
+    switch (props.$strength) {
       case 'weak': return 'rgba(239, 68, 68, 0.1)';
       case 'medium': return 'rgba(245, 158, 11, 0.1)';
       case 'strong': return 'rgba(16, 185, 129, 0.1)';
@@ -224,10 +224,10 @@ const PasswordStrengthIndicator = ({ password }) => {
     return (
       <StrengthContainer>
         <StrengthBar>
-          <StrengthProgress strength="none" />
+          <StrengthProgress $strength="none" />
         </StrengthBar>
-        <StrengthText strength="none">
-          <StrengthIcon strength="none">{icon}</StrengthIcon>
+        <StrengthText $strength="none">
+          <StrengthIcon $strength="none">{icon}</StrengthIcon>
           <StrengthLabel>Nhập mật khẩu</StrengthLabel>
         </StrengthText>
       </StrengthContainer>
@@ -237,10 +237,10 @@ const PasswordStrengthIndicator = ({ password }) => {
   return (
     <StrengthContainer>
       <StrengthBar>
-        <StrengthProgress strength={strength} />
+        <StrengthProgress $strength={strength} />
       </StrengthBar>
-      <StrengthText strength={strength}>
-        <StrengthIcon strength={strength}>{icon}</StrengthIcon>
+      <StrengthText $strength={strength}>
+        <StrengthIcon $strength={strength}>{icon}</StrengthIcon>
         <StrengthLabel>{text}</StrengthLabel>
       </StrengthText>
       {feedback.length > 0 && strength !== 'very-strong' && (

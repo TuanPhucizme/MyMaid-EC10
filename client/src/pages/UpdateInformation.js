@@ -136,7 +136,7 @@ const InputIcon = styled.div`
 const Input = styled.input`
   width: 100%;
   padding: 1rem 1rem 1rem 3rem;
-  border: 2px solid ${props => props.error ? '#ef4444' : '#e5e7eb'};
+  border: 2px solid ${props => props.$error ? '#ef4444' : '#e5e7eb'};
   border-radius: 1rem;
   font-size: 1rem;
   font-weight: 500;
@@ -167,7 +167,7 @@ const Input = styled.input`
 const Select = styled.select`
   width: 100%;
   padding: 1rem 1rem 1rem 3rem;
-  border: 2px solid ${props => props.error ? '#ef4444' : '#e5e7eb'};
+  border: 2px solid ${props => props.$error ? '#ef4444' : '#e5e7eb'};
   border-radius: 1rem;
   font-size: 1rem;
   font-weight: 500;
@@ -397,7 +397,7 @@ const UpdateInformationPage = () => {
                 <User size={18} />
               </InputIcon>
               <Select 
-                error={!!errors.gender}
+                $error={!!errors.gender}
                 {...register('gender')}
               >
                 <option value="">-- Chọn giới tính --</option>
@@ -417,7 +417,7 @@ const UpdateInformationPage = () => {
               <Input 
                 type="tel"
                 placeholder="Số điện thoại (VD: 0901234567)"
-                error={!!errors.phone}
+                $error={!!errors.phone}
                 {...register('phone')}
               />
             </InputWrapper>
@@ -432,7 +432,7 @@ const UpdateInformationPage = () => {
               <Input 
                 type="text"
                 placeholder="Địa chỉ của bạn"
-                error={!!errors.address}
+                $error={!!errors.address}
                 {...register('address')}
               />
             </InputWrapper>
