@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { CheckCircle, XCircle, Mail, ArrowRight } from 'lucide-react';
 import styled from 'styled-components';
 import LoadingSpinner from '../components/LoadingSpinner';
+
+import { auth } from '../config/firebase';
+import { applyActionCode } from 'firebase/auth';
 
 const VerifyContainer = styled.div`
   min-height: calc(100vh - 4rem);
@@ -49,7 +51,7 @@ const Message = styled.p`
   line-height: 1.6;
 `;
 
-const ActionButton = styled(Link)`
+const ActionButton = styled.button`
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -59,6 +61,8 @@ const ActionButton = styled(Link)`
   text-decoration: none;
   border-radius: 0.5rem;
   font-weight: 500;
+  border: none;
+  cursor: pointer;
   transition: background-color 0.2s;
 
   &:hover {
@@ -66,28 +70,67 @@ const ActionButton = styled(Link)`
   }
 `;
 
-const VerifyEmailPage = () => {
-  const { user } = useAuth();
+const EmailVerificationHandler = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [status, setStatus] = useState('loading'); // loading, success, error
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    // Kiểm tra user có tồn tại không
-    if (!user) {
+    const oobCode = searchParams.get('oobCode');
+    
+    // Debug: Log tất cả parameters
+    console.log('URL Search Params:', Object.fromEntries(searchParams.entries()));
+    console.log('oobCode:', oobCode);
+
+    if (!oobCode) {
       setStatus('error');
-      setMessage('Không tìm thấy thông tin người dùng. Vui lòng đăng nhập trước.');
+      setMessage('Link xác thực không hợp lệ. Vui lòng kiểm tra email và thử lại.');
       return;
     }
 
-    // Kiểm tra email đã được verify chưa
-    if (user.emailVerified) {
-      setStatus('success');
-      setMessage('Email của bạn đã được xác thực thành công! Bây giờ bạn có thể sử dụng đầy đủ các tính năng của hệ thống.');
+    const verify = async () => {
+      try {
+        console.log('Applying action code:', oobCode);
+        await applyActionCode(auth, oobCode);
+        console.log('Email verification successful');
+        setStatus('success');
+        setMessage('Email của bạn đã được xác thực thành công! Bây giờ bạn có thể đăng nhập.');
+      } catch (error) {
+        console.error("Lỗi xác thực email:", error);
+        setStatus('error');
+        
+        // Cải thiện error message
+        let errorMessage = 'Link xác thực không hợp lệ hoặc đã hết hạn.';
+        
+        switch (error.code) {
+          case 'auth/invalid-action-code':
+            errorMessage = 'Link xác thực không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu gửi lại email xác thực.';
+            break;
+          case 'auth/expired-action-code':
+            errorMessage = 'Link xác thực đã hết hạn. Vui lòng yêu cầu gửi lại email xác thực.';
+            break;
+          case 'auth/user-disabled':
+            errorMessage = 'Tài khoản đã bị vô hiệu hóa. Vui lòng liên hệ admin.';
+            break;
+          default:
+            errorMessage = `Lỗi xác thực: ${error.message}`;
+        }
+        
+        setMessage(errorMessage);
+      }
+    };
+
+    verify();
+  }, [searchParams]);
+
+  const handleContinue = () => {
+    if (status === 'success') {
+      navigate('/login');
     } else {
-      setStatus('error');
-      setMessage('Email của bạn chưa được xác thực. Vui lòng kiểm tra email và nhấp vào liên kết xác thực.');
+      navigate('/register');
     }
-  }, [user]);
+  };
 
   const renderContent = () => {
     switch (status) {
@@ -97,7 +140,7 @@ const VerifyEmailPage = () => {
             <IconContainer>
               <Mail size={32} />
             </IconContainer>
-            <Title>Đang kiểm tra...</Title>
+            <Title>Đang xác thực email...</Title>
             <Message>Vui lòng đợi trong giây lát</Message>
             <LoadingSpinner />
           </>
@@ -111,8 +154,8 @@ const VerifyEmailPage = () => {
             </IconContainer>
             <Title>Xác thực thành công!</Title>
             <Message>{message}</Message>
-            <ActionButton to="/dashboard">
-              Đi đến Dashboard
+            <ActionButton onClick={handleContinue}>
+              Đi đến đăng nhập
               <ArrowRight size={16} />
             </ActionButton>
           </>
@@ -126,7 +169,7 @@ const VerifyEmailPage = () => {
             </IconContainer>
             <Title>Xác thực thất bại</Title>
             <Message>{message}</Message>
-            <ActionButton to="/register">
+            <ActionButton onClick={handleContinue}>
               Quay lại đăng ký
               <ArrowRight size={16} />
             </ActionButton>
@@ -147,4 +190,4 @@ const VerifyEmailPage = () => {
   );
 };
 
-export default VerifyEmailPage;
+export default EmailVerificationHandler;

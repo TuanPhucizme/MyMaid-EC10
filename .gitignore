@@ -115,5 +115,22 @@ firestore-debug.log
 tmp/
 temp/
 
-#serviceAccount
+# Firebase Service Account Keys and Credentials (SECURITY CRITICAL)
+*firebase*adminsdk*.json
+*serviceAccount*.json
+*service-account*.json
+*firebase-adminsdk*.json
 server/serviceAccountKey.json
+
+# Environment files with real credentials
+.env.backup
+.env.production
+.env.staging
+*.key
+*.pem
+*.p12
+
+# Any file with "key" or "secret" in the name
+*secret*
+*private*key*
+*credentials*

@@ -253,7 +253,7 @@ async function startAllProcesses() {
 
     // Start server and client
     log('🎯 Starting services...', 'cyan');
-    await startProcess('npm', ['start'], 'server', 'SERVER', 5000);
+    await startProcess('npm', ['run', 'dev'], 'server', 'SERVER', 5000);
     await startProcess('npm', ['start'], 'client', 'CLIENT', 3000);
 
     log('✅ All processes started successfully!', 'green');

@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import styled from 'styled-components';
 import ErrorMessage from '../components/ErrorMessage';
+import EmailVerificationStatus from '../components/EmailVerificationStatus';
 
 const LoginContainer = styled.div`
   min-height: calc(120vh - 4rem);
@@ -63,7 +64,7 @@ const InputIcon = styled.div`
 const Input = styled.input`
   width: 100%;
   padding: 0.75rem 0.75rem 0.75rem 2.5rem;
-  border: 2px solid ${props => props.error ? '#ef4444' : '#d1d5db'};
+  border: 2px solid ${props => props.$error ? '#ef4444' : '#d1d5db'};
   border-radius: 0.5rem;
   font-size: 1rem;
   transition: border-color 0.2s;
@@ -157,7 +158,7 @@ const schema = yup.object({
 });
 
 const LoginPage = () => {
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -177,6 +178,8 @@ const LoginPage = () => {
     try {
       const result = await login(data.email, data.password);
       if (result.success) {
+        // Sẽ được xử lý bởi AuthContext's useEffect để redirect đúng chỗ
+        // Tạm thời navigate về home, AuthContext sẽ redirect nếu cần setup profile
         navigate('/');
       } else {
         setError(result.error);
@@ -202,6 +205,10 @@ const LoginPage = () => {
             onClose={() => setError('')}
             show={!!error}
           />
+          
+          {user && !user.emailVerified && (
+            <EmailVerificationStatus user={user} />
+          )}
           <InputGroup>
             <InputIcon>
               <Mail size={20} />
@@ -209,7 +216,7 @@ const LoginPage = () => {
             <Input
               type="email"
               placeholder="Nhập email của bạn"
-              error={errors.email}
+                             $error={errors.email}
               {...register('email')}
             />
             {errors.email && (
@@ -224,7 +231,7 @@ const LoginPage = () => {
             <Input
               type={showPassword ? 'text' : 'password'}
               placeholder="Nhập mật khẩu của bạn"
-              error={errors.password}
+                             $error={errors.password}
               {...register('password')}
             />
             <PasswordToggle

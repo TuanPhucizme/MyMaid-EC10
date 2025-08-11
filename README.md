@@ -1,72 +1,49 @@
-# MyMaid - Sprint 1 Implementation
+# MyMaid-EC10
 
-MyMaid là một ứng dụng web cho phép người dùng tìm kiếm người giúp việc phù hợp với các nhu cầu của họ. Đây là implementation của Sprint 1 với các tính năng cơ bản.
+MyMaid-EC10 là một nền tảng kết nối dịch vụ giúp việc chuyên nghiệp, cho phép người dùng tìm kiếm và thuê người giúp việc phù hợp với nhu cầu của họ.
 
-## 🚀 Tính năng Sprint 1
+## 🚀 Tính năng chính
 
 ### ✅ Đã hoàn thành:
-- **Đăng ký tài khoản**: Người dùng có thể tạo tài khoản mới
-- **Xác minh email**: Hệ thống gửi email xác minh để kích hoạt tài khoản
-- **Đăng nhập**: Người dùng có thể đăng nhập vào hệ thống
+- **Đăng ký/Đăng nhập**: Hệ thống authentication với Firebase
+- **Xác minh email**: Gửi email xác minh để kích hoạt tài khoản
 - **Quên mật khẩu**: Tính năng đặt lại mật khẩu qua email
-- **Kiểm tra link**: Dán link để kiểm tra độ tin cậy từ crawler API
-- **Dashboard cá nhân**: Giao diện tổng quan hoạt động của người dùng
-- **Chỉnh sửa hồ sơ**: Cập nhật thông tin cá nhân cơ bản
+- **Dashboard**: Giao diện tổng quan cho người dùng
+- **Quản lý hồ sơ**: Cập nhật thông tin cá nhân
+- **Thanh toán**: Tích hợp VNPay cho thanh toán
+- **Giao diện responsive**: Tương thích với mọi thiết bị
 
-## 🏗️ Architecture
+## 🏗️ Kiến trúc
 
 ### Backend (Express.js)
 ```
-main/server/
-├── src/
-│   ├── app.js                 # Main application file
-│   ├── config/
-│   │   └── firebase.js        # Firebase configuration
-│   ├── controllers/
-│   │   ├── authController.js  # Authentication logic
-│   │   ├── userController.js  # User management
-│   │   └── linkController.js  # Link checking logic
-│   ├── middleware/
-│   │   ├── auth.js           # Authentication middleware
-│   │   ├── validation.js     # Request validation
-│   │   └── errorHandler.js   # Error handling
-│   ├── routes/
-│   │   ├── auth.js           # Auth routes
-│   │   ├── users.js          # User routes
-│   │   └── links.js          # Link routes
-│   ├── services/
-│   │   ├── emailService.js   # Email sending
-│   │   └── crawlerService.js # Link crawling/checking
-│   └── utils/                # Utility functions
-├── package.json
-└── .env.example
+server/
+├── app.js                 # Main application file
+├── config/
+│   └── firebaseAdmin.js   # Firebase Admin configuration
+├── middleware/
+│   └── authMiddleware.js  # Authentication middleware
+├── routes/
+│   ├── userRoutes.js      # User management routes
+│   └── payment.js         # Payment routes (VNPay)
+└── package.json
 ```
 
 ### Frontend (React)
 ```
-main/client/
+client/
 ├── src/
-│   ├── components/
-│   │   ├── Navbar.js         # Navigation component
-│   │   ├── ProtectedRoute.js # Route protection
-│   │   └── LoadingSpinner.js # Loading indicator
-│   ├── pages/
-│   │   ├── HomePage.js       # Landing page
-│   │   ├── LoginPage.js      # Login form
-│   │   ├── RegisterPage.js   # Registration form
-│   │   ├── DashboardPage.js  # User dashboard
-│   │   ├── CheckLinkPage.js  # Link checking
-│   │   ├── ProfilePage.js    # Profile management
-│   │   ├── VerifyEmailPage.js # Email verification
-│   │   ├── ForgotPasswordPage.js # Password reset request
-│   │   └── ResetPasswordPage.js  # Password reset form
-│   ├── context/
-│   │   └── AuthContext.js    # Authentication context
-│   ├── services/
-│   │   └── api.js           # API client
-│   ├── App.js               # Main app component
-│   └── index.js             # App entry point
-├── public/
+│   ├── components/        # UI components
+│   ├── pages/            # Page components
+│   ├── context/          # React context
+│   ├── services/         # API services
+│   ├── config/           # Configuration files
+│   ├── data/             # Mock data
+│   ├── hooks/            # Custom hooks
+│   ├── utils/            # Utility functions
+│   ├── App.js            # Main app component
+│   └── index.js          # App entry point
+├── public/               # Static files
 └── package.json
 ```
 
@@ -77,226 +54,136 @@ main/client/
 - **Firebase Firestore**: Database
 - **Firebase Admin**: Server-side Firebase SDK
 - **JWT**: Authentication tokens
-- **Bcrypt**: Password hashing
-- **Nodemailer**: Email sending
-- **Joi**: Request validation
-- **Axios**: HTTP client for crawler API
+- **CORS**: Cross-origin resource sharing
 
 ### Frontend:
 - **React 18**: UI framework
 - **React Router**: Client-side routing
+- **Tailwind CSS**: Styling framework
+- **Firebase Auth**: Client-side authentication
+- **GSAP**: Animation library
 - **React Hook Form**: Form handling
-- **React Query**: Data fetching and caching
-- **Styled Components**: CSS-in-JS styling
-- **Yup**: Form validation
-- **Lucide React**: Icons
-- **React Hot Toast**: Notifications
 
 ## 🚀 Cài đặt và Chạy
 
 ### Prerequisites:
-- Node.js 16+
-- Firebase project với Firestore enabled
-- Email service (Gmail với App Password)
+- Node.js 18+
+- Firebase project với Authentication và Firestore enabled
 
-### Backend Setup:
+### Quick Start:
 
-1. **Cài đặt dependencies:**
+1. **Clone repository:**
 ```bash
-cd backup/server
-npm install
+git clone <repository-url>
+cd MyMaid-EC10
 ```
 
-2. **Cấu hình environment:**
+2. **Cài đặt dependencies:**
 ```bash
-cp .env.example .env
-# Chỉnh sửa .env với thông tin Firebase và email
+npm run install:all
 ```
 
-3. **Chạy server:**
-```bash
-# Development
-npm run dev
+3. **Cấu hình Firebase:**
+   - Tạo Firebase project tại [Firebase Console](https://console.firebase.google.com/)
+   - Enable Authentication và Firestore
+   - Tạo Service Account và download JSON key
+   - Copy file `.env.example` thành `.env` và điền thông tin Firebase
 
-# Production
+4. **Chạy ứng dụng:**
+```bash
+# Khởi động cả frontend và backend
 npm start
+
+# Hoặc chạy riêng lẻ
+npm run server-only    # Chỉ backend (port 5000)
+npm run client-only    # Chỉ frontend (port 3000)
 ```
 
-Server sẽ chạy tại `http://localhost:5000`
-
-### Frontend Setup:
-
-1. **Cài đặt dependencies:**
-```bash
-cd backup/client
-npm install
-```
-
-2. **Chạy client:**
-```bash
-npm start
-```
-
-Client sẽ chạy tại `http://localhost:3000`
+5. **Truy cập ứng dụng:**
+   - Frontend: http://localhost:3000
+   - Backend: http://localhost:5000
 
 ## 🔧 Cấu hình
 
-### Firebase Setup:
-1. Tạo Firebase project tại https://console.firebase.google.com
-2. Enable Firestore Database
-3. Tạo Service Account và download JSON key
-4. Cấu hình thông tin trong `.env`
-
-### Email Setup:
-1. Sử dụng Gmail với App Password
-2. Cấu hình SMTP settings trong `.env`
-
-### Environment Variables:
+### Environment Variables (.env):
 ```env
-# Server
-PORT=5000
+# Server Configuration
 NODE_ENV=development
+PORT=5000
 
-# Firebase
+# Firebase Configuration
 FIREBASE_PROJECT_ID=your-project-id
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
 FIREBASE_CLIENT_EMAIL=your-service-account@project.iam.gserviceaccount.com
 
-# JWT
-JWT_SECRET=your-super-secret-jwt-key
-JWT_EXPIRE=7d
-
-# Email
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USER=your-email@gmail.com
-EMAIL_PASS=your-app-password
-
-# Crawler API
-CRAWLER_API_URL=https://api.example.com/crawler
-CRAWLER_API_KEY=your-api-key
-
-# Frontend URL
+# Frontend Configuration
 FRONTEND_URL=http://localhost:3000
+CORS_ORIGIN=http://localhost:3000
 ```
 
-## 📊 Database Schema
+## 📱 Tính năng
 
-### Collections:
+### Người dùng:
+- Đăng ký/Đăng nhập với email
+- Xác minh email
+- Quên mật khẩu
+- Cập nhật hồ sơ cá nhân
+- Xem dashboard
 
-#### users
-```javascript
-{
-  email: string,
-  password: string (hashed),
-  firstName: string,
-  lastName: string,
-  isVerified: boolean,
-  createdAt: timestamp,
-  updatedAt: timestamp,
-  profile: {
-    bio: string,
-    avatar: string
-  },
-  stats: {
-    linksChecked: number,
-    joinedAt: timestamp
-  }
-}
-```
+### Hệ thống:
+- Authentication với Firebase
+- Database với Firestore
+- Thanh toán VNPay
+- Responsive design
+- Process management
 
-#### links
-```javascript
-{
-  userId: string,
-  url: string,
-  credibilityScore: number,
-  status: string,
-  summary: string,
-  sources: array,
-  metadata: {
-    title: string,
-    domain: string,
-    publishDate: timestamp,
-    author: string
-  },
-  checkedAt: timestamp
-}
-```
-
-#### verification_tokens
-```javascript
-{
-  userId: string,
-  token: string,
-  email: string,
-  expiresAt: timestamp,
-  createdAt: timestamp
-}
-```
-
-#### password_reset_tokens
-```javascript
-{
-  userId: string,
-  token: string,
-  email: string,
-  expiresAt: timestamp,
-  createdAt: timestamp
-}
-```
-
-## 🔗 API Endpoints
-
-### Authentication:
-- `POST /api/auth/register` - Đăng ký
-- `POST /api/auth/login` - Đăng nhập
-- `POST /api/auth/verify-email` - Xác minh email
-- `POST /api/auth/forgot-password` - Quên mật khẩu
-- `POST /api/auth/reset-password` - Đặt lại mật khẩu
-
-### Users:
-- `GET /api/users/profile` - Lấy thông tin profile
-- `PUT /api/users/profile` - Cập nhật profile
-- `GET /api/users/dashboard` - Lấy dữ liệu dashboard
-- `DELETE /api/users/account` - Xóa tài khoản
-
-### Links:
-- `POST /api/links/check` - Kiểm tra link
-- `GET /api/links/history` - Lịch sử kiểm tra
-- `GET /api/links/:linkId` - Chi tiết kết quả
-- `DELETE /api/links/:linkId` - Xóa kết quả
-
-## 🧪 Testing
+## 🚀 Scripts
 
 ```bash
-# Backend tests
-cd backup/server
-npm test
+# Khởi động
+npm start                    # Khởi động cả frontend và backend
+npm run server-only          # Chỉ backend
+npm run client-only          # Chỉ frontend
 
-# Frontend tests
-cd backup/client
-npm test
+# Dừng
+npm stop                     # Dừng tất cả processes
+
+# Tiện ích
+npm run install:all          # Cài đặt tất cả dependencies
+npm run check-env            # Kiểm tra environment variables
+npm run status               # Kiểm tra trạng thái processes
+npm run restart              # Khởi động lại tất cả services
 ```
 
-## 📝 Next Steps (Sprint 2+)
+## 📁 Cấu trúc Project
 
-- Community features
-- Advanced filtering
-- Expert verification
-- Chatbot integration
-- Admin panel
-- Mobile app
-- Advanced analytics
+```
+MyMaid-EC10/
+├── client/                  # Frontend React app
+├── server/                  # Backend Express app
+├── .env                     # Environment variables
+├── .env.example            # Environment template
+├── process-manager.js       # Process management
+├── force-kill-ports.js      # Port management utility
+└── package.json            # Root package.json
+```
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create feature branch
-3. Commit changes
-4. Push to branch
-5. Create Pull Request
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
 
 ## 📄 License
 
 MIT License - see LICENSE file for details
+
+## 🆘 Support
+
+Nếu gặp vấn đề, hãy kiểm tra:
+1. Environment variables đã được cấu hình đúng chưa
+2. Firebase project đã được setup chưa
+3. Port 3000 và 5000 có bị chiếm không
+4. Dependencies đã được cài đặt đầy đủ chưa

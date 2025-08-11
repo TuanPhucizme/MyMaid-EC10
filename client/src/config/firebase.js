@@ -4,7 +4,7 @@
  */
 
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, doc, setDoc } from "firebase/firestore";
 import {
   createUserWithEmailAndPassword,
   getAuth, 
@@ -58,9 +58,31 @@ export const firebaseAuth = {
       await updateProfile(user, {
         displayName: `${firstName} ${lastName}`
       });
+
+      // Tạo hồ sơ tạm thời trong Firestore
+      try {
+        await setDoc(doc(db, "mm_users", user.uid), {
+          name: `${firstName} ${lastName}`,
+          email: email,
+          role: 'customer',
+          status: 'pending_verification', // Trạng thái chờ xác thực
+          createdAt: new Date(),
+        });
+        console.log('User profile created in Firestore');
+      } catch (firestoreError) {
+        console.warn('Firestore error (non-critical):', firestoreError);
+        // Không throw error vì user đã được tạo thành công
+        // Profile sẽ được tạo sau khi user verify email
+      }
       
-      // Gửi email xác thực
-      await sendEmailVerification(user);
+      // Gửi email xác thực với action code settings
+      const actionCodeSettings = {
+        url: `${window.location.origin}/email-verification`,
+        handleCodeInApp: true,
+      };
+      
+      await sendEmailVerification(user, actionCodeSettings);
+      console.log('Email verification sent to:', user.email);
       
       return { 
         success: true, 
@@ -81,20 +103,32 @@ export const firebaseAuth = {
         case 'auth/weak-password':
           errorMessage = 'Mật khẩu quá yếu. Vui lòng chọn mật khẩu mạnh hơn (ít nhất 6 ký tự)';
           break;
+        case 'auth/invalid-password':
+          errorMessage = 'Mật khẩu không hợp lệ. Vui lòng kiểm tra lại';
+          break;
+        case 'auth/network-request-failed':
+          errorMessage = 'Lỗi kết nối mạng. Vui lòng kiểm tra internet và thử lại';
+          break;
         case 'auth/operation-not-allowed':
-          errorMessage = 'Đăng ký bằng email không được hỗ trợ. Vui lòng liên hệ admin';
+          errorMessage = 'Đăng ký bằng email không được bật. Vui lòng liên hệ admin';
           break;
         case 'auth/too-many-requests':
           errorMessage = 'Quá nhiều lần thử đăng ký. Vui lòng thử lại sau';
+          break;
+        case 'permission-denied':
+        case 'Missing or insufficient permissions':
+          errorMessage = 'Lỗi quyền truy cập. Vui lòng liên hệ admin hoặc thử lại sau';
           break;
         default:
           errorMessage = error.message || 'Đăng ký thất bại';
       }
       
+      console.error('Firebase registration error:', error);
       return { 
         success: false, 
         error: errorMessage,
-        code: error.code
+        code: error.code,
+        details: error.message
       };
     }
   },
