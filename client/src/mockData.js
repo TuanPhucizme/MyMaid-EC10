@@ -124,3 +124,51 @@ export const mockBookingDetails = {
     partnerEarning: 240000, // Số tiền đối tác nhận được (sau khi trừ phí)
   },
 };
+
+export const mockPartners = [
+  {
+    uid: 'PARTNER_UID_01',
+    name: 'Trần Thị Mai',
+    email: 'partner.mai@example.com',
+    phone: '0911223344',
+    status: 'active', // Trạng thái đã được duyệt
+    idNumber: '123456789012', // Số CCCD đã mã hóa
+    photoURL: 'https://i.pravatar.cc/150?img=1', // Ảnh đại diện
+    rating: 4.9,
+    jobsCompleted: 25,
+    registeredAt: new Date('2025-07-22T10:00:00Z'),
+  },
+  {
+    uid: 'PARTNER_UID_02',
+    name: 'Hoàng Văn Dũng',
+    email: 'partner.dung@example.com',
+    phone: '0933445566',
+    idNumber: '987654321098', // Số CCCD đã mã hóa
+    photoURL: 'https://i.pravatar.cc/150?img=2', // Ảnh đại diện
+    // ✅ TRẠNG THÁI CHỜ DUYỆT
+    status: 'pending_approval', // Trạng thái chờ duyệt
+    rating: 0,
+    jobsCompleted: 0,
+    registeredAt: new Date('2025-08-04T11:00:00Z'),
+  },
+  {
+    uid: 'PARTNER_UID_03',
+    name: 'Lê Văn Hùng',
+    email: 'partner.hung@example.com',
+    phone: '0944556677',
+    idNumber: '112233445566', // Số CCCD đã mã hóa
+    photoURL: 'https://i.pravatar.cc/150?img=3', // Ảnh đại diện
+    // ✅ TRẠNG THÁI BỊ ĐÌNH CHỈ
+    status: 'suspended', // Trạng thái bị đình chỉ
+    rating: 4.5,
+    jobsCompleted: 15,
+    registeredAt: new Date('2025-06-15T08:00:00Z'),
+  },
+];
+
+// Dữ liệu này giả lập kết quả trả về từ API GET /api/partners/stats
+export const mockStats = {
+  revenueThisMonth: 12500000,
+  bookingsThisMonth: 42,
+  pendingPartners: 1, // Khớp với số partner có status 'pending_approval' ở trên
+};
