@@ -8,7 +8,7 @@ import { Phone, MapPin, User, ArrowRight, CheckCircle } from 'lucide-react';
 import ErrorMessage from '../components/ErrorMessage';
 
 import { auth, db } from '../config/firebase';
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, getDoc } from "firebase/firestore";
 
 const fadeIn = keyframes`
   from {
@@ -294,56 +294,74 @@ const UpdateInformationPage = () => {
   });
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(user => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (!user) {
-        // Nếu không có ai đăng nhập, không cho phép ở lại trang này
+        // Nếu không có người dùng, quay về trang đăng nhập
         navigate('/login');
-      } else if (!user.emailVerified) {
-        // Nếu email chưa xác thực, cũng không cho phép
-        alert("Vui lòng xác thực email của bạn trước.");
-        navigate('/login');
+        return;
       }
-      // Nếu đã đăng nhập và xác thực, dừng loading
-      setIsAuthLoading(false);
+
+      // Rất quan trọng: Tải lại thông tin người dùng để nhận trạng thái emailVerified mới nhất
+      await user.reload();
+      const freshUser = auth.currentUser; // Lấy thông tin người dùng đã được làm mới
+
+      if (!freshUser.emailVerified) {
+        // Nếu vẫn chưa xác thực, yêu cầu họ xác thực
+        alert("Vui lòng xác thực email của bạn trước khi hoàn tất hồ sơ.");
+        navigate('/login');
+      } else {
+        // Người dùng ĐÃ XÁC THỰC! Tiến hành cập nhật status
+        const userDocRef = doc(db, "mm_users", freshUser.uid);
+        try {
+          const userDoc = await getDoc(userDocRef);
+          // Chỉ cập nhật nếu trạng thái hiện tại là 'pending_verification' để tránh ghi dữ liệu thừa
+          if (userDoc.exists() && userDoc.data().status === 'pending_verification') {
+            await updateDoc(userDocRef, {
+              status: 'active', // Cập nhật trạng thái
+              emailVerifiedAt: new Date(), // (Tùy chọn) Lưu lại thời điểm xác thực
+            });
+            console.log("Trạng thái người dùng đã được cập nhật thành 'active'");
+          }
+        } catch (err) {
+          console.error("Lỗi khi cập nhật trạng thái người dùng:", err);
+          setError("Không thể cập nhật trạng thái tài khoản. Vui lòng thử lại.");
+        } finally {
+          setIsAuthLoading(false); // Dừng màn hình loading
+        }
+      }
     });
+
     return () => unsubscribe();
   }, [navigate]);
 
   const onSubmit = async (data) => {
     setIsLoading(true);
     setError('');
-    setSuccess(false);
-    
     try {
-      const user = auth.currentUser;
-      if (!user) {
-        throw new Error("Không tìm thấy người dùng. Vui lòng đăng nhập lại.");
-      }
+          const user = auth.currentUser;
+          if (!user) throw new Error("Không tìm thấy người dùng. Vui lòng đăng nhập lại.");
 
-      // Tạo tham chiếu đến document của user
-      const userDocRef = doc(db, "mm_users", user.uid);
+          const userDocRef = doc(db, "mm_users", user.uid);
 
-      // Cập nhật hồ sơ với thông tin mới
-      await updateDoc(userDocRef, {
-        phone: data.phone,
-        address: data.address,
-        gender: data.gender,
-        status: 'active', // Cập nhật trạng thái thành "hoạt động"
-        updatedAt: new Date(),
-      });
+          // Bây giờ chỉ cần cập nhật các thông tin cá nhân mới
+          await updateDoc(userDocRef, {
+            phone: data.phone,
+            address: data.address,
+            gender: data.gender,
+            updatedAt: new Date(),
+            // Không cần cập nhật status ở đây nữa vì đã làm trong useEffect
+          });
 
-      setSuccess(true);
-      setTimeout(() => {
-        navigate('/'); // Chuyển đến trang chủ
-      }, 2000);
+          setSuccess(true);
+          setTimeout(() => navigate('/'), 2000);
 
-    } catch (err) {
-      console.error("Lỗi khi cập nhật thông tin:", err);
-      setError('Đã có lỗi xảy ra. Vui lòng thử lại.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        } catch (err) {
+          console.error("Lỗi khi cập nhật thông tin:", err);
+          setError('Đã có lỗi xảy ra. Vui lòng thử lại.');
+        } finally {
+          setIsLoading(false);
+        }
+      };
 
   if (isAuthLoading) {
     return (

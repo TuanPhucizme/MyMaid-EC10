@@ -241,6 +241,7 @@ const InputRow = styled.div`
   }
 `;
 
+
 const schema = yup.object({
   firstName: yup.string().min(2, 'Họ và tên là bắt buộc').max(50).required('Họ và tên là bắt buộc'),
   lastName: yup.string().min(1, 'Họ và tên là bắt buộc').max(50).required('Họ và tên là bắt buộc'),
@@ -288,15 +289,15 @@ const DisplayProfile = ({ profile }) => (
       <DetailIcon><Calendar size={20} /></DetailIcon>
       <DetailContent>
         <DetailLabel>Ngày tham gia</DetailLabel>
-        <DetailValue>
-          {profile.createdAt
-            ? profile.createdAt.toDate().toLocaleDateString('vi-VN', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })
-            : 'Không rõ'}
-        </DetailValue>
+          <DetailValue>
+            {profile.createdAt
+              ? profile.createdAt.toDate().toLocaleDateString('vi-VN', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })
+              : 'Không rõ'}
+          </DetailValue>
       </DetailContent>
     </DetailItem>
   </>
@@ -404,7 +405,7 @@ const ProfilePage = () => {
 
       const token = await user.getIdToken();
       
-      const response = await fetch(`/api/users/profile`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/users/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
