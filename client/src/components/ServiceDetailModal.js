@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { X, Tag, DollarSign, Clock } from 'lucide-react';
+import { X, Tag, DollarSign, Clock, User } from 'lucide-react';
 
 // --- Styled Components for the Modal ---
 const ModalOverlay = styled.div`
@@ -82,38 +82,45 @@ const ServiceDetailModal = ({ service, onClose }) => {
         <h3 style={{ fontWeight: 600, marginTop: '1.5rem' }}>Các Bậc Giá</h3>
         <TiersTable>
         <thead>
-            <tr>
+          <tr>
             <th>
-                {/* Đặt flexbox vào một div bên trong th */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                 <Tag size={14} />
                 <span>Nhãn</span>
-                </div>
+              </div>
             </th>
             <th>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                 <DollarSign size={14} />
                 <span>Giá</span>
-                </div>
+              </div>
             </th>
             <th>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                 <Clock size={14} />
                 <span>Thời gian</span>
-                </div>
+              </div>
             </th>
-            </tr>
+            <th>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <User size={14} />
+                <span>Số người</span>
+              </div>
+            </th>
+          </tr>
         </thead>
         <tbody>
-            {service.pricingTiers?.map((tier) => (
+          {service.pricingTiers?.map((tier) => (
             <tr key={tier.id}>
-                <td>{tier.label}</td>
-                <td>{tier.price.toLocaleString()}đ</td>
-                <td>{tier.duration} giờ</td>
+              <td>{tier.label}</td>
+              <td>{tier.price.toLocaleString()}đ</td>
+              <td>{tier.duration} giờ</td>
+              <td>{tier.workers} người</td>
             </tr>
-            ))}
+          ))}
         </tbody>
-        </TiersTable>
+      </TiersTable>
+
       </ModalContent>
     </ModalOverlay>
   );
