@@ -32,12 +32,14 @@ const serviceAccount = {
 };
 
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
+  credential: admin.credential.cert(serviceAccount),
+  storageBucket: 'mymaid-ec10.appspot.com'
 });
 
 const db = admin.firestore();
 const auth = admin.auth();
+const storage = admin.storage();
 
 console.log('✅ Firebase Admin SDK initialized successfully');
 
-module.exports = { db, auth };
+module.exports = { db, auth, storage };

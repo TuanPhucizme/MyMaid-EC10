@@ -7,6 +7,7 @@ const vnpayRouter = require('./routes/payment');
 const cors = require('cors');
 
 const serviceRoutes = require('./routes/serviceRoutes');
+const bookingRoutes = require('./routes/bookingRoutes');
 
 // Load environment variables từ root directory
 
@@ -109,6 +110,8 @@ if (app.router && app.router.stack) {
 } else {
   console.log('App router not available yet');
 }
+
+app.use('/api/bookings', bookingRoutes);
 
 // Start server with route checking
 app.listen(PORT, () => {
