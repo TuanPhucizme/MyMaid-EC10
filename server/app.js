@@ -9,7 +9,6 @@ const serviceRoutes = require('./routes/serviceRoutes');
 // Load environment variables từ root directory
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
-const vnpayRouter = require('./routes/payment');
 const userRoutes = require('./routes/userRoutes');
 const partnerRoutes = require('./routes/partnerRoutes');
 

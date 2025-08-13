@@ -11,10 +11,7 @@ import Hero from "./components/Hero";
 import Services from "./components/Services";
 import ServicesPage from "./pages/ServicesPage";
 import MaidProfiles from "./components/MaidProfiles";
-import Services from "./components/Services";
 import Testimonials from "./components/Testimonials";
-import BlogSection from "./components/BlogSection";
-import Footer from "./components/Footer";
 import AuthRedirect from "./components/AuthRedirect";
 import VerificationBanner from "./components/VerificationBanner";
 
@@ -22,7 +19,6 @@ import VerificationBanner from "./components/VerificationBanner";
 import PartNer from "./pages/RegisterPartnerPage";
 
 
-import AdminPage from "./pages/AdminPage";
 import AdminPage from "./pages/AdminPage";
 import BookingDetailPage from "./pages/BookingDetailPage";
 import BookingPage from "./pages/BookingPage";
@@ -36,20 +32,11 @@ import Register from "./pages/RegisterPage";
 import PaymentPage from "./pages/PaymentPage";
 import PaymentResultPage from "./pages/PaymentResult";
 import HomePage from "./pages/HomePage";
-import DashboardPage from "./pages/DashboardPage";
 import ProfilePage from "./pages/ProfilePage";
-import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
-import CheckLinkPage from "./pages/CheckLinkPage";
-import BookingPage from "./pages/BookingPage";
-import EmailVerificationHandler from "./pages/EmailVerificationHandler";
-import CheckLinkPage from "./pages/CheckLinkPage";
-import BookingPage from "./pages/BookingPage";
-import ServicesPage from "./pages/ServicesPage";
 import UpdateInformationPage from "./pages/UpdateInformation";
-import BookingDetailPage from "./pages/BookingDetailPage";
-// Component nh? d? ch?a n?i dung trang ch?, giúp code trong <Routes> g?n gàng hon
+// Component nh? d? ch?a n?i dung trang ch?, giï¿½p code trong <Routes> g?n gï¿½ng hon
 const HomePageContent = () => (
   <main>
     <Hero />
@@ -91,13 +78,11 @@ function App() {
             <Route path="/partner" element={<PartNer />} />
             <Route path="/login" element={<LogIn />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
-                         <Route path="/verify-email" element={<VerifyEmailPage />} />
-             <Route path="/email-verification" element={<EmailVerificationHandler />} />
-             <Route path="/check-link" element={<CheckLinkPage />} />        
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
+            <Route path="/check-link" element={<CheckLinkPage />} />        
             <Route path="/payment" element={<PaymentPage />} />
             <Route path="/payment-result" element={<PaymentResultPage />} />
             <Route path="/booking" element={<BookingPage />} />
@@ -108,14 +93,14 @@ function App() {
       </AuthRedirect>
 
       <Routes>
-        {/* --- CÁC ROUTE CÔNG KHAI & CHÍNH --- */}
-        {/* Trang ch? s? hi?n th? m?t t?p h?p các component */}
+        {/* --- Cï¿½C ROUTE Cï¿½NG KHAI & CHï¿½NH --- */}
+        {/* Trang ch? s? hi?n th? m?t t?p h?p cï¿½c component */}
         <Route path="/" element={<HomePageContent />} />
         <Route path="/home" element={<HomePage />} />
         <Route path="/services" element={<ServicesPage />} />
 
-        {/* --- LU?NG XÁC TH?C NGU?I DÙNG --- */}
-        {/* Các trang liên quan d?n dang nh?p, dang ký, quên m?t kh?u */}
+        {/* --- LU?NG Xï¿½C TH?C NGU?I Dï¿½NG --- */}
+        {/* Cï¿½c trang liï¿½n quan d?n dang nh?p, dang kï¿½, quï¿½n m?t kh?u */}
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/login" element={<LogIn />} />
         <Route path="/register" element={<Register />} />
@@ -124,8 +109,8 @@ function App() {
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/check-link" element={<CheckLinkPage />} />
 
-        {/* --- CÁC ROUTE C?A NGU?I DÙNG & Ð?I TÁC (YÊU C?U ÐANG NH?P) --- */}
-        {/* Các trang ch?c nang chính sau khi ngu?i dùng dã dang nh?p */}
+        {/* --- Cï¿½C ROUTE C?A NGU?I Dï¿½NG & ï¿½?I Tï¿½C (Yï¿½U C?U ï¿½ANG NH?P) --- */}
+        {/* Cï¿½c trang ch?c nang chï¿½nh sau khi ngu?i dï¿½ng dï¿½ dang nh?p */}
         <Route path="/booking" element={<BookingPage />} />
         <Route path="/booking-details/:bookingId" element={<BookingDetailPage />} />
         <Route path="/dashboardpartner" element={<DashboardPartnerPage />} />
@@ -134,11 +119,11 @@ function App() {
         <Route path="/payment-result" element={<PaymentResultPage />} />
         <Route path="/profile" element={<ProfilePage />} />
 
-        {/* --- CÁC ROUTE C?A QU?N TR? VIÊN (YÊU C?U VAI TRÒ ADMIN) --- */}
+        {/* --- Cï¿½C ROUTE C?A QU?N TR? VIï¿½N (Yï¿½U C?U VAI TRï¿½ ADMIN) --- */}
         <Route path="/admin" element={<AdminPage />} />
 
-        {/* --- ROUTE B?T L?I 404 (KHÔNG TÌM TH?Y TRANG) --- */}
-        {/* Luôn d?t route này ? cu?i cùng */}
+        {/* --- ROUTE B?T L?I 404 (KHï¿½NG Tï¿½M TH?Y TRANG) --- */}
+        {/* Luï¿½n d?t route nï¿½y ? cu?i cï¿½ng */}
         <Route path="*" element={<h1 className="text-center text-2xl p-8">404 - Page Not Found</h1>} />
       </Routes>
 
