@@ -6,6 +6,8 @@ import * as yup from 'yup';
 import { User, Phone, Calendar, Edit3, Save, X, Globe } from 'lucide-react';
 import styled from 'styled-components';
 
+import LoadingSpinner from '../components/LoadingSpinner';
+
 import { auth, db } from '../config/firebase'; // Đảm bảo đường dẫn đúng
 import { doc, getDoc } from "firebase/firestore";
 
@@ -349,8 +351,8 @@ const ProfilePage = () => {
   const [profileData, setProfileData] = useState(null);
   const [originalData, setOriginalData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // State cho việc tải dữ liệu ban đầu
-  const [isSaving, setIsSaving] = useState(false); // State cho việc lưu
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -363,76 +365,69 @@ const ProfilePage = () => {
     resolver: yupResolver(schema),
   });
 
-   useEffect(() => {
-    // Dùng onAuthStateChanged để đảm bảo chúng ta có user trước khi fetch
+  useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
-        // Nếu có user, bắt đầu lấy dữ liệu hồ sơ
         try {
           const userDocRef = doc(db, "mm_users", user.uid);
           const userDocSnap = await getDoc(userDocRef);
-
           if (userDocSnap.exists()) {
             const data = userDocSnap.data();
             setProfileData(data);
             setOriginalData(data);
-            reset(data); // Điền dữ liệu vào form
+            reset(data);
           } else {
-            setError("Không tìm thấy hồ sơ người dùng trong cơ sở dữ liệu.");
+            setError("Không tìm thấy hồ sơ người dùng.");
           }
         } catch (err) {
-          console.error("Lỗi khi lấy hồ sơ:", err);
           setError("Không thể tải dữ liệu hồ sơ.");
         }
       } else {
-        // Nếu không có user, chuyển về trang đăng nhập
         navigate('/login');
       }
-      // Dù thành công hay thất bại, cũng kết thúc trạng thái loading
       setIsLoading(false);
     });
-
-    // Dọn dẹp listener khi component bị hủy
     return () => unsubscribe();
   }, [navigate, reset]);
 
-  // ✅ 3. HÀM ONSUBMIT SẼ GỌI ĐẾN BACKEND API ĐỂ CẬP NHẬT
+  // ✅ HÀM ONSUBMIT ĐÃ ĐƯỢỢC TỐI ƯU HÓA
   const onSubmit = async (data) => {
     setIsSaving(true);
     setError('');
     setSuccess('');
 
-    console.log("Dữ liệu từ form:", data);
-
-
     try {
       const user = auth.currentUser;
-      if (user) {
-        const token = await user.getIdToken();
-        console.log("Token đã lấy:", token.substring(0, 30) + "...");
-
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/users/profile`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(data)
-        });
-
-        const result = await response.json();
-        console.log("Kết quả từ backend:", result);
-
-        if (!response.ok) throw new Error(result.message);
-
-        setProfileData(result.data);
-        setOriginalData(result.data);
-        
-        setIsEditing(false);
-        setSuccess('Hồ sơ đã được cập nhật thành công!');
+      if (!user) {
+        throw new Error("Người dùng không được xác thực. Vui lòng đăng nhập lại.");
       }
+
+      const token = await user.getIdToken();
+      
+      const response = await fetch(`/api/users/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(data)
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Cập nhật hồ sơ thất bại.');
+      }
+      
+      setProfileData(result.data);
+      setOriginalData(result.data);
+      
+      setIsEditing(false);
+      setSuccess('Hồ sơ đã được cập nhật thành công!');
+
     } catch (err) {
-      setError(err.message || "Không thể cập nhật hồ sơ.");
+      console.error("Lỗi khi cập nhật hồ sơ:", err);
+      setError(err.message || "Không thể cập nhật hồ sơ. Vui lòng thử lại.");
     } finally {
       setIsSaving(false);
     }
@@ -443,29 +438,19 @@ const ProfilePage = () => {
     setIsEditing(false);
   };
 
- const getInitials = () => {
+  const getInitials = () => {
     if (!profileData) return '?';
     const firstNameInitial = profileData.firstName?.[0] || '';
     const lastNameInitial = profileData.lastName?.[0] || '';
     return `${firstNameInitial}${lastNameInitial}`.toUpperCase();
   };
 
-  if (!isLoading && !profileData) {
-    return (
-      <ProfileContainer>
-        <div className="card">
-          <p>Đang tải hồ sơ...</p>
-        </div>
-      </ProfileContainer>
-    );
+  if (isLoading) {
+    return <LoadingSpinner fullScreen text="Đang tải hồ sơ..." />;
   }
 
-    if (!profileData) {
-    return (
-      <ProfileContainer>
-        <ErrorMessage message={error || "Không thể tải dữ liệu hồ sơ."} />
-      </ProfileContainer>
-    );
+  if (!profileData) {
+    return <ProfileContainer><ErrorMessage message={error || "Không thể tải dữ liệu hồ sơ."} /></ProfileContainer>;
   }
 
 return (
