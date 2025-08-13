@@ -10,8 +10,8 @@ import LoadingSpinner from '../components/LoadingSpinner';
 
 //IMPORT CÁC HÀM TỪ FIREBASE
 import { auth, db, storage } from '../config/firebase';
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 const RegisterContainer = styled.div`
   min-height: calc(100vh - 4rem);
@@ -162,7 +162,9 @@ const schema = yup.object({
   phone: yup.string().matches(/(84|0[3|5|7|8|9])+([0-9]{8})\b/g, "Số điện thoại phải hợp lệ").required("Số điện thoại là bắt buộc"),
   address: yup.string().min(5, "Địa chỉ phải có ít nhất 5 ký tự").max(100).required("Địa chỉ là bắt buộc"),
   cccd: yup.string().matches(/^\d{12}$/, "CCCD phải gồm đúng 12 chữ số").required("Số CCCD là bắt buộc"),
-  avatar: yup.mixed().test("required", "Ảnh đại diện là bắt buộc", value => value && value.length > 0),
+  avatar: yup.mixed()
+    .test("required", "Ảnh đại diện là bắt buộc", (value) => value && value.length > 0)
+    .test("fileSize", "Kích thước file quá lớn (tối đa 2MB)", (value) => value && value[0] && value[0].size <= 2000000),
 });
 
 const RegisterPartnerPage = () => {
@@ -209,7 +211,7 @@ const RegisterPartnerPage = () => {
     return () => unsubscribe();
   }, [navigate, reset]);
 
-const onSubmit = async (data) => {
+ const onSubmit = async (data) => {
     if (!currentUser) {
       setError("Không thể xác thực người dùng. Vui lòng đăng nhập lại.");
       return;
@@ -219,31 +221,48 @@ const onSubmit = async (data) => {
     setError('');
 
     try {
+      // 1. Upload ảnh đại diện
       const avatarFile = data.avatar[0];
       const avatarRef = ref(storage, `avatars/${currentUser.uid}`);
       await uploadBytes(avatarRef, avatarFile);
       const photoURL = await getDownloadURL(avatarRef);
 
-      // BƯỚC C: CẬP NHẬT DOCUMENT TRONG FIRESTORE
-      const userDocRef = doc(db, "users", currentUser.uid);
+      // 2. Chuẩn bị dữ liệu cho collection 'mm_partners'
+      const partnerData = {
+        verification: {
+          idNumber: data.cccd,
+        },
+        serviceProfile: {
+          bio: "",
+          skills: [],
+          serviceArea: []
+        },
+        operational: {
+          status: 'pending_approval',
+          rating: { average: 0, count: 0 },
+          jobsCompleted: 0
+        },
+        registeredAt: new Date()
+      };
+
+      // 3. TẠO MỘT DOCUMENT MỚI TRONG 'mm_partners'
+      // Sử dụng `setDoc` để đảm bảo ghi đè nếu đã tồn tại yêu cầu trước đó
+      const partnerDocRef = doc(db, "mm_partners", currentUser.uid);
+      await setDoc(partnerDocRef, partnerData);
+      
+      // 4. Cập nhật các thông tin cá nhân (phone, address, photoURL) vào 'mm_users'
+      // LƯU Ý: KHÔNG CẬP NHẬT `role` ở đây nữa
+      const userDocRef = doc(db, "mm_users", currentUser.uid);
       await updateDoc(userDocRef, {
-        role: 'partner', // Nâng cấp vai trò
         phone: data.phone,
         address: data.address,
-        photoURL: photoURL, // Lưu URL ảnh mới
-        partnerInfo: {
-          cccd: data.cccd,
-          status: 'pending_approval', // Trạng thái chờ duyệt
-          rating: 0,
-          jobsCompleted: 0,
-        }
+        photoURL: photoURL,
       });
 
-      alert('Đăng ký đối tác thành công! Hồ sơ của bạn đang chờ được duyệt.');
-      navigate('/dashboard'); // Chuyển đến dashboard của partner
+      navigate('/partner-registration-success');
 
     } catch (err) {
-      console.error("Lỗi khi đăng ký đối tác:", err);
+      console.error("Lỗi khi gửi yêu cầu làm đối tác:", err);
       setError("Đã có lỗi xảy ra. Vui lòng thử lại.");
     } finally {
       setIsLoading(false);
@@ -273,7 +292,7 @@ const onSubmit = async (data) => {
           {/* Hiển thị thông tin không thể sửa */}
           <InputGroup>
             <InputIcon><User size={20} /></InputIcon>
-            <Input value={`${currentUser.lastname} ${currentUser.firstname}`} readOnly disabled />
+            <Input value={currentUser.name || ''} readOnly disabled />
           </InputGroup>
           <InputGroup>
             <InputIcon><Mail size={20} /></InputIcon>
@@ -301,7 +320,7 @@ const onSubmit = async (data) => {
             <Input
               type="file"
               accept="image/*"
-              error={!!errors.avatar}
+              $error={!!errors.avatar}
               {...register("avatar")}
             />
             {errors.avatar && <ErrorMessage>{errors.avatar.message}</ErrorMessage>}
