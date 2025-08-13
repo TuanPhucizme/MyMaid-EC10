@@ -9,6 +9,8 @@ import ErrorMessage from '../components/ErrorMessage';
 import ServiceEditModal from '../components/ServiceEditModal';
 import ServiceDetailModal from '../components/ServiceDetailModal';
 
+import PartnerApprovalModal from '../components/PartnerApprovalModal';
+
 // // 1. IMPORT CÁC HÀM TỪ FIREBASE
 import { auth, db } from '../config/firebase';
 // import { doc, getDoc, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
@@ -200,6 +202,8 @@ const displayPriceRange = (tiers) => {
   return `${minPrice.toLocaleString()}đ - ${maxPrice.toLocaleString()}đ`;
 };
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 const AdminPage = () => {
   const navigate = useNavigate();
   //const [partners, setPartners] = useState([]);
@@ -210,11 +214,16 @@ const AdminPage = () => {
   //const [selectedPartner, setSelectedPartner] = useState(null);
   const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
   const [editingService, setEditingService] = useState(null); // null = thêm mới, object = sửa
+  const [isSaving, setIsSaving] = useState(false);
 
   const [services, setServices] = useState([]);
   const [viewingService, setViewingService] = useState(null);
 
-  const fetchAdminData = useCallback(async()=> {
+  const [pendingPartners, setPendingPartners] = useState([]);
+  const [viewingPartner, setViewingPartner] = useState(null); // State để mở modal duyệt
+  const [isProcessing, setIsProcessing] = useState(false); // State cho nút trong modal
+
+  const fetchAdminData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -224,37 +233,37 @@ const AdminPage = () => {
       const token = await user.getIdToken();
       const headers = { 'Authorization': `Bearer ${token}` };
 
-      // 2. LẤY DỮ LIỆU THỐNG KÊ
-      
-      // Dùng Promise.all để gọi các API song song, tăng tốc độ tải
-      const [servicesResponse] = await Promise.all([
-        //fetch('http://localhost:3030/api/partners', { headers }),
-        //fetch('http://localhost:3030/api/partners/stats', { headers }),
-        fetch('http://localhost:3030/api/services', { headers }) // Fetch services
+      // Gọi các API song song
+      const [statsResponse, servicesResponse, pendingPartnersResponse] = await Promise.all([
+        fetch(`${process.env.REACT_APP_API_URL}/api/partners/stats`, { headers }),
+        fetch(`${process.env.REACT_APP_API_URL}/api/services`, { headers }),
+        fetch(`${process.env.REACT_APP_API_URL}/api/partners/pending`, { headers })
       ]);
 
-      //if (!partnersResponse.ok) throw new Error('Không thể tải danh sách đối tác.');
-      //if (!statsResponse.ok) throw new Error('Không thể tải dữ liệu thống kê.');
+      if (!statsResponse.ok) throw new Error('Không thể tải dữ liệu thống kê.');
       if (!servicesResponse.ok) throw new Error('Không thể tải danh sách dịch vụ.');
 
-      //const partnersData = await partnersResponse.json();
-      //const statsData = await statsResponse.json();
+      const statsData = await statsResponse.json();
       const servicesData = await servicesResponse.json();
+      const pendingData = await pendingPartnersResponse.json();
 
-      //setPartners(partnersData);
-      //setStats(statsData);
+      setStats(statsData);
       setServices(servicesData);
+      setPendingPartners(pendingData);
+
     } catch (err) {
       console.error("Lỗi khi tải dữ liệu admin:", err);
       setError(err.message);
     } finally {
       setIsLoading(false);
     }
-  }, []); // Mảng rỗng đảm bảo hàm chỉ được tạo 1 lần
+  }, [API_URL]); // Thêm API_URL vào dependency array
 
+  // ✅ 2. SỬ DỤNG useEffect GỌI API THẬT
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(user => {
       if (user) {
+        // Giả định user này đã được xác thực là admin bởi AdminRoute
         fetchAdminData();
       } else {
         navigate('/login');
@@ -263,78 +272,7 @@ const AdminPage = () => {
     return () => unsubscribe();
   }, [navigate, fetchAdminData]);
 
-  // useEffect(() => {
-  //   console.log("Đang tải dữ liệu từ file mock...");
-    
-  //   // Giả lập độ trễ mạng để kiểm tra trạng thái loading
-  //   const timer = setTimeout(() => {
-  //     try {
-  //       setPartners(mockPartners);
-  //       setStats(mockStats);
-  //       setIsLoading(false);
-  //       console.log("Tải dữ liệu mock thành công!");
-  //     } catch (err) {
-  //       setError("Lỗi khi xử lý dữ liệu mock.");
-  //       setIsLoading(false);
-  //     }
-  //   }, 1000); // Giả lập 1 giây tải dữ liệu
-
-  //   // Dọn dẹp timer khi component bị hủy
-  //   return () => clearTimeout(timer);
-  // }, []); // Mảng rỗng đảm bảo useEffect chỉ chạy 1 lần
-
-
-  // const handleUpdatePartnerStatus = async (partnerId, newStatus) => {
-  //   if (!window.confirm(`Bạn có chắc muốn ${newStatus === 'active' ? 'duyệt' : 'đình chỉ'} đối tác này?`)) return;
-
-  //   try {
-  //     const user = auth.currentUser;
-  //     if (!user) throw new Error("Vui lòng đăng nhập lại.");
-  //     const token = await user.getIdToken();
-      
-  //     const response = await fetch(`http://localhost:3030/api/partners/${partnerId}/status`, {
-  //       method: 'PUT',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //         'Authorization': `Bearer ${token}`
-  //       },
-  //       body: JSON.stringify({ status: newStatus })
-  //     });
-
-  //     if (!response.ok) {
-  //       const result = await response.json();
-  //       throw new Error(result.message || 'Cập nhật trạng thái thất bại.');
-  //     }
-
-  //     if (response.status === 401) {
-  //       navigate('/login');
-  //     }
-      
-  //     // ✅ SỬA LẠI LOGIC CẬP NHẬT UI
-  //     // Dữ liệu từ API GET /api/partners đã được làm phẳng, nên chúng ta chỉ cần cập nhật trường 'status'
-  //     setPartners(prevPartners => prevPartners.map(p => 
-  //       p.uid === partnerId ? { ...p, status: newStatus } : p
-  //     ));
-      
-  //     // Tải lại dữ liệu thống kê để cập nhật số lượng "Đối tác chờ duyệt"
-  //     fetchAdminData();
-
-  //     alert('Cập nhật trạng thái đối tác thành công!');
-  //   } catch (err) {
-  //     console.error("Lỗi khi cập nhật trạng thái:", err);
-  //     alert(err.message);
-  //   }
-  // };
-
-  //   // 4. TẠO CÁC HÀM ĐỂ MỞ/ĐÓNG MODAL
-  // const handleRowClick = (partner) => {
-  //   setSelectedPartner(partner);
-  // };
-
-  // const handleCloseModal = () => {
-  //   setSelectedPartner(null);
-  // };
-
+  // --- Các hàm xử lý Service ---
   const handleOpenServiceModal = (service = null) => {
     setEditingService(service);
     setIsServiceModalOpen(true);
@@ -346,8 +284,10 @@ const AdminPage = () => {
   };
 
   const handleSaveService = async (data, serviceId) => {
+    setIsSaving(true); // Bắt đầu trạng thái "đang lưu"
+    
     const isEditing = !!serviceId;
-    const url = isEditing ? `http://localhost:3030/api/services/${serviceId}` : 'http://localhost:3030/api/services';
+    const url = isEditing ? `${API_URL}/api/services/${serviceId}` : `${API_URL}/api/services`;
     const method = isEditing ? 'PUT' : 'POST';
 
     try {
@@ -357,23 +297,32 @@ const AdminPage = () => {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(data),
       });
+
+      const result = await response.json();
       if (!response.ok) {
-        const result = await response.json();
         throw new Error(result.message || 'Lưu dịch vụ thất bại.');
       }
-      alert(`Dịch vụ đã được ${isEditing ? 'cập nhật' : 'thêm mới'} thành công!`);
+
+      // Chỉ đóng modal và tải lại dữ liệu SAU KHI thành công
       handleCloseServiceModal();
-      fetchAdminData(); // Tải lại toàn bộ dữ liệu
+      await fetchAdminData(); // Chờ tải lại dữ liệu xong
+      
+      // Hiển thị thông báo thành công cuối cùng
+      alert(`Dịch vụ đã được ${isEditing ? 'cập nhật' : 'thêm mới'} thành công!`);
+
     } catch (err) {
+      // Nếu có lỗi, chỉ hiển thị lỗi và KHÔNG đóng modal
       alert(err.message);
+    } finally {
+      setIsSaving(false); // Kết thúc trạng thái "đang lưu"
     }
   };
 
   const handleDeleteService = async (serviceId) => {
-    if (!window.confirm("Bạn có chắc muốn xóa dịch vụ này? Hành động này không thể hoàn tác.")) return;
+    if (!window.confirm("Bạn có chắc muốn xóa dịch vụ này?")) return;
     try {
       const token = await auth.currentUser.getIdToken();
-      const response = await fetch(`http://localhost:3030/api/services/${serviceId}`, {
+      const response = await fetch(`${API_URL}/api/services/${serviceId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -382,6 +331,32 @@ const AdminPage = () => {
       fetchAdminData();
     } catch (err) {
       alert(err.message);
+    }
+  };
+
+    const handleUpdatePartnerStatus = async (partnerId, newStatus, successMessage) => {
+    setIsProcessing(true);
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error("Vui lòng đăng nhập lại.");
+      const token = await user.getIdToken();
+      
+      const response = await fetch(`${API_URL}/api/partners/${partnerId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (!response.ok) throw new Error('Cập nhật trạng thái thất bại.');
+      
+      alert(successMessage);
+      setViewingPartner(null); // Đóng modal sau khi thành công
+      await fetchAdminData(); // Tải lại toàn bộ dữ liệu
+      
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -399,31 +374,37 @@ const AdminPage = () => {
         <Title>Trang Quản Trị</Title>
       </AdminHeader>
 
-      {/* <StatsGrid>
-        <StatCard>
-          <StatIcon bgColor="#dcfce7" color="#16a34a"><DollarSign size={32} /></StatIcon>
-          <StatContent>
-            <StatValue>{stats.revenueThisMonth.toLocaleString()}đ</StatValue>
-            <StatLabel>Doanh thu tháng này</StatLabel>
-          </StatContent>
-        </StatCard>
-        <StatCard>
-          <StatIcon bgColor="#e0e7ff" color="#3b82f6"><ListChecks size={32} /></StatIcon>
-          <StatContent>
-            <StatValue>{stats.bookingsThisMonth}</StatValue>
-            <StatLabel>Số đơn tháng này</StatLabel>
-          </StatContent>
-        </StatCard>
-        <StatCard>
-          <StatIcon bgColor="#fef3c7" color="#d97706"><UserCheck size={32} /></StatIcon>
-          <StatContent>
-            <StatValue>{stats.pendingPartners}</StatValue>
-            <StatLabel>Đối tác chờ duyệt</StatLabel>
-          </StatContent>
-        </StatCard>
-      </StatsGrid> */}
+      <TableCard>
+        <CardHeader>
+          <CardTitle>Đối Tác Chờ Duyệt ({pendingPartners.length})</CardTitle>
+        </CardHeader>
+        <Table>
+          <thead>
+            <tr>
+              <th>Tên Đối Tác</th>
+              <th>Email</th>
+              <th>Ngày Đăng Ký</th>
+              <th>Hành Động</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pendingPartners.map(partner => (
+              <tr key={partner.uid}>
+                <td>{partner.name}</td>
+                <td>{partner.email}</td>
+                <td>{new Date(partner.registeredAt).toLocaleDateString('vi-VN')}</td>
+                <td>
+                  <ActionButton onClick={() => setViewingPartner(partner)} style={{color: '#2563eb'}}>
+                    Xem chi tiết
+                  </ActionButton>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      </TableCard>
 
-      <TableCard style={{ marginTop: '2.5rem' }}>
+       <TableCard style={{ marginTop: '2.5rem' }}>
         <CardHeader>
           <CardTitle>Quản Lý Dịch Vụ</CardTitle>
           <AddButton onClick={() => handleOpenServiceModal()}>
@@ -443,7 +424,7 @@ const AdminPage = () => {
               <tr key={service.id} onClick={() => setViewingService(service)}>
                 <td>{service.name_service}</td>
                 <td>{displayPriceRange(service.pricingTiers)}</td>
-                <td onClick={(e) => e.stopPropagation()}> {/* Ngăn modal hiện khi click nút */}
+                <td onClick={(e) => e.stopPropagation()}>
                   <ActionButton onClick={() => handleOpenServiceModal(service)} style={{ color: '#2563eb' }}>
                     <Edit size={14} /> Sửa
                   </ActionButton>
@@ -457,104 +438,12 @@ const AdminPage = () => {
         </Table>
       </TableCard>
 
-      {/* <TableCard>
-        <Table>
-          <thead>
-            <tr>
-              <th>Tên Đối Tác</th>
-              <th>Email</th>
-              <th>Ngày Đăng Ký</th>
-              <th>Trạng Thái</th>
-              <th>Hành Động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {partners.map(partner => {
-              const status = getStatusProps(partner.status);
-              return (
-                <TableRow key={partner.uid} onClick={() => handleRowClick(partner)}>
-                  <td>{partner.name}</td>
-                  <td>{partner.email}</td>
-                  <td>{new Date(partner.registeredAt).toLocaleDateString('vi-VN')}</td>
-                  <td>
-                    <StatusBadge bgColor={status.bgColor} color={status.color}>
-                      {status.text}
-                    </StatusBadge>
-                  </td>
-                  <td onClick={(e) => e.stopPropagation()}> {/* Ngăn modal hiện lên khi click vào nút */}
-                    {/* {partner.status === 'pending_approval' && (
-                      <ApproveButton onClick={() => handleUpdatePartnerStatus(partner.uid, 'active')}>
-                        <UserCheck size={14} /> Duyệt
-                      </ApproveButton>
-                    )}
-                    {partner.status === 'active' && (
-                      <SuspendButton onClick={() => handleUpdatePartnerStatus(partner.uid, 'suspended')}>
-                        <UserX size={14} /> Đình chỉ
-                      </SuspendButton>
-                    )}
-                  </td>
-                </TableRow>
-              );
-            })}
-          </tbody>
-        </Table>
-      </TableCard> */}
-
-      {/* <TableCard>
-        <Table>
-          <thead>
-            <tr>
-              <th>Tên Đối Tác</th>
-              <th>Email</th>
-              <th>Ngày Đăng Ký</th>
-              <th>Trạng Thái</th>
-              <th>Hành Động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {partners.map(partner => {
-              // ✅ SỬA LẠI CÁCH TRUY CẬP DỮ LIỆU
-              const status = getStatusProps(partner.status);
-              return (
-                <tr key={partner.uid}>
-                  <td>{partner.name}</td>
-                  <td>{partner.email}</td>
-                  <td>{new Date(partner.registeredAt).toLocaleDateString('vi-VN')}</td>
-                  <td>
-                    <StatusBadge bgColor={status.bgColor} color={status.color}>
-                      {status.text}
-                    </StatusBadge>
-                  </td>
-                  <td>
-                    {partner.status === 'pending_approval' && (
-                      <ApproveButton onClick={() => handleUpdatePartnerStatus(partner.uid, 'active')}>
-                        <UserCheck size={14} /> Duyệt
-                      </ApproveButton>
-                    )}
-                    {partner.status === 'active' && (
-                      <SuspendButton onClick={() => handleUpdatePartnerStatus(partner.uid, 'suspended')}>
-                        <UserX size={14} /> Đình chỉ
-                      </SuspendButton>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </Table>
-      </TableCard> */}
-
-
-      {/* --- CÁC MODAL --- */}
-      {/* {selectedPartner && (
-        <PartnerDetailModal partner={selectedPartner} onClose={handleCloseModal} />
-      )} */}
-
       {isServiceModalOpen && (
         <ServiceEditModal
           service={editingService}
           onClose={handleCloseServiceModal}
           onSave={handleSaveService}
+          isSaving={isSaving} 
         />
       )}
 
@@ -562,6 +451,16 @@ const AdminPage = () => {
         <ServiceDetailModal 
           service={viewingService} 
           onClose={() => setViewingService(null)} 
+        />
+      )}
+
+      {viewingPartner && (
+        <PartnerApprovalModal
+          partner={viewingPartner}
+          onClose={() => setViewingPartner(null)}
+          isProcessing={isProcessing}
+          onApprove={(partnerId) => handleUpdatePartnerStatus(partnerId, 'active', 'Duyệt đối tác thành công!')}
+          onReject={(partnerId) => handleUpdatePartnerStatus(partnerId, 'suspended', 'Đã từ chối/đình chỉ đối tác.')}
         />
       )}
     </AdminContainer>
