@@ -93,7 +93,7 @@ const PaymentDetailPage = () => {
   const { service, summary, contact, schedule } = bookingDetails;
 
   const handlePayment = () => {
-    fetch('http://localhost:3030/api/payment/create_payment_url', {
+    fetch('http://localhost:5000/api/payment/create_payment_url', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
