@@ -78,7 +78,7 @@ const Hero = () => {
   };
 
   const handleLearnMore = () => {
-    navigate('/about-us');
+            navigate('/services');
   };
 
   return (

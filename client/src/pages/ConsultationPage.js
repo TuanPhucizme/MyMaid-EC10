@@ -350,7 +350,7 @@ const ConsultationPage = () => {
                   <Button 
                     variant="outline" 
                     className="w-full"
-                    onClick={() => navigate('/about-us')}
+                    onClick={() => navigate('/services')}
                   >
                     Tìm hiểu thêm
                   </Button>

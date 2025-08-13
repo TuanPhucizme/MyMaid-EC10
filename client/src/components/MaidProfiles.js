@@ -325,9 +325,9 @@ const MaidProfiles = () => {
             <Button variant="ghost" onClick={handleBecomePartner}>
               Trở thành đối tác
             </Button>
-            <Button variant="ghost" onClick={() => navigate('/about-us')}>
-              Tìm hiểu thêm
-            </Button>
+                    <Button variant="ghost" onClick={() => navigate('/services')}>
+          Xem dịch vụ
+        </Button>
           </div>
         </div>
       </div>

@@ -92,44 +92,82 @@ const PaymentDetailPage = () => {
   // Bây giờ bạn có thể sử dụng dữ liệu này để hiển thị và tạo thanh toán
   const { service, summary, contact, schedule } = bookingDetails;
 
-  const handlePayment = () => {
-    fetch('http://localhost:5000/api/payment/create_payment_url', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        // Sử dụng tổng tiền từ bookingDetails
-        amount: summary.totalPrice, 
-        // Sử dụng mô tả đơn hàng đã tạo
-        orderDescription: summary.orderDescription, 
-        language: 'vn',
-        bankCode: ''
-      })
-    })
-    .then(res => {
-      if (!res.ok) {
-      // Nếu server trả về lỗi, ném ra lỗi để nhảy vào .catch
-      throw new Error('Lỗi từ server: ' + res.status);
+  const handlePayment = async () => {
+    try {
+      // Bước 1: Tạo đơn hàng trong database trước
+      const orderResponse = await fetch('http://localhost:5000/api/orders', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await getCurrentUserToken()}`
+        },
+        body: JSON.stringify({
+          service: bookingDetails.service,
+          schedule: bookingDetails.schedule,
+          contact: bookingDetails.contact,
+          summary: bookingDetails.summary,
+          paymentMethod: 'vnpay'
+        })
+      });
+
+      if (!orderResponse.ok) {
+        throw new Error('Không thể tạo đơn hàng');
       }
-      return res.json();
-      })
-      .then(data => {
-      // Kiểm tra xem server có trả về paymentUrl không
-      if (data && data.paymentUrl) {
-      // Lưu thông tin booking vào localStorage để sử dụng sau này
+
+      const orderData = await orderResponse.json();
+      console.log('Order created:', orderData);
+
+      // Bước 2: Tạo URL thanh toán với order ID
+      const paymentResponse = await fetch('http://localhost:5000/api/payment/create_payment_url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: summary.totalPrice, 
+          orderDescription: summary.orderDescription, 
+          language: 'vn',
+          bankCode: '',
+          orderDbId: orderData.orderId
+        })
+      });
+
+      if (!paymentResponse.ok) {
+        throw new Error('Lỗi từ server: ' + paymentResponse.status);
+      }
+
+      return paymentResponse.json();
+    } catch (error) {
+      console.error('Lỗi khi tạo đơn hàng hoặc thanh toán:', error);
+      alert('Có lỗi xảy ra: ' + error.message);
+      return null;
+    }
+  };
+
+  const getCurrentUserToken = async () => {
+    // Import auth từ firebase config
+    const { auth } = await import('../config/firebase');
+    const user = auth.currentUser;
+    if (user) {
+      return await user.getIdToken();
+    }
+    throw new Error('Vui lòng đăng nhập để tiếp tục');
+  };
+
+  const handlePaymentClick = async () => {
+    const data = await handlePayment();
+    
+    if (data && data.paymentUrl) {
+      // Lưu thông tin booking và order ID vào localStorage
       localStorage.setItem('bookingDetails', JSON.stringify(bookingDetails));
-      // Nếu có, chuyển hướng người dùng đến URL đó
+      localStorage.setItem('orderDbId', data.orderDbId);
+      // Chuyển hướng người dùng đến URL thanh toán
       window.location.href = data.paymentUrl;
-      } else {
-      // Nếu không, thông báo lỗi
+    } else if (data === null) {
+      // Lỗi đã được xử lý trong handlePayment
+      return;
+    } else {
       console.error('Không nhận được URL thanh toán từ server.');
       alert('Không thể lấy được URL thanh toán. Vui lòng kiểm tra lại.');
-      }
-      })
-      .catch(err => {
-      // Bắt lỗi mạng hoặc lỗi từ server
-      console.error('Lỗi khi tạo yêu cầu thanh toán:', err);
-      alert('Có lỗi xảy ra khi kết nối đến máy chủ thanh toán. Vui lòng thử lại sau.');
-    });
+    }
   };
   
   return (
@@ -194,7 +232,7 @@ const PaymentDetailPage = () => {
           </InfoText>
         </InfoRow>
         
-        <PayButton onClick={handlePayment}>Thanh toán ngay</PayButton>
+        <PayButton onClick={handlePaymentClick}>Thanh toán ngay</PayButton>
       </PaymentCard>
     </PaymentContainer>
   );

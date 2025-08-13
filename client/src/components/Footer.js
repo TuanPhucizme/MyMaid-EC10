@@ -22,7 +22,7 @@ const Footer = () => {
       { name: 'Chuyển nhà', path: '/services' }
     ],
     company: [
-      { name: 'Về MyMaid', path: '/about-us' },
+  
       { name: 'Tuyển dụng', path: '/careers' },
       { name: 'Tin tức', path: '/news' },
       { name: 'Liên hệ tư vấn', path: '/consultation' },

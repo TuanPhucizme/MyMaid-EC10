@@ -159,7 +159,7 @@ const Testimonials = () => {
   };
 
   const handleLearnMore = () => {
-    navigate('/about-us');
+            navigate('/services');
   };
 
   return (
