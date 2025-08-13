@@ -5,159 +5,218 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useAuth } from '../context/AuthContext';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components'; // ✅ Thêm keyframes
 import ErrorMessage from '../components/ErrorMessage';
 import EmailVerificationStatus from '../components/EmailVerificationStatus';
 
+// ✅ 1. THÊM CÁC KEYFRAMES CHO ANIMATION
+const fadeIn = keyframes`
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
+const slideIn = keyframes`
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+`;
+
+// ✅ 2. NÂNG CẤP TOÀN BỘ STYLED COMPONENTS
 const LoginContainer = styled.div`
-  min-height: calc(120vh - 4rem);
+  min-height: calc(100vh - 4rem);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 2rem 1rem;
-  background: #f8fafc;
+  background: linear-gradient(135deg, #fdfdfdff 0%, #f8f8f8ff 100%);
 `;
 
 const LoginCard = styled.div`
-  background: white;
-  padding: 2rem;
-  border-radius: 0.75rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  padding: 3rem 2.5rem;
+  border-radius: 1.5rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   width: 100%;
-  max-width: 400px;
+  max-width: 450px;
+  animation: ${fadeIn} 0.6s ease-out;
+  
+  @media (max-width: 640px) {
+    padding: 2rem 1.5rem;
+    margin: 1rem;
+  }
 `;
 
 const LoginHeader = styled.div`
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
+  animation: ${slideIn} 0.6s ease-out 0.1s both;
 `;
 
 const LoginTitle = styled.h1`
-  font-size: 1.875rem;
-  font-weight: bold;
-  color: #1a202c;
-  margin-bottom: 0.5rem;
+  font-size: 2.25rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.75rem;
 `;
 
 const LoginSubtitle = styled.p`
   color: #6b7280;
+  font-size: 1.1rem;
+  font-weight: 500;
 `;
 
 const Form = styled.form`
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.75rem;
 `;
 
 const InputGroup = styled.div`
   position: relative;
+  display: flex;
+  flex-direction: column;
+`;
+
+const InputWrapper = styled.div`
+  position: relative;
+  display: flex;
+  align-items: center;
 `;
 
 const InputIcon = styled.div`
   position: absolute;
-  left: 0.75rem;
+  left: 1rem;
   top: 50%;
   transform: translateY(-50%);
   color: #9ca3af;
+  pointer-events: none;
 `;
 
 const Input = styled.input`
   width: 100%;
-  padding: 0.75rem 0.75rem 0.75rem 2.5rem;
-  border: 2px solid ${props => props.$error ? '#ef4444' : '#d1d5db'};
-  border-radius: 0.5rem;
+  padding: 1rem 1rem 1rem 3rem;
+  border: 2px solid ${props => props.$error ? '#ef4444' : '#e5e7eb'};
+  border-radius: 1rem;
   font-size: 1rem;
-  transition: border-color 0.2s;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.8);
 
   &:focus {
     outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-
-  &::placeholder {
-    color: #9ca3af;
+    border-color: #667eea;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    background: rgba(255, 255, 255, 0.95);
   }
 `;
 
 const PasswordToggle = styled.button`
   position: absolute;
-  right: 0.75rem;
+  right: 1rem;
   top: 50%;
   transform: translateY(-50%);
   background: none;
   border: none;
   color: #9ca3af;
   cursor: pointer;
-  padding: 0.25rem;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: all 0.2s ease;
 
   &:hover {
-    color: #6b7280;
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.1);
   }
 `;
 
 const FormErrorMessage = styled.span`
   color: #ef4444;
   font-size: 0.875rem;
-  margin-top: 0.25rem;
-  display: block;
+  margin-top: 0.5rem;
+  font-weight: 500;
+  animation: ${fadeIn} 0.3s ease;
 `;
 
 const SubmitButton = styled.button`
   width: 100%;
-  padding: 0.75rem;
-  background: #3b82f6;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  font-weight: 600;
+  border-radius: 1rem;
+  font-size: 1.1rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: background-color 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+  }
 
   &:hover:not(:disabled) {
-    background: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+    &::before { left: 100%; }
   }
 
   &:disabled {
-    opacity: 0.6;
+    opacity: 0.7;
     cursor: not-allowed;
   }
 `;
 
 const LoginFooter = styled.div`
   text-align: center;
-  margin-top: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  animation: ${slideIn} 0.6s ease-out 0.2s both;
 `;
 
 const FooterLink = styled(Link)`
-  color: #3b82f6;
+  color: #667eea;
   text-decoration: none;
-  font-size: 0.875rem;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: color 0.2s ease;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transition: width 0.3s ease;
+  }
 
   &:hover {
-    text-decoration: underline;
+    color: #764ba2;
+    &::after { width: 100%; }
   }
 `;
 
 const schema = yup.object({
-  email: yup
-    .string()
-    .email('Please enter a valid email')
-    .required('Email is required'),
-  password: yup
-    .string()
-    .required('Password is required')
+  email: yup.string().email('Vui lòng nhập email hợp lệ').required('Email là bắt buộc'),
+  password: yup.string().required('Mật khẩu là bắt buộc')
 });
 
 const LoginPage = () => {
+  // --- LOGIC GIỮ NGUYÊN ---
   const { login, user } = useAuth();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
@@ -174,12 +233,10 @@ const LoginPage = () => {
 
   const onSubmit = async (data) => {
     setIsLoading(true);
-    setError(''); // Clear previous errors
+    setError('');
     try {
       const result = await login(data.email, data.password);
       if (result.success) {
-        // Sẽ được xử lý bởi AuthContext's useEffect để redirect đúng chỗ
-        // Tạm thời navigate về home, AuthContext sẽ redirect nếu cần setup profile
         navigate('/');
       } else {
         setError(result.error);
@@ -195,8 +252,8 @@ const LoginPage = () => {
     <LoginContainer>
       <LoginCard>
         <LoginHeader>
-          <LoginTitle>Chào Mừng Đến Với MyMaid</LoginTitle>
-          <LoginSubtitle>Đăng nhập vào tài khoản MyMaid của bạn</LoginSubtitle>
+          <LoginTitle>Chào Mừng Trở Lại</LoginTitle>
+          <LoginSubtitle>Đăng nhập vào tài khoản của bạn</LoginSubtitle>
         </LoginHeader>
 
         <Form onSubmit={handleSubmit(onSubmit)}>
@@ -209,58 +266,44 @@ const LoginPage = () => {
           {user && !user.emailVerified && (
             <EmailVerificationStatus user={user} />
           )}
+
+          {/* ✅ 3. CẬP NHẬT LẠI CẤU TRÚC JSX CỦA INPUT */}
           <InputGroup>
-            <InputIcon>
-              <Mail size={20} />
-            </InputIcon>
-            <Input
-              type="email"
-              placeholder="Nhập email của bạn"
-                             $error={errors.email}
-              {...register('email')}
-            />
-            {errors.email && (
-              <FormErrorMessage>{errors.email.message}</FormErrorMessage>
-            )}
+            <InputWrapper>
+              <InputIcon><Mail size={20} /></InputIcon>
+              <Input
+                type="email"
+                placeholder="Nhập email của bạn"
+                $error={!!errors.email}
+                {...register('email')}
+              />
+            </InputWrapper>
+            {errors.email && <FormErrorMessage>{errors.email.message}</FormErrorMessage>}
           </InputGroup>
 
           <InputGroup>
-            <InputIcon>
-              <Lock size={20} />
-            </InputIcon>
-            <Input
-              type={showPassword ? 'text' : 'password'}
-              placeholder="Nhập mật khẩu của bạn"
-                             $error={errors.password}
-              {...register('password')}
-            />
-            <PasswordToggle
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-            </PasswordToggle>
-            {errors.password && (
-              <FormErrorMessage>{errors.password.message}</FormErrorMessage>
-            )}
+            <InputWrapper>
+              <InputIcon><Lock size={20} /></InputIcon>
+              <Input
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Nhập mật khẩu của bạn"
+                $error={!!errors.password}
+                {...register('password')}
+              />
+              <PasswordToggle type="button" onClick={() => setShowPassword(!showPassword)}>
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </PasswordToggle>
+            </InputWrapper>
+            {errors.password && <FormErrorMessage>{errors.password.message}</FormErrorMessage>}
           </InputGroup>
 
           <SubmitButton type="submit" disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <div className="spinner" style={{ width: '1rem', height: '1rem' }} />
-                Signing in...
-              </>
-            ) : (
-              'Đăng Nhập'
-            )}
+            {isLoading ? 'Đang đăng nhập...' : 'Đăng Nhập'}
           </SubmitButton>
         </Form>
 
         <LoginFooter>
-          <FooterLink to="/forgot-password">
-            Quên mật khẩu?
-          </FooterLink>
+          <FooterLink to="/forgot-password">Quên mật khẩu?</FooterLink>
           <div>
             Bạn chưa có tài khoản?{' '}
             <FooterLink to="/register">Đăng ký tại đây</FooterLink>

@@ -41,7 +41,7 @@ const RegisterContainer = styled.div`
   align-items: center;
   justify-content: center;
   padding: 2rem 1rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #fdfdfdff 0%, #f8f8f8ff 100%);
   position: relative;
   
   &::before {
