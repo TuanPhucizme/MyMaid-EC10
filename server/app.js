@@ -15,6 +15,8 @@ const userRoutes = require('./routes/userRoutes');
 console.log('User routes loaded');
 const partnerRoutes = require('./routes/partnerRoutes');
 console.log('Partner routes loaded');
+const orderRoutes = require('./routes/orderRoutes');
+console.log('Order routes loaded');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -83,12 +85,20 @@ try {
   console.error('Error mounting payment routes:', error);
 }
 
+try {
+  app.use('/api/orders', orderRoutes);
+  console.log('Order routes mounted at /api/orders');
+} catch (error) {
+  console.error('Error mounting order routes:', error);
+}
+
 // Debug: Log all registered routes
 console.log('Registered routes:');
 console.log('- /api/users/*');
 console.log('- /api/partners/*');
 console.log('- /api/services/*');
 console.log('- /api/payment/*');
+console.log('- /api/orders/*');
 
 // Test route registration
 app.get('/test', (req, res) => {

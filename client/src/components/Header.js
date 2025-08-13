@@ -124,6 +124,12 @@ const Header = () => {
                 {isUserMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-neutral-200 py-2">
                     <Link
+                      to="/my-orders"
+                      className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
+                    >
+                      Đơn hàng của tôi
+                    </Link>
+                    <Link
                       to="/dashboard"
                       className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
                     >

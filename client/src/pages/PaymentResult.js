@@ -129,6 +129,36 @@ const PaymentResultPage = () => {
   const [paymentInfo, setPaymentInfo] = useState(null);
   const [isSuccess, setIsSuccess] = useState(false);
 
+  const updateOrderAfterPayment = async (paymentInfo) => {
+    try {
+      const orderDbId = localStorage.getItem('orderDbId');
+      if (!orderDbId) {
+        console.warn('Không tìm thấy order ID để cập nhật');
+        return;
+      }
+
+      const response = await fetch(`http://localhost:5000/api/orders/${orderDbId}/payment-success`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vnpayTransactionId: paymentInfo.transactionNo,
+          vnpayResponseCode: paymentInfo.responseCode,
+          vnpayAmount: paymentInfo.amount,
+          vnpayBankCode: paymentInfo.bankCode,
+          vnpayPayDate: paymentInfo.payDate
+        })
+      });
+
+      if (response.ok) {
+        console.log('Cập nhật đơn hàng thành công');
+      } else {
+        console.error('Lỗi khi cập nhật đơn hàng:', await response.text());
+      }
+    } catch (error) {
+      console.error('Lỗi khi cập nhật đơn hàng:', error);
+    }
+  };
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const responseCode = params.get('vnp_ResponseCode');
@@ -146,7 +176,10 @@ const PaymentResultPage = () => {
     setIsSuccess(responseCode === '00');
 
     if (responseCode === '00') {
+      // Cập nhật trạng thái đơn hàng thành công
+      updateOrderAfterPayment(info);
       localStorage.removeItem('bookingDetails'); // Xoá khi thanh toán thành công
+      localStorage.removeItem('orderDbId');
     }
   }, [location]);
 
@@ -204,6 +237,7 @@ const PaymentResultPage = () => {
                 <Value>{formatDateTime(paymentInfo.payDate)}</Value>
               </InfoText>
             </InfoRow>
+            <ActionButton onClick={() => navigate('/my-orders')}>Xem đơn hàng</ActionButton>
             <ActionButton onClick={() => navigate('/')}>Về trang chủ</ActionButton>
           </>
         ) : (

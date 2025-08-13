@@ -49,6 +49,9 @@ router.post('/create_payment_url', function (req, res, next) {
     let amount = req.body.amount;
     let bankCode = req.body.bankCode;
     
+    // Lưu order ID để tracking sau này
+    let orderDbId = req.body.orderDbId;
+    
     let locale = req.body.language;
     if(locale === null || locale === ''){
         locale = 'vn';
@@ -61,7 +64,7 @@ router.post('/create_payment_url', function (req, res, next) {
     vnp_Params['vnp_Locale'] = locale;
     vnp_Params['vnp_CurrCode'] = currCode;
     vnp_Params['vnp_TxnRef'] = orderId;
-    vnp_Params['vnp_OrderInfo'] = 'Thanh toan cho ma GD:' + orderId;
+    vnp_Params['vnp_OrderInfo'] = orderDbId ? `Thanh toan don hang ${orderDbId}` : 'Thanh toan cho ma GD:' + orderId;
     vnp_Params['vnp_OrderType'] = 'other';
     vnp_Params['vnp_Amount'] = amount * 100;
     vnp_Params['vnp_ReturnUrl'] = returnUrl;
@@ -80,7 +83,11 @@ router.post('/create_payment_url', function (req, res, next) {
     vnpUrl += '?' + querystring.stringify(vnp_Params, { encode: false });
 
     // THAY ĐỔI QUAN TRỌNG: Trả về URL cho React xử lý
-    res.json({ paymentUrl: vnpUrl });
+    res.json({ 
+        paymentUrl: vnpUrl,
+        vnpayOrderId: orderId,
+        orderDbId: orderDbId
+    });
 });
 
 /**

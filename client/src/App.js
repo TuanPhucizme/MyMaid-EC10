@@ -27,6 +27,7 @@ import PartnerSuccessPage from "./pages/PartnerSuccessPage";
 import PaymentPage from "./pages/PaymentPage";
 import PaymentResultPage from "./pages/PaymentResult";
 import ProfilePage from "./pages/ProfilePage";
+import OrderManagementPage from "./pages/OrderManagementPage";
 import RegisterPage from "./pages/RegisterPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ServicesPage from "./pages/ServicesPage";
@@ -86,6 +87,7 @@ function App() {
         <Route path="/booking-details/:bookingId" element={<BookingDetailPage />} />
         <Route path="/payment" element={<PaymentPage />} />
         <Route path="/payment-result" element={<PaymentResultPage />} />
+        <Route path="/my-orders" element={<OrderManagementPage />} />
 
         {/* --- CÁC ROUTE CỦA QUẢN TRỊ VIÊN --- */}
         {/* Lưu ý: Route này cần được bọc trong một AdminRoute */}
