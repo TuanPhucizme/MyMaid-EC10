@@ -1,7 +1,7 @@
-const express = require('express');
 const path = require('path');
-const bodyParser = require('body-parser');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
+const express = require('express');
+const bodyParser = require('body-parser');
 
 const vnpayRouter = require('./routes/payment');
 const cors = require('cors');
