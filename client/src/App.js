@@ -93,14 +93,12 @@ function App() {
       </AuthRedirect>
 
       <Routes>
-        {/* --- C�C ROUTE C�NG KHAI & CH�NH --- */}
-        {/* Trang ch? s? hi?n th? m?t t?p h?p c�c component */}
+        {/* --- CÁC ROUTE CÔNG KHAI & CHÍNH --- */}
         <Route path="/" element={<HomePageContent />} />
         <Route path="/home" element={<HomePage />} />
         <Route path="/services" element={<ServicesPage />} />
 
-        {/* --- LU?NG X�C TH?C NGU?I D�NG --- */}
-        {/* C�c trang li�n quan d?n dang nh?p, dang k�, qu�n m?t kh?u */}
+        {/* --- LỒNG XÁC THỰC NGƯỜI DÙNG --- */}
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/login" element={<LogIn />} />
         <Route path="/register" element={<Register />} />
@@ -109,8 +107,8 @@ function App() {
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/check-link" element={<CheckLinkPage />} />
 
-        {/* --- C�C ROUTE C?A NGU?I D�NG & �?I T�C (Y�U C?U �ANG NH?P) --- */}
-        {/* C�c trang ch?c nang ch�nh sau khi ngu?i d�ng d� dang nh?p */}
+        {/* --- CÁC ROUTE CỦA NGUỜI DÙNG & ĐỐI TÁC (YÊU CẦU ĐANG NHẬP) --- */}
+
         <Route path="/booking" element={<BookingPage />} />
         <Route path="/booking-details/:bookingId" element={<BookingDetailPage />} />
         <Route path="/dashboardpartner" element={<DashboardPartnerPage />} />
@@ -119,11 +117,10 @@ function App() {
         <Route path="/payment-result" element={<PaymentResultPage />} />
         <Route path="/profile" element={<ProfilePage />} />
 
-        {/* --- C�C ROUTE C?A QU?N TR? VI�N (Y�U C?U VAI TR� ADMIN) --- */}
+        {/* --- CÁC ROUTE CỦA QUẢN TRỊ VIÊN (YÊU CẦU VAI TRÒ ADMIN) --- */}
         <Route path="/admin" element={<AdminPage />} />
 
-        {/* --- ROUTE B?T L?I 404 (KH�NG T�M TH?Y TRANG) --- */}
-        {/* Lu�n d?t route n�y ? cu?i c�ng */}
+        {/* --- ROUTE BẮT LỖI 404 (KHÔNG TÌM THẤY TRANG) --- */}
         <Route path="*" element={<h1 className="text-center text-2xl p-8">404 - Page Not Found</h1>} />
       </Routes>
 

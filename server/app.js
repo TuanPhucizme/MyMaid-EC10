@@ -14,7 +14,7 @@ const userRoutes = require('./routes/userRoutes');
 const partnerRoutes = require('./routes/partnerRoutes');
 
 const app = express();
-const PORT = process.env.PORT || 5000; //đổi lại 3030 nếu lỗi
+const PORT = process.env.PORT || 5000;
 
 app.use(cors()); // Thêm middleware CORS
 app.use(express.json()); // Cho phép đọc req.body từ JSON
