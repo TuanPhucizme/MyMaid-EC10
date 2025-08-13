@@ -191,7 +191,7 @@ const Label = styled.label`
 
 const Input = styled.input`
   padding: 0.75rem;
-  border: 2px solid ${(props) => (props.error ? '#ef4444' : '#d1d5db')};
+  border: 2px solid ${(props) => (props.$error ? '#ef4444' : '#d1d5db')};
   border-radius: 0.375rem;
   font-size: 1rem;
   transition: border-color 0.2s;
@@ -205,7 +205,7 @@ const Input = styled.input`
 
 const TextArea = styled.textarea`
   padding: 0.75rem;
-  border: 2px solid ${(props) => (props.error ? '#ef4444' : '#d1d5db')};
+  border: 2px solid ${(props) => (props.$error ? '#ef4444' : '#d1d5db')};
   border-radius: 0.375rem;
   font-size: 1rem;
   resize: vertical;
@@ -240,8 +240,8 @@ const InputRow = styled.div`
 `;
 
 const schema = yup.object({
-  firstname: yup.string().min(2, 'Họ và tên là bắt buộc').max(50).required('Họ và tên là bắt buộc'),
-  lastname: yup.string().min(1, 'Họ và tên là bắt buộc').max(50).required('Họ và tên là bắt buộc'),
+  firstName: yup.string().min(2, 'Họ và tên là bắt buộc').max(50).required('Họ và tên là bắt buộc'),
+  lastName: yup.string().min(1, 'Họ và tên là bắt buộc').max(50).required('Họ và tên là bắt buộc'),
   phone: yup.string().matches(/(84|0[3|5|7|8|9])+([0-9]{8})\b/g, 'Số điện thoại không hợp lệ').optional().nullable(),
   address: yup.string().max(200, 'Địa chỉ không quá 200 ký tự').optional().nullable(),
   gender: yup.string().oneOf(['male', 'female', 'other'], 'Giới tính không hợp lệ').optional().nullable(),
@@ -254,7 +254,7 @@ const DisplayProfile = ({ profile }) => (
       <DetailIcon><User size={20} /></DetailIcon>
       <DetailContent>
         <DetailLabel>Họ và tên</DetailLabel>
-        <DetailValue>{profile.lastname} {profile.firstname || 'Chưa cập nhật'}</DetailValue>
+        <DetailValue>{profile.lastName} {profile.firstName || 'Chưa cập nhật'}</DetailValue>
       </DetailContent>
     </DetailItem>
     <DetailItem>
@@ -287,8 +287,8 @@ const DisplayProfile = ({ profile }) => (
       <DetailContent>
         <DetailLabel>Ngày tham gia</DetailLabel>
         <DetailValue>
-          {profile.createdat
-            ? profile.createdat.toDate().toLocaleDateString('vi-VN', {
+          {profile.createdAt
+            ? profile.createdAt.toDate().toLocaleDateString('vi-VN', {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric',
@@ -305,14 +305,14 @@ const EditProfileForm = ({ onSubmit, handleCancel, isSaving, register, handleSub
   <Form onSubmit={handleSubmit(onSubmit)}>
     <InputRow>
       <FormGroup>
-        <Label htmlFor="lastname">Họ</Label>
-        <Input id="lastname" type="text" error={!!errors.lastname} {...register('lastname')} />
-        {errors.lastname && <ErrorMessage>{errors.lastname.message}</ErrorMessage>}
+        <Label htmlFor="lastName">Họ</Label>
+        <Input id="lastName" type="text" $error={!!errors.lastName} {...register('lastName')} />
+        {errors.lastName && <ErrorMessage>{errors.lastName.message}</ErrorMessage>}
       </FormGroup>
       <FormGroup>
-        <Label htmlFor="firstname">Tên</Label>
-        <Input id="firstname" type="text" error={!!errors.firstname} {...register('firstname')} />
-        {errors.firstname && <ErrorMessage>{errors.firstname.message}</ErrorMessage>}
+        <Label htmlFor="firstName">Tên</Label>
+        <Input id="firstName" type="text" $error={!!errors.firstName} {...register('firstName')} />
+        {errors.firstName && <ErrorMessage>{errors.firstName.message}</ErrorMessage>}
       </FormGroup>
     </InputRow>
     <FormGroup>
@@ -327,12 +327,12 @@ const EditProfileForm = ({ onSubmit, handleCancel, isSaving, register, handleSub
     </FormGroup>
     <FormGroup>
       <Label htmlFor="phone">Số điện thoại</Label>
-      <Input id="phone" type="text" error={!!errors.phone} {...register('phone')} />
+      <Input id="phone" type="text" $error={!!errors.phone} {...register('phone')} />
       {errors.phone && <ErrorMessage>{errors.phone.message}</ErrorMessage>}
     </FormGroup>
     <FormGroup>
       <Label htmlFor="address">Địa chỉ</Label>
-      <TextArea id="address" placeholder="Nhập địa chỉ của bạn..." error={!!errors.address} {...register('address')} />
+      <TextArea id="address" placeholder="Nhập địa chỉ của bạn..." $error={!!errors.address} {...register('address')} />
       {errors.address && <ErrorMessage>{errors.address.message}</ErrorMessage>}
     </FormGroup>
     <FormActions>
@@ -445,8 +445,8 @@ const ProfilePage = () => {
 
  const getInitials = () => {
     if (!profileData) return '?';
-    const firstNameInitial = profileData.firstname?.[0] || '';
-    const lastNameInitial = profileData.lastname?.[0] || '';
+    const firstNameInitial = profileData.firstName?.[0] || '';
+    const lastNameInitial = profileData.lastName?.[0] || '';
     return `${firstNameInitial}${lastNameInitial}`.toUpperCase();
   };
 
@@ -478,7 +478,7 @@ return (
     <ProfileCard>
       <ProfileSidebar>
         <Avatar>{getInitials()}</Avatar>
-        <UserName>{profileData.lastname} {profileData.firstname || 'Người dùng'}</UserName>
+        <UserName>{profileData.lastName || ''} {profileData.firstName || 'Người dùng'}</UserName>
         <UserEmail>{profileData.email}</UserEmail>
       </ProfileSidebar>
 

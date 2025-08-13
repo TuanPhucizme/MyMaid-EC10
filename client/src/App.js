@@ -47,12 +47,12 @@ const HomePageContent = () => (
   </main>
 );
 function App() {
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const [showVerificationBanner, setShowVerificationBanner] = useState(true);
 
   return (
     <div className="min-h-screen bg-neutral-50">
-      {user && !user.emailVerified && showVerificationBanner && (
+      {user && userProfile && userProfile.status !== 'active' && showVerificationBanner && (
         <VerificationBanner 
           user={user} 
           onClose={() => setShowVerificationBanner(false)}
@@ -78,7 +78,7 @@ function App() {
             <Route path="/partner" element={<PartNer />} />
             <Route path="/login" element={<LogIn />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/profile" element={<ProfilePage />} />
+            {/*<Route path="/profile" element={<ProfilePage />} />*/}
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/verify-email" element={<VerifyEmailPage />} />

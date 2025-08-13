@@ -266,7 +266,7 @@ const SuccessMessage = styled.div`
 const schema = yup.object({
   phone: yup
     .string()
-    .matches(/^(84|0[3578])\d{8}$/, 'Số điện thoại không hợp lệ')
+    .matches(/^(0\d{9}|84\d{8})$/, 'Số điện thoại không hợp lệ')
     .required('Số điện thoại là bắt buộc'),
   address: yup
     .string()

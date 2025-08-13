@@ -1,13 +1,14 @@
 const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+
 const vnpayRouter = require('./routes/payment');
 const cors = require('cors');
 
 const serviceRoutes = require('./routes/serviceRoutes');
 
 // Load environment variables từ root directory
-require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 const userRoutes = require('./routes/userRoutes');
 const partnerRoutes = require('./routes/partnerRoutes');

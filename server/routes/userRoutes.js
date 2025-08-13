@@ -11,18 +11,18 @@ const authMiddleware = require('../middleware/authMiddleware');
 router.put('/profile', authMiddleware, async (req, res) => {
   try {
     const { uid } = req.user; // Lấy uid từ middleware
-    const { firstname, lastname, phone, address, gender } = req.body;
+    const { firstName, lastName, phone, address, gender } = req.body;
 
     // Server-side validation (bạn có thể thêm validation chi tiết hơn ở đây)
-    if (!firstname || !lastname) {
+    if (!firstName || !lastName) {
       return res.status(400).send({ message: 'Firstname and Lastname are required.' });
     }
 
     const userDocRef = db.collection('mm_users').doc(uid);
 
     const dataToUpdate = {
-      firstname,
-      lastname,
+      lastName,
+      firstName,
       phone: phone || "",
       address: address || "",
       gender: gender || ""
@@ -30,6 +30,7 @@ router.put('/profile', authMiddleware, async (req, res) => {
 
     await userDocRef.update(dataToUpdate);
 
+    console.log(`Profile for user ${uid} updated successfully.`);
     res.status(200).send({ message: 'Profile updated successfully!', data: dataToUpdate });
 
   } catch (error) {

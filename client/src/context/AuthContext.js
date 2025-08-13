@@ -1,6 +1,14 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { firebaseAuth, db } from '../config/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { 
+  onAuthStateChanged, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  sendEmailVerification,
+  signOut,
+  sendPasswordResetEmail
+} from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { auth, db } from '../config/firebase'; // Đổi tên firebaseAuth thành auth cho nhất quán
 import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
@@ -14,203 +22,136 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(null); // User từ Firebase Auth
+  const [userProfile, setUserProfile] = useState(null); // Hồ sơ từ Firestore
   const [loading, setLoading] = useState(true);
-  const [idToken, setIdToken] = useState(null);
 
-  // Lắng nghe thay đổi auth state từ Firebase
   useEffect(() => {
-    const unsubscribe = firebaseAuth.onAuthStateChange(async (firebaseUser) => {
-      setLoading(true);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setUser(firebaseUser);
       
-      if (firebaseUser && firebaseUser.emailVerified) {
-        // User đã đăng nhập và email đã được xác thực
-        try {
-          const token = await firebaseUser.getIdToken();
-          setIdToken(token);
-          
-          // Lấy thông tin user từ Firestore
-          const userDocRef = doc(db, "mm_users", firebaseUser.uid);
-          const userDocSnap = await getDoc(userDocRef);
-          
-          let userData = {
-            id: firebaseUser.uid,
-            firebaseUid: firebaseUser.uid,
-            email: firebaseUser.email,
-            firstName: firebaseUser.displayName?.split(' ')[0] || '',
-            lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
-            isVerified: firebaseUser.emailVerified,
-            profile: {
-              avatar: firebaseUser.photoURL
-            }
-          };
-
-          // Nếu có data trong Firestore, merge với userData
-          if (userDocSnap.exists()) {
-            const firestoreData = userDocSnap.data();
-            userData = {
-              ...userData,
-              ...firestoreData,
-              needsProfileSetup: !firestoreData.phone || !firestoreData.address || !firestoreData.gender || firestoreData.status === 'pending_verification'
-            };
-          } else {
-            // Nếu chưa có trong Firestore, đánh dấu cần setup profile
-            userData.needsProfileSetup = true;
-          }
-          
-          setUser(userData);
-        } catch (error) {
-          console.error('Error getting ID token:', error);
-          setUser(null);
-          setIdToken(null);
+      if (firebaseUser) {
+        const userDocRef = doc(db, "mm_users", firebaseUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        
+        if (userDocSnap.exists()) {
+          setUserProfile(userDocSnap.data());
+        } else {
+          setUserProfile(null);
         }
       } else {
-        // User chưa đăng nhập hoặc email chưa xác thực
-        setUser(null);
-        setIdToken(null);
+        setUserProfile(null);
       }
       
       setLoading(false);
     });
 
-    // Cleanup subscription
     return () => unsubscribe();
   }, []);
 
-  // Đăng nhập với Firebase Auth
   const login = async (email, password) => {
     try {
-      setLoading(true);
-      const result = await firebaseAuth.login(email, password);
-      
-      if (result.success) {
-        toast.success(result.message);
-        return { success: true };
-      } else {
-        toast.error(result.error);
-        return { success: false, error: result.error };
-      }
+      await signInWithEmailAndPassword(auth, email, password);
+      toast.success('Đăng nhập thành công!');
+      return { success: true };
     } catch (error) {
-      const message = 'Đăng nhập thất bại';
+      const message = error.code === 'auth/invalid-credential' 
+        ? 'Email hoặc mật khẩu không chính xác.' 
+        : 'Đăng nhập thất bại. Vui lòng thử lại.';
       toast.error(message);
       return { success: false, error: message };
-    } finally {
-      setLoading(false);
     }
   };
 
-  // Đăng ký với Firebase Auth
   const register = async (userData) => {
+    const { email, password, firstName, lastName } = userData;
     try {
-      setLoading(true);
-      const { email, password, firstName, lastName } = userData;
-      const result = await firebaseAuth.register(email, password, firstName, lastName);
+      // 1. Tạo tài khoản trong Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
+
+      // 2. Tạo hồ sơ trong Firestore
+      await setDoc(doc(db, "mm_users", firebaseUser.uid), {
+        firstName,
+        lastName,
+        name: `${firstName} ${lastName}`,
+        email,
+        role: 'customer',
+        status: 'pending_verification',
+        createdAt: new Date(),
+      });
+
+      // 3. Gửi email xác thực
+      const actionCodeSettings = {
+        url: 'http://localhost:3000/email-verification',
+        handleCodeInApp: true,
+      };
+      await sendEmailVerification(firebaseUser, actionCodeSettings);
       
-      if (result.success) {
-        // Không hiển thị toast ở đây, để RegisterPage tự handle
-        return { success: true, message: result.message };
-      } else {
-        return { success: false, error: result.error };
-      }
+      return { success: true };
+
     } catch (error) {
-      const message = 'Đăng ký thất bại';
+      const message = error.code === 'auth/email-already-in-use'
+        ? 'Email này đã được sử dụng.'
+        : 'Đăng ký thất bại. Vui lòng thử lại.';
       return { success: false, error: message };
-    } finally {
-      setLoading(false);
     }
   };
 
-  // Đăng xuất với Firebase Auth
   const logout = async () => {
     try {
-      setLoading(true);
-      const result = await firebaseAuth.logout();
-      
-      if (result.success) {
-        toast.success(result.message);
-        return { success: true };
-      } else {
-        toast.error(result.error);
-        return { success: false, error: result.error };
-      }
+      await signOut(auth);
+      toast.success('Đăng xuất thành công!');
+      return { success: true };
     } catch (error) {
-      console.error('Logout error:', error);
-      toast.error('Đăng xuất thất bại');
+      toast.error('Đăng xuất thất bại.');
       return { success: false, error: 'Đăng xuất thất bại' };
-    } finally {
-      setLoading(false);
     }
   };
 
-  // Gửi lại email xác thực
-  const resendEmailVerification = async () => {
+  const resendEmailVerification = useCallback(async () => {
+    if (!auth.currentUser) {
+      toast.error('Bạn cần đăng nhập để thực hiện hành động này.');
+      return { success: false, error: 'User not logged in' };
+    }
     try {
-      if (user) {
-        const result = await firebaseAuth.resendEmailVerification(user);
-        
-        if (result.success) {
-          toast.success(result.message);
-          return { success: true };
-        } else {
-          toast.error(result.error);
-          return { success: false, error: result.error };
-        }
-      } else {
-        const message = 'Không tìm thấy user để gửi email xác thực';
-        toast.error(message);
-        return { success: false, error: message };
-      }
+      await sendEmailVerification(auth.currentUser);
+      toast.success('Email xác thực đã được gửi lại. Vui lòng kiểm tra hộp thư.');
+      return { success: true };
     } catch (error) {
-      const message = 'Gửi email xác thực thất bại';
-      toast.error(message);
-      return { success: false, error: message };
+      toast.error('Gửi lại email thất bại. Vui lòng thử lại sau.');
+      return { success: false, error: 'Failed to resend email' };
     }
-  };
+  }, []);
 
-  // Quên mật khẩu với Firebase Auth
   const forgotPassword = async (email) => {
     try {
-      const result = await firebaseAuth.sendPasswordReset(email);
-      
-      if (result.success) {
-        toast.success(result.message);
-        return { success: true };
-      } else {
-        toast.error(result.error);
-        return { success: false, error: result.error };
-      }
+      await sendPasswordResetEmail(auth, email);
+      toast.success('Email đặt lại mật khẩu đã được gửi. Vui lòng kiểm tra hộp thư.');
+      return { success: true };
     } catch (error) {
-      const message = 'Gửi email đặt lại mật khẩu thất bại';
+      const message = error.code === 'auth/user-not-found'
+        ? 'Không tìm thấy tài khoản với email này.'
+        : 'Gửi email thất bại.';
       toast.error(message);
       return { success: false, error: message };
-    }
-  };
-
-  // Lấy ID token hiện tại
-  const getCurrentIdToken = async () => {
-    try {
-      const result = await firebaseAuth.getCurrentIdToken();
-      return result;
-    } catch (error) {
-      return { success: false, error: error.message };
     }
   };
 
   const value = {
     user,
+    userProfile,
     loading,
-    idToken,
     login,
     register,
     logout,
     resendEmailVerification,
     forgotPassword,
-    getCurrentIdToken
   };
 
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 };

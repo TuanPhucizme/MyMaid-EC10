@@ -225,11 +225,11 @@ const Header = () => {
                     Hồ sơ
                   </Button>
                 </Link>
-                <button onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}>
+                <div onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}>
                   <Button variant="danger" className="w-full justify-center">
                     Đăng xuất
                   </Button>
-                </button>
+                </div>
               </div>
             ) : (
               <div className="flex flex-col space-y-2 px-4 pt-4 border-t border-neutral-200">
