@@ -211,52 +211,6 @@ const PartnerDashboardPage = () => {
     return <DashboardContainer><ErrorMessage message={error} /></DashboardContainer>;
   }
 
-  // // Sử dụng dữ liệu mẫu để mô phỏng
-  // // ✅ 4. TẠO MỘT useEffect MỚI ĐỂ XỬ LÝ MOCK DATA
-  // useEffect(() => {
-  //   // Giả lập việc xử lý dữ liệu như khi lấy từ Firebase
-  //   const processMockData = () => {
-  //     const now = new Date();
-  //     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      
-  //     let revenue = 0;
-  //     let completedCount = 0;
-  //     const newAssignedJobs = [];
-
-  //     mockBookings.forEach(job => {
-  //       const jobDate = new Date(job.createdAt);
-        
-  //       if (job.status === 'confirmed') {
-  //         newAssignedJobs.push(job);
-  //       }
-
-  //       if (job.status === 'completed' && jobDate >= startOfMonth) {
-  //         const commissionRate = 0.8; 
-  //         revenue += job.summary.totalPrice * commissionRate;
-  //         completedCount++;
-  //       }
-  //     });
-
-  //     setNewJobs(newAssignedJobs);
-  //     setStats({ revenueThisMonth: revenue, completedJobsThisMonth: completedCount });
-  //     setIsLoading(false); // Kết thúc loading
-  //   };
-
-  //   // Giả lập độ trễ mạng
-  //   const timer = setTimeout(processMockData, 500); 
-
-  //   return () => clearTimeout(timer); // Dọn dẹp timer
-  // }, []); // Mảng rỗng đảm bảo chỉ chạy 1 lần
-
-  // if (isLoading) {
-  //   return <LoadingSpinner fullScreen text="Đang tải dữ liệu đối tác..." />;
-  // }
-
-  // if (error) {
-  //   return <DashboardContainer><ErrorMessage message={error} /></DashboardContainer>;
-  // }
-
-
   return (
     <DashboardContainer>
       <DashboardHeader>
@@ -305,8 +259,6 @@ const PartnerDashboardPage = () => {
           )) : <EmptyState>Hiện tại không có dịch vụ nào mới được giao cho bạn.</EmptyState>}
         </CardContent>
       </Card>
-      
-      {/* Bạn có thể thêm Card Lịch sử công việc ở đây nếu muốn */}
 
     </DashboardContainer>
   );
