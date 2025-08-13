@@ -9,34 +9,31 @@ import Footer from "./components/Footer";
 import Header from "./components/Header";
 import Hero from "./components/Hero";
 import Services from "./components/Services";
-import ServicesPage from "./pages/ServicesPage";
 import MaidProfiles from "./components/MaidProfiles";
 import Testimonials from "./components/Testimonials";
-import AuthRedirect from "./components/AuthRedirect";
 import VerificationBanner from "./components/VerificationBanner";
 
 // Pages
-import PartNer from "./pages/RegisterPartnerPage";
-
-
 import AdminPage from "./pages/AdminPage";
 import BookingDetailPage from "./pages/BookingDetailPage";
 import BookingPage from "./pages/BookingPage";
+import BlogDetailPage from "./pages/BlogDetailPage";
 import CheckLinkPage from "./pages/CheckLinkPage";
-
 import DashboardPartnerPage from "./pages/DashboardPartnerPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
-import Partner from "./pages/RegisterPartnerPage";
-import LogIn from "./pages/LoginPage";
-import Register from "./pages/RegisterPage";
+import LoginPage from "./pages/LoginPage";
+import PartnerPage from "./pages/RegisterPartnerPage";
+import PartnerSuccessPage from "./pages/PartnerSuccessPage";
 import PaymentPage from "./pages/PaymentPage";
 import PaymentResultPage from "./pages/PaymentResult";
-import HomePage from "./pages/HomePage";
 import ProfilePage from "./pages/ProfilePage";
+import RegisterPage from "./pages/RegisterPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
-import VerifyEmailPage from "./pages/VerifyEmailPage";
+import ServicesPage from "./pages/ServicesPage";
 import UpdateInformationPage from "./pages/UpdateInformation";
-// Component nh? d? ch?a n?i dung trang ch?, gi�p code trong <Routes> g?n g�ng hon
+import VerifyEmailPage from "./pages/VerifyEmailPage";
+
+// Component cho nội dung trang chủ
 const HomePageContent = () => (
   <main>
     <Hero />
@@ -46,81 +43,55 @@ const HomePageContent = () => (
     <BlogSection />
   </main>
 );
+
 function App() {
   const { user, userProfile } = useAuth();
   const [showVerificationBanner, setShowVerificationBanner] = useState(true);
 
   return (
     <div className="min-h-screen bg-neutral-50">
-      {user && userProfile && userProfile.status !== 'active' && showVerificationBanner && (
-        <VerificationBanner 
-          user={user} 
+      
+      {user && userProfile && userProfile.status !== "active" && showVerificationBanner && (
+        <VerificationBanner
+          user={user}
           onClose={() => setShowVerificationBanner(false)}
         />
-      )}      <Header />
-      
-      <AuthRedirect>
-        <Routes>
-            <Route
-              path="/"
-              element={
-                <main>
-                  <Hero />
-                  <Services />
-                  <MaidProfiles />
-                  <Testimonials />
-                  <BlogSection />
-                </main>
-              }
-            />
-            <Route path="/home" element={<HomePage />} />
-            <Route path="/services" element={<ServicesPage />} />
-            <Route path="/partner" element={<PartNer />} />
-            <Route path="/login" element={<LogIn />} />
-            <Route path="/register" element={<Register />} />
-            {/*<Route path="/profile" element={<ProfilePage />} />*/}
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/verify-email" element={<VerifyEmailPage />} />
-            <Route path="/check-link" element={<CheckLinkPage />} />        
-            <Route path="/payment" element={<PaymentPage />} />
-            <Route path="/payment-result" element={<PaymentResultPage />} />
-            <Route path="/booking" element={<BookingPage />} />
-            <Route path="/update-information" element={<UpdateInformationPage />} />
-            <Route path="/booking-details/:bookingId" element={<BookingDetailPage />} />
-            <Route path="*" element={<h1 className="text-center text-2xl">404 - Page Not Found</h1>} />
-        </Routes>
-      </AuthRedirect>
+      )}
 
+      <Header />
+
+      {/* ✅ CHỈ SỬ DỤNG MỘT KHỐI <Routes> DUY NHẤT */}
       <Routes>
         {/* --- CÁC ROUTE CÔNG KHAI & CHÍNH --- */}
         <Route path="/" element={<HomePageContent />} />
-        <Route path="/home" element={<HomePage />} />
         <Route path="/services" element={<ServicesPage />} />
+        <Route path="/blog" element={<BlogDetailPage />} />
 
-        {/* --- LỒNG XÁC THỰC NGƯỜI DÙNG --- */}
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/login" element={<LogIn />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        {/* --- LUỒNG XÁC THỰC NGƯỜI DÙNG --- */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route path="/update-information" element={<UpdateInformationPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/check-link" element={<CheckLinkPage />} />
 
-        {/* --- CÁC ROUTE CỦA NGUỜI DÙNG & ĐỐI TÁC (YÊU CẦU ĐANG NHẬP) --- */}
-
+        {/* --- CÁC ROUTE CỦA NGƯỜI DÙNG & ĐỐI TÁC (YÊU CẦU ĐĂNG NHẬP) --- */}
+        {/* Lưu ý: Các route này cần được bọc trong một ProtectedRoute để hoạt động đúng */}
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/partner" element={<PartnerPage />} />
+        <Route path="/partner-registration-success" element={<PartnerSuccessPage />} />
+        <Route path="/dashboard-partner" element={<DashboardPartnerPage />} />
         <Route path="/booking" element={<BookingPage />} />
         <Route path="/booking-details/:bookingId" element={<BookingDetailPage />} />
-        <Route path="/dashboardpartner" element={<DashboardPartnerPage />} />
-        <Route path="/partner" element={<Partner />} />
         <Route path="/payment" element={<PaymentPage />} />
         <Route path="/payment-result" element={<PaymentResultPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
 
-        {/* --- CÁC ROUTE CỦA QUẢN TRỊ VIÊN (YÊU CẦU VAI TRÒ ADMIN) --- */}
+        {/* --- CÁC ROUTE CỦA QUẢN TRỊ VIÊN --- */}
+        {/* Lưu ý: Route này cần được bọc trong một AdminRoute */}
         <Route path="/admin" element={<AdminPage />} />
 
-        {/* --- ROUTE BẮT LỖI 404 (KHÔNG TÌM THẤY TRANG) --- */}
+        {/* --- ROUTE BẮT LỖI 404 --- */}
         <Route path="*" element={<h1 className="text-center text-2xl p-8">404 - Page Not Found</h1>} />
       </Routes>
 
