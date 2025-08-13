@@ -70,7 +70,7 @@ const EmailVerificationStatus = ({ user }) => {
 
     try {
       const actionCodeSettings = {
-        url: `${window.location.origin}/verify-email`,
+        url: `${window.location.origin}/update-information`,
         handleCodeInApp: true,
       };
       

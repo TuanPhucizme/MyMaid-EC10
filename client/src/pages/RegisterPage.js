@@ -327,12 +327,12 @@ const SuccessMessage = styled.div`
 `;
 
 const schema = yup.object({
-  firstName: yup
+  lastName: yup
     .string()
     .min(2, 'Họ và tên đệm phải có ít nhất 2 ký tự')
     .max(50, 'Họ và tên đệm không được vượt quá 50 ký tự')
     .required('Họ và tên đệm là bắt buộc'),
-  lastName: yup
+  firstName: yup
     .string()
     .min(2, 'Tên phải có ít nhất 2 ký tự')
     .max(50, 'Tên không được vượt quá 50 ký tự')
@@ -480,11 +480,11 @@ const RegisterPage = () => {
                 <Input 
                   type="text" 
                   placeholder="Họ Và Tên Đệm" 
-                  $error={!!errors.firstName} 
-                  {...register('firstName')} 
+                  $error={!!errors.lastName} 
+                  {...register('lastName')} 
                 />
               </InputWrapper>
-              {errors.firstName && <FormErrorMessage>{errors.firstName.message}</FormErrorMessage>}
+              {errors.lastName && <FormErrorMessage>{errors.lastName.message}</FormErrorMessage>}
             </InputGroup>
             
             <InputGroup>
@@ -495,11 +495,11 @@ const RegisterPage = () => {
                 <Input 
                   type="text" 
                   placeholder="Tên" 
-                  $error={!!errors.lastName} 
-                  {...register('lastName')} 
+                  $error={!!errors.firstName} 
+                  {...register('firstName')} 
                 />
               </InputWrapper>
-              {errors.lastName && <FormErrorMessage>{errors.lastName.message}</FormErrorMessage>}
+              {errors.firstName && <FormErrorMessage>{errors.firstName.message}</FormErrorMessage>}
             </InputGroup>
           </InputRow>
 
@@ -537,9 +537,8 @@ const RegisterPage = () => {
               </PasswordToggle>
             </InputWrapper>
             {errors.password && <FormErrorMessage>{errors.password.message}</FormErrorMessage>}
-            
-            {/* Fixed height container to prevent layout shift */}
-                            <PasswordComponentsContainer $hasPassword={!!watchedPassword}>
+          
+              <PasswordComponentsContainer $hasPassword={!!watchedPassword}>
               {!watchedPassword && (
                 <PasswordComponentWrapper>
                   <PasswordInfo />

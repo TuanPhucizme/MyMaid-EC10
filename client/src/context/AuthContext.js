@@ -82,8 +82,8 @@ export const AuthProvider = ({ children }) => {
       });
 
       // 3. Gửi email xác thực
-      const actionCodeSettings = {
-        url: 'http://localhost:3000/email-verification',
+        const actionCodeSettings = {
+        url: 'http://localhost:3000/update-information', // <-- Đổi thành trang cập nhật thông tin
         handleCodeInApp: true,
       };
       await sendEmailVerification(firebaseUser, actionCodeSettings);

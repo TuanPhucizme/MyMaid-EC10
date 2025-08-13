@@ -1,11 +1,58 @@
 // server/routes/userRoutes.js
-
 const express = require('express');
 const router = express.Router();
-const { db } = require('../config/firebaseAdmin');
+const { db, storage } = require('../config/firebaseAdmin');
+
+const { v4: uuidv4 } = require('uuid');
 const authMiddleware = require('../middleware/authMiddleware');
 
-// Route: GET /api/users/profile (Giữ nguyên, đã tốt)
+const multer = require('multer');
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
+
+/**
+ * @route   POST /api/users/avatar
+ * @desc    Upload avatar cho người dùng đang đăng nhập
+ * @access  Private
+ */
+router.post('/avatar', [authMiddleware, upload.single('avatar')], async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).send({ message: 'Vui lòng chọn một file ảnh.' });
+    }
+    const user = req.user;
+    const bucket = storage.bucket();
+    const filename = `avatars/${user.uid}/avatar-${uuidv4()}`;
+    const fileUpload = bucket.file(filename);
+
+    const blobStream = fileUpload.createWriteStream({
+      metadata: { contentType: req.file.mimetype },
+    });
+
+    blobStream.on('error', (error) => {
+      throw error;
+    });
+
+    blobStream.on('finish', async () => {
+      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
+      // Cập nhật URL avatar trong document của user
+      await db.collection('mm_users').doc(user.uid).update({
+        avatarUrl: publicUrl,
+      });
+      res.status(200).send({ message: 'Cập nhật ảnh đại diện thành công!', avatarUrl: publicUrl });
+    });
+
+    blobStream.end(req.file.buffer);
+
+  } catch (error) {
+    console.error('Lỗi khi upload avatar:', error);
+    res.status(500).send({ message: 'Lỗi server khi upload ảnh.' });
+  }
+});
+
 router.get('/profile', authMiddleware, async (req, res, next) => {
   try {
     const { uid } = req.user;
@@ -27,7 +74,7 @@ router.get('/profile', authMiddleware, async (req, res, next) => {
   }
 });
 
-router.put('/profile', authMiddleware, async (req, res, next) => { // Thêm next để dùng global error handler
+router.put('/profile', authMiddleware, async (req, res, next) => {
   try {
     const { uid } = req.user;
     // ✅ 1. NHẬN VỀ firstName VÀ lastName TỪ req.body
