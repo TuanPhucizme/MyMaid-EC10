@@ -411,7 +411,7 @@ const ProfilePage = () => {
         const token = await user.getIdToken();
         console.log("Token đã lấy:", token.substring(0, 30) + "...");
 
-        const response = await fetch('http://localhost:3030/api/users/profile', {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/users/profile`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',

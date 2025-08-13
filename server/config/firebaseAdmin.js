@@ -4,7 +4,7 @@ const admin = require('firebase-admin');
 const path = require('path');
 
 // Load environment variables từ root directory
-require('dotenv').config({ path: path.join(__dirname, '../.env') });
+require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 
 // Kiểm tra các biến môi trường Firebase cần thiết
 const requiredEnvVars = [
