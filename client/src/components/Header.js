@@ -52,7 +52,7 @@ const Header = () => {
   const navItems = [
     { name: 'Trang chủ', path: '/' },
     { name: 'Dịch vụ', path: '/services' },
-    { name: 'Về MyMaid', path: '/about-us' },
+
     { name: 'Blog', path: '/blog' },
     { name: 'Đối tác', path: '/partner' }
   ];

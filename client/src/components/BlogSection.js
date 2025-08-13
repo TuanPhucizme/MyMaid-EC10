@@ -257,9 +257,9 @@ const BlogSection = () => {
             <Button variant="ghost" onClick={() => navigate('/services')}>
               Đặt dịch vụ ngay
             </Button>
-            <Button variant="ghost" onClick={() => navigate('/about-us')}>
-              Tìm hiểu thêm
-            </Button>
+                    <Button variant="ghost" onClick={() => navigate('/services')}>
+          Xem dịch vụ
+        </Button>
           </div>
         </div>
       </div>
