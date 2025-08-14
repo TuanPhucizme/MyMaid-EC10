@@ -58,7 +58,6 @@ const Header = () => {
   const navItems = [
     { name: 'Trang chủ', path: '/' },
     { name: 'Dịch vụ', path: '/services' },
-    { name: 'Về MyMaid', path: '/about-us' },
     { name: 'Blog', path: '/blog' },
     { name: 'Đối tác', path: '/partner' }
   ];
@@ -130,10 +129,10 @@ const Header = () => {
                 {isUserMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-neutral-200 py-2">
                     <Link
-                      to="/dashboard"
+                      to="/my-orders"
                       className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
                     >
-                      Dashboard
+                      Đơn hàng của tôi
                     </Link>
                     <Link
                       to="/profile"
@@ -146,6 +145,12 @@ const Header = () => {
                       className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
                     >
                       Đặt dịch vụ
+                    </Link>
+                    <Link
+                      to="/my-orders"
+                      className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
+                    >
+                      Đơn hàng của tôi
                     </Link>
                     <hr className="my-2" />
                     <button
@@ -221,14 +226,19 @@ const Header = () => {
                   </div>
                   <span className="text-sm font-medium text-neutral-700">{user.displayName || 'User'}</span>
                 </div>
-                <Link to="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
+                <Link to="/my-orders" onClick={() => setIsMobileMenuOpen(false)}>
                   <Button variant="ghost" className="w-full justify-center">
-                    Dashboard
+                    Đơn hàng của tôi
                   </Button>
                 </Link>
                 <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)}>
                   <Button variant="ghost" className="w-full justify-center">
                     Hồ sơ
+                  </Button>
+                </Link>
+                <Link to="/my-orders" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button variant="ghost" className="w-full justify-center">
+                    Đơn hàng của tôi
                   </Button>
                 </Link>
                 <div onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}>

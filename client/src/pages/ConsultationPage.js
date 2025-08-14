@@ -83,7 +83,7 @@ const ConsultationPage = () => {
     setTimeout(() => {
       setIsSubmitting(false);
       alert('Gửi yêu cầu tư vấn thành công! Chúng tôi sẽ liên hệ với bạn trong vòng 24 giờ.');
-      navigate('/dashboard');
+              navigate('/my-orders');
     }, 2000);
   };
 
