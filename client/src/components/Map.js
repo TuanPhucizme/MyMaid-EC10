@@ -182,6 +182,7 @@ const Map = ({
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
+  const [clickedLocation, setClickedLocation] = useState(null);
 
   // Khởi tạo bản đồ
   useEffect(() => {
@@ -214,7 +215,12 @@ const Map = ({
     // Xử lý sự kiện click trên bản đồ
     if (onMapClick) {
       map.current.on('click', (e) => {
-        onMapClick([e.lngLat.lng, e.lngLat.lat]);
+        const coordinates = [e.lngLat.lng, e.lngLat.lat];
+        setClickedLocation(coordinates);
+        onMapClick(coordinates);
+        
+        // Hiển thị thông báo tạm thời
+        console.log('📍 Đã chọn địa điểm:', coordinates);
       });
     }
 
@@ -231,7 +237,7 @@ const Map = ({
     };
   }, [initialCenter, initialZoom, onMapClick]);
 
-  // Thêm markers khi markers thay đổi
+  // Thêm markers khi markers thay đổi hoặc có địa điểm được click
   useEffect(() => {
     if (!map.current || !map.current.isStyleLoaded()) return;
 
@@ -239,21 +245,51 @@ const Map = ({
     const existingMarkers = document.querySelectorAll('.mapbox-marker');
     existingMarkers.forEach(marker => marker.remove());
 
-    // Thêm markers mới
-    markers.forEach((marker, index) => {
+    // Tạo danh sách tất cả markers (bao gồm cả địa điểm được click)
+    const allMarkers = [...markers];
+    
+    // Thêm marker cho địa điểm được click
+    if (clickedLocation) {
+      allMarkers.push({
+        coordinates: clickedLocation,
+        title: 'Địa điểm đã chọn',
+        description: `Tọa độ: ${clickedLocation[1].toFixed(6)}, ${clickedLocation[0].toFixed(6)}`,
+        isClicked: true
+      });
+    }
+
+    // Thêm tất cả markers
+    allMarkers.forEach((marker, index) => {
       const el = document.createElement('div');
       el.className = 'mapbox-marker';
-      el.innerHTML = `
-        <div style="
-          width: 30px; 
-          height: 30px; 
-          background: #ef4444; 
-          border: 3px solid white; 
-          border-radius: 50%; 
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-          cursor: pointer;
-        "></div>
-      `;
+      
+      // Marker đặc biệt cho địa điểm được click
+      if (marker.isClicked) {
+        el.innerHTML = `
+          <div style="
+            width: 40px; 
+            height: 40px; 
+            background: #10b981; 
+            border: 4px solid white; 
+            border-radius: 50%; 
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+            cursor: pointer;
+            animation: pulse 2s infinite;
+          "></div>
+        `;
+      } else {
+        el.innerHTML = `
+          <div style="
+            width: 30px; 
+            height: 30px; 
+            background: #ef4444; 
+            border: 3px solid white; 
+            border-radius: 50%; 
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+          "></div>
+        `;
+      }
 
       if (onMarkerClick) {
         el.addEventListener('click', () => onMarkerClick(marker, index));
@@ -271,12 +307,13 @@ const Map = ({
                 <p style="margin: 0; font-size: 12px; color: #6b7280;">
                   ${marker.description || marker.coordinates.join(', ')}
                 </p>
+                ${marker.isClicked ? '<p style="margin: 8px 0 0 0; color: #10b981; font-weight: 500;">✅ Đã chọn</p>' : ''}
               </div>
             `)
         )
         .addTo(map.current);
     });
-  }, [markers, onMarkerClick]);
+  }, [markers, onMarkerClick, clickedLocation]);
 
   // Tìm kiếm địa chỉ
   const handleSearch = useCallback(async () => {
@@ -417,6 +454,48 @@ const Map = ({
             </SearchResults>
           )}
         </>
+      )}
+
+      {/* Hướng dẫn sử dụng */}
+      {!clickedLocation && (
+        <div style={{
+          position: 'absolute',
+          top: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(59, 130, 246, 0.9)',
+          color: 'white',
+          padding: '8px 16px',
+          borderRadius: '20px',
+          fontSize: '14px',
+          fontWeight: '500',
+          boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+          zIndex: 1000,
+          backdropFilter: 'blur(10px)'
+        }}>
+          💡 Click vào bản đồ để chọn địa điểm
+        </div>
+      )}
+
+      {/* Thông báo khi chọn địa điểm */}
+      {clickedLocation && (
+        <div style={{
+          position: 'absolute',
+          top: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: '#10b981',
+          color: 'white',
+          padding: '8px 16px',
+          borderRadius: '20px',
+          fontSize: '14px',
+          fontWeight: '500',
+          boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+          zIndex: 1000,
+          animation: 'slideDown 0.3s ease'
+        }}>
+          ✅ Đã chọn địa điểm: {clickedLocation[1].toFixed(6)}, {clickedLocation[0].toFixed(6)}
+        </div>
       )}
 
       <MapControls>

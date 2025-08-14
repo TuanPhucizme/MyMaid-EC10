@@ -16,6 +16,8 @@ const BookingPage = () => {
     area: 'small', // Thêm 'area' với giá trị mặc định
     address: '',
     addressCoordinates: null, // Thêm tọa độ địa chỉ
+    addressComponents: null, // Thêm thông tin chi tiết địa chỉ
+    formattedAddress: '', // Thêm địa chỉ được định dạng
     phone: '',
     name: '',
     email: '',
@@ -132,6 +134,8 @@ const BookingPage = () => {
         email: formData.email,
         address: formData.address,
         addressCoordinates: formData.addressCoordinates,
+        addressComponents: formData.addressComponents,
+        formattedAddress: formData.formattedAddress,
         notes: formData.notes,
       },
       summary: {
@@ -310,11 +314,13 @@ const BookingPage = () => {
                           onChange={(address) => {
                             setFormData(prev => ({ ...prev, address }));
                           }}
-                          onAddressSelect={({ address, coordinates }) => {
+                          onAddressSelect={({ address, coordinates, components, formattedAddress }) => {
                             setFormData(prev => ({ 
                               ...prev, 
                               address, 
-                              addressCoordinates: coordinates 
+                              addressCoordinates: coordinates,
+                              addressComponents: components,
+                              formattedAddress: formattedAddress || address
                             }));
                           }}
                           placeholder="Nhập địa chỉ hoặc chọn trên bản đồ..."
@@ -326,12 +332,48 @@ const BookingPage = () => {
                       
                       {formData.addressCoordinates && (
                         <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                          <div className="flex items-center space-x-2 text-green-700">
+                          <div className="flex items-start space-x-3 text-green-700">
                             <span className="text-lg">📍</span>
-                            <div>
+                            <div className="flex-1">
                               <p className="font-medium">Địa chỉ đã được xác định</p>
-                              <p className="text-sm">{formData.address}</p>
-                              <p className="text-xs text-green-600">
+                              <p className="text-sm mb-2">{formData.address}</p>
+                              
+                              {formData.addressComponents && (
+                                <div className="grid grid-cols-2 gap-2 text-xs text-green-600">
+                                  {formData.addressComponents.houseNumber && (
+                                    <div>
+                                      <span className="font-medium">Số nhà:</span> {formData.addressComponents.houseNumber}
+                                    </div>
+                                  )}
+                                  {formData.addressComponents.street && (
+                                    <div>
+                                      <span className="font-medium">Đường:</span> {formData.addressComponents.street}
+                                    </div>
+                                  )}
+                                  {formData.addressComponents.ward && (
+                                    <div>
+                                      <span className="font-medium">Phường/Xã:</span> {formData.addressComponents.ward}
+                                    </div>
+                                  )}
+                                  {formData.addressComponents.district && (
+                                    <div>
+                                      <span className="font-medium">Quận/Huyện:</span> {formData.addressComponents.district}
+                                    </div>
+                                  )}
+                                  {formData.addressComponents.city && (
+                                    <div>
+                                      <span className="font-medium">Thành phố:</span> {formData.addressComponents.city}
+                                    </div>
+                                  )}
+                                  {formData.addressComponents.province && (
+                                    <div>
+                                      <span className="font-medium">Tỉnh:</span> {formData.addressComponents.province}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              
+                              <p className="text-xs text-green-600 mt-2">
                                 Tọa độ: {formData.addressCoordinates[1].toFixed(6)}, {formData.addressCoordinates[0].toFixed(6)}
                               </p>
                             </div>
@@ -465,7 +507,22 @@ const BookingPage = () => {
                           <span className="text-lg">📍</span>
                           <div className="flex-1">
                             <p className="text-sm font-medium text-blue-900">Địa chỉ:</p>
-                            <p className="text-sm text-blue-700">{formData.address}</p>
+                            <p className="text-sm text-blue-700 mb-1">{formData.address}</p>
+                            
+                            {formData.addressComponents && (
+                              <div className="text-xs text-blue-600 space-y-1">
+                                {formData.addressComponents.houseNumber && formData.addressComponents.street && (
+                                  <p>🏠 {formData.addressComponents.houseNumber} {formData.addressComponents.street}</p>
+                                )}
+                                {formData.addressComponents.ward && (
+                                  <p>🏘️ {formData.addressComponents.ward}</p>
+                                )}
+                                {formData.addressComponents.district && (
+                                  <p>🏙️ {formData.addressComponents.district}</p>
+                                )}
+                              </div>
+                            )}
+                            
                             {formData.addressCoordinates && (
                               <p className="text-xs text-blue-600 mt-1">
                                 ✓ Đã xác định tọa độ chính xác
