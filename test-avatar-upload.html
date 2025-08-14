@@ -1,0 +1,173 @@
+// test-avatar-upload.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Avatar Upload</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 600px; 
+            margin: 50px auto; 
+            padding: 20px; 
+        }
+        .form-group { 
+            margin: 20px 0; 
+        }
+        label { 
+            display: block; 
+            margin-bottom: 5px; 
+            font-weight: bold; 
+        }
+        input, button { 
+            padding: 10px; 
+            font-size: 16px; 
+        }
+        input[type="file"] { 
+            width: 100%; 
+        }
+        button { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            cursor: pointer; 
+            width: 100%; 
+        }
+        button:hover { 
+            background: #0056b3; 
+        }
+        .result { 
+            margin-top: 20px; 
+            padding: 15px; 
+            border-radius: 5px; 
+        }
+        .success { 
+            background: #d4edda; 
+            color: #155724; 
+            border: 1px solid #c3e6cb; 
+        }
+        .error { 
+            background: #f8d7da; 
+            color: #721c24; 
+            border: 1px solid #f5c6cb; 
+        }
+        .info { 
+            background: #d1ecf1; 
+            color: #0c5460; 
+            border: 1px solid #bee5eb; 
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Avatar Upload</h1>
+    
+    <div class="form-group">
+        <label for="token">JWT Token:</label>
+        <input type="text" id="token" placeholder="Paste your JWT token here..." />
+        <button onclick="generateToken()" style="margin-top: 10px; width: auto; padding: 5px 15px;">Generate Test Token</button>
+        <button onclick="enableStorage()" style="margin-top: 10px; margin-left: 10px; width: auto; padding: 5px 15px; background: #28a745;">Enable Storage</button>
+    </div>
+    
+    <div class="form-group">
+        <label for="avatar">Select Avatar Image:</label>
+        <input type="file" id="avatar" accept="image/*" />
+    </div>
+    
+    <div class="form-group">
+        <button onclick="uploadAvatar()">Upload Avatar</button>
+    </div>
+    
+    <div id="result"></div>
+
+    <script>
+        function showResult(message, type = 'info') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = message;
+        }
+
+        async function generateToken() {
+            showResult('🔄 Generating test token...', 'info');
+            
+            try {
+                const response = await fetch('http://localhost:5000/generate-test-token');
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('token').value = data.token;
+                    showResult(`✅ Test token generated successfully for user: ${data.userId}`, 'success');
+                } else {
+                    showResult(`❌ Failed to generate token: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                showResult(`💥 Error generating token: ${error.message}`, 'error');
+            }
+        }
+
+        async function uploadAvatar() {
+            const token = document.getElementById('token').value.trim();
+            const fileInput = document.getElementById('avatar');
+            const file = fileInput.files[0];
+
+            if (!token) {
+                showResult('❌ Please provide JWT token', 'error');
+                return;
+            }
+
+            if (!file) {
+                showResult('❌ Please select an image file', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('avatar', file);
+
+            showResult('🔄 Uploading avatar...', 'info');
+
+            try {
+                const response = await fetch('http://localhost:5000/api/users/avatar', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showResult(`
+                        ✅ <strong>Upload successful!</strong><br/>
+                        📁 Bucket used: ${data.bucketUsed || 'Unknown'}<br/>
+                        🔗 Avatar URL: <a href="${data.avatarUrl}" target="_blank">${data.avatarUrl}</a><br/>
+                        💬 Message: ${data.message}
+                    `, 'success');
+                } else {
+                    showResult(`
+                        ❌ <strong>Upload failed!</strong><br/>
+                        💬 Message: ${data.message}<br/>
+                        🔍 Error: ${data.error || 'Unknown error'}
+                    `, 'error');
+                }
+            } catch (error) {
+                showResult(`
+                    💥 <strong>Network Error!</strong><br/>
+                    🔍 Error: ${error.message}
+                `, 'error');
+            }
+        }
+
+        // Test connection on page load
+        window.onload = async function() {
+            try {
+                const response = await fetch('http://localhost:5000/test');
+                const data = await response.text();
+                showResult(`🔗 Server connection: ${data}`, 'success');
+            } catch (error) {
+                showResult(`❌ Cannot connect to server: ${error.message}`, 'error');
+            }
+        };
+    </script>
+</body>
+</html>

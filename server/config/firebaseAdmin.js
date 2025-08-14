@@ -31,9 +31,18 @@ const serviceAccount = {
   universe_domain: "googleapis.com"
 };
 
+// Debug: Log các biến môi trường
+console.log('🔍 [DEBUG] Environment variables:');
+console.log('  - FIREBASE_PROJECT_ID:', process.env.FIREBASE_PROJECT_ID);
+console.log('  - REACT_APP_FIREBASE_STORAGE_BUCKET:', process.env.REACT_APP_FIREBASE_STORAGE_BUCKET);
+
+// Sử dụng bucket default của Firebase project
+const defaultBucket = `${process.env.FIREBASE_PROJECT_ID}.appspot.com`;
+console.log('  - Using default Firebase Storage bucket:', defaultBucket);
+
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  storageBucket: 'mymaid-ec10.appspot.com'
+  storageBucket: defaultBucket
 });
 
 const db = admin.firestore();
@@ -41,5 +50,6 @@ const auth = admin.auth();
 const storage = admin.storage();
 
 console.log('✅ Firebase Admin SDK initialized successfully');
+console.log('🪣 [DEBUG] Storage bucket name:', storage.bucket().name);
 
 module.exports = { db, auth, storage };

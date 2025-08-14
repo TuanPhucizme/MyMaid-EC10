@@ -4,6 +4,7 @@ import Button from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { useGSAP } from '../hooks/useGSAP';
 import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
+import AddressSelector from '../components/AddressSelector';
 
 const BookingPage = () => {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ const BookingPage = () => {
     time: '',
     area: 'small', // Thêm 'area' với giá trị mặc định
     address: '',
+    addressCoordinates: null, // Thêm tọa độ địa chỉ
     phone: '',
     name: '',
     email: '',
@@ -95,6 +97,14 @@ const BookingPage = () => {
       alert('Vui lòng chọn ngày và giờ');
       return;
     }
+    if (currentStep === 3 && (!formData.address || !formData.addressCoordinates)) {
+      alert('Vui lòng chọn địa chỉ chính xác bằng cách sử dụng bản đồ');
+      return;
+    }
+    if (currentStep === 4 && (!formData.name || !formData.phone)) {
+      alert('Vui lòng điền đầy đủ thông tin liên hệ');
+      return;
+    }
     setCurrentStep(prev => prev + 1);
   };
 
@@ -113,7 +123,7 @@ const BookingPage = () => {
       schedule: {
         date: formData.date,
         time: formData.time,
-        duration: formData.duration,
+        duration: selectedAreaInfo.duration,
         frequency: formData.frequency,
       },
       contact: {
@@ -121,6 +131,7 @@ const BookingPage = () => {
         phone: formData.phone,
         email: formData.email,
         address: formData.address,
+        addressCoordinates: formData.addressCoordinates,
         notes: formData.notes,
       },
       summary: {
@@ -154,7 +165,7 @@ const BookingPage = () => {
           {/* Progress Steps */}
           <div className="flex justify-center mb-8">
             <div className="flex items-center space-x-4">
-              {[1, 2, 3].map((step) => (
+              {[1, 2, 3, 4].map((step) => (
                 <div key={step} className="flex items-center">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
                     step <= currentStep 
@@ -163,7 +174,7 @@ const BookingPage = () => {
                   }`}>
                     {step}
                   </div>
-                  {step < 3 && (
+                  {step < 4 && (
                     <div className={`w-16 h-1 mx-2 ${
                       step < currentStep ? 'bg-primary-600' : 'bg-neutral-200'
                     }`} />
@@ -283,10 +294,59 @@ const BookingPage = () => {
                   </div>
                 )}
 
+                {/* Step 3: Chọn địa chỉ */}
                 {currentStep === 3 && (
                   <div>
                     <h2 className="text-2xl font-bold text-neutral-900 mb-6">
-                      Bước 3: Thông Tin Liên Hệ
+                      Bước 3: Chọn Địa Chỉ
+                    </h2>
+                    <div className="space-y-6">
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-2">
+                          Địa chỉ thực hiện dịch vụ *
+                        </label>
+                        <AddressSelector
+                          value={formData.address}
+                          onChange={(address) => {
+                            setFormData(prev => ({ ...prev, address }));
+                          }}
+                          onAddressSelect={({ address, coordinates }) => {
+                            setFormData(prev => ({ 
+                              ...prev, 
+                              address, 
+                              addressCoordinates: coordinates 
+                            }));
+                          }}
+                          placeholder="Nhập địa chỉ hoặc chọn trên bản đồ..."
+                        />
+                        <p className="text-sm text-neutral-500 mt-2">
+                          💡 Sử dụng bản đồ để chọn địa chỉ chính xác, giúp maid dễ dàng tìm đến nhà bạn
+                        </p>
+                      </div>
+                      
+                      {formData.addressCoordinates && (
+                        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                          <div className="flex items-center space-x-2 text-green-700">
+                            <span className="text-lg">📍</span>
+                            <div>
+                              <p className="font-medium">Địa chỉ đã được xác định</p>
+                              <p className="text-sm">{formData.address}</p>
+                              <p className="text-xs text-green-600">
+                                Tọa độ: {formData.addressCoordinates[1].toFixed(6)}, {formData.addressCoordinates[0].toFixed(6)}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 4: Thông tin liên hệ */}
+                {currentStep === 4 && (
+                  <div>
+                    <h2 className="text-2xl font-bold text-neutral-900 mb-6">
+                      Bước 4: Thông Tin Liên Hệ
                     </h2>
                     <div className="grid md:grid-cols-2 gap-6">
                       <div>
@@ -329,20 +389,6 @@ const BookingPage = () => {
                       </div>
                       <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-neutral-700 mb-2">
-                          Địa chỉ *
-                        </label>
-                        <input
-                          type="text"
-                          name="address"
-                          value={formData.address}
-                          onChange={handleInputChange}
-                          required
-                          placeholder="Nhập địa chỉ chi tiết"
-                          className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-neutral-700 mb-2">
                           Ghi chú
                         </label>
                         <textarea
@@ -366,7 +412,7 @@ const BookingPage = () => {
                     </Button>
                   )}
                   <div className="ml-auto">
-                    {currentStep < 3 ? (
+                    {currentStep < 4 ? (
                       <Button onClick={handleNext}>
                         Tiếp tục
                       </Button>
@@ -391,7 +437,7 @@ const BookingPage = () => {
                   Tóm Tắt Đơn Hàng
                 </h3>
                 
-                {selectedService && selectedAreaInfo && ( // ✅ BƯỚC 5: CẬP NHẬT TÓM TẮT
+                {selectedService && selectedAreaInfo && (
                   <div className="space-y-4">
                     <div className="flex items-center space-x-3 p-3 bg-neutral-50 rounded-lg">
                       <span className="text-2xl">{selectedService.icon}</span>
@@ -410,6 +456,23 @@ const BookingPage = () => {
                       <div className="p-3 bg-neutral-50 rounded-lg">
                         <p className="text-sm text-neutral-600">Ngày: {formData.date}</p>
                         <p className="text-sm text-neutral-600">Lúc: {formData.time}</p>
+                      </div>
+                    )}
+
+                    {formData.address && (
+                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-start space-x-2">
+                          <span className="text-lg">📍</span>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-blue-900">Địa chỉ:</p>
+                            <p className="text-sm text-blue-700">{formData.address}</p>
+                            {formData.addressCoordinates && (
+                              <p className="text-xs text-blue-600 mt-1">
+                                ✓ Đã xác định tọa độ chính xác
+                              </p>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     )}
 
