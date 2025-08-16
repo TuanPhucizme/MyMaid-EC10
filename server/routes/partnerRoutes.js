@@ -18,7 +18,7 @@ const upload = multer({
  * @desc    Cho phép người dùng đã đăng nhập đăng ký làm đối tác
  * @access  Private (Logged-in users)
  */
-router.post('/register', [authMiddleware, upload.single('portrait')], async (req, res) => {
+router.post('/register', authMiddleware, async (req, res) => {
   try {
     const { nationalId } = req.body;
     const user = req.user; // Lấy từ authMiddleware
@@ -26,63 +26,36 @@ router.post('/register', [authMiddleware, upload.single('portrait')], async (req
     if (!nationalId) {
       return res.status(400).send({ message: 'Vui lòng cung cấp số CCCD/CMND.' });
     }
-    if (!req.file) {
-      return res.status(400).send({ message: 'Vui lòng cung cấp ảnh chân dung.' });
-    }
 
-    // 1. Tải ảnh lên Firebase Storage
-    const bucket = storage.bucket();
-    const filename = `partner_documents/${user.uid}/portrait-${uuidv4()}.jpg`;
-    const fileUpload = bucket.file(filename);
+    // 1. Sử dụng Batched Write để cập nhật nhiều collection
+    const batch = db.batch();
 
-    const blobStream = fileUpload.createWriteStream({
-      metadata: {
-        contentType: req.file.mimetype,
+    // Tham chiếu đến document của user và partner
+    const userDocRef = db.collection('mm_users').doc(user.uid);
+    const partnerDocRef = db.collection('mm_partners').doc(user.uid);
+
+    // Tác vụ 1: Cập nhật role trong mm_users
+    batch.update(userDocRef, { role: 'partner' });
+
+    // Tác vụ 2: Tạo document mới trong mm_partners
+    batch.set(partnerDocRef, {
+      userId: user.uid,
+      nationalId: nationalId,
+      registeredAt: new Date(),
+      operational: {
+        status: 'active', // <-- KÍCH HOẠT NGAY LẬP TỨC
+        rating: {
+          average: 0,
+          count: 0,
+        },
+        jobsCompleted: 0,
       },
     });
 
-    blobStream.on('error', (error) => {
-      console.error('Lỗi khi upload ảnh:', error);
-      throw new Error('Upload ảnh thất bại');
-    });
+    // 2. Commit batch
+    await batch.commit();
 
-    blobStream.on('finish', async () => {
-      // 2. Lấy URL công khai của ảnh
-      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
-
-      // 3. Sử dụng Batched Write để cập nhật nhiều collection
-      const batch = db.batch();
-
-      // Tham chiếu đến document của user và partner
-      const userDocRef = db.collection('mm_users').doc(user.uid);
-      const partnerDocRef = db.collection('mm_partners').doc(user.uid);
-
-      // Tác vụ 1: Cập nhật role trong mm_users
-      batch.update(userDocRef, { role: 'partner' });
-
-      // Tác vụ 2: Tạo document mới trong mm_partners
-      batch.set(partnerDocRef, {
-        userId: user.uid,
-        nationalId: nationalId,
-        portraitUrl: publicUrl,
-        registeredAt: new Date(),
-        operational: {
-          status: 'active', // <-- KÍCH HOẠT NGAY LẬP TỨC
-          rating: {
-            average: 0,
-            count: 0,
-          },
-          jobsCompleted: 0,
-        },
-      });
-      
-      // 4. Commit batch
-      await batch.commit();
-
-      res.status(201).send({ message:'Chúc mừng! Bạn đã chính thức trở thành đối tác của chúng tôi.' });
-    });
-
-    blobStream.end(req.file.buffer);
+    res.status(201).send({ message: 'Chúc mừng! Bạn đã chính thức trở thành đối tác của chúng tôi.' });
 
   } catch (error) {
     console.error('Lỗi khi đăng ký đối tác:', error);
