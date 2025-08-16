@@ -6,6 +6,7 @@ import { getAddressSuggestions } from '../services/vietnamAddressService';
 import { entranceAnimations, exitAnimations, microAnimations } from '../utils/gsapAnimations';
 import Map from './Map';
 import MapDebug from './MapDebug';
+import styled, { keyframes } from 'styled-components';
 
 // Keyframes for animations
 const spin = keyframes`
