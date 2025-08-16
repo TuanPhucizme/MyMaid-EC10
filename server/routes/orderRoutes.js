@@ -234,48 +234,36 @@ router.get('/', authMiddleware, async (req, res) => {
  * @desc    Lấy chi tiết đơn hàng
  * @access  Private
  */
-router.get('/:orderId', authMiddleware, async (req, res) => {
+router.get('/:orderId', authMiddleware, async (req, res, next) => {
   try {
+    const { uid: userId } = req.user;
     const { orderId } = req.params;
-    const userId = req.user.uid;
 
-    const doc = await db.collection('orders').doc(orderId).get();
-    
-    if (!doc.exists) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy đơn hàng'
-      });
+    const orderDocRef = db.collection('orders').doc(orderId); // Sử dụng tên collection của bạn
+    const orderDoc = await orderDocRef.get();
+
+    if (!orderDoc.exists) {
+      return res.status(404).send({ message: 'Không tìm thấy đơn hàng.' });
     }
 
-    const orderData = doc.data();
-    
-    // Check if user owns this order
-    if (orderData.userId !== userId) {
-      return res.status(403).json({
-        success: false,
-        message: 'Không có quyền truy cập đơn hàng này'
-      });
+    const orderData = orderDoc.data();
+
+    // ✅ KIỂM TRA QUYỀN TRUY CẬP (Rất quan trọng)
+    // Chỉ cho phép khách hàng đặt đơn hoặc đối tác được gán xem chi tiết
+    if (orderData.userId !== userId && orderData.partnerId !== userId) {
+      // Nếu bạn có vai trò admin, bạn có thể thêm một điều kiện ở đây
+      // const userProfile = await auth.getUser(userId);
+      // if (userProfile.customClaims?.role !== 'admin') { ... }
+      return res.status(403).send({ message: 'Bạn không có quyền xem đơn hàng này.' });
     }
 
-    res.json({
-      success: true,
-      order: {
-        id: doc.id,
-        ...orderData
-      }
-    });
+    res.status(200).json({ id: orderDoc.id, ...orderData });
 
   } catch (error) {
-    console.error('Error fetching order:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Lỗi server khi lấy chi tiết đơn hàng',
-      error: error.message
-    });
+    console.error(`Lỗi khi lấy chi tiết đơn hàng ${req.params.orderId}:`, error);
+    next(error);
   }
 });
-
 /**
  * @route   PUT /api/orders/:orderId/status
  * @desc    Cập nhật trạng thái đơn hàng

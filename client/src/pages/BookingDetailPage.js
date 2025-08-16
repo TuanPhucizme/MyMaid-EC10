@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { Calendar, Clock, MapPin, User, Phone, FileText, DollarSign, CheckCircle, AlertTriangle } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
 
-// ✅ 1. IMPORT DỮ LIỆU MẪU
-import { mockBookingDetails } from '../mockData';
+import { auth } from '../config/firebase';
+
+// // ✅ 1. IMPORT DỮ LIỆU MẪU
+// import { mockBookingDetails } from '../mockData';
 
 // --- Styled Components ---
 const DetailPageContainer = styled.div`
@@ -146,38 +148,99 @@ const generateMapsLink = (address) => {
 };
 
 const BookingDetailPage = () => {
-  const { bookingId } = useParams(); // Lấy ID từ URL, ví dụ: /booking-details/job-abc-123
+  const { bookingId } = useParams();
+  const navigate = useNavigate();
+  const API_URL = process.env.REACT_APP_API_URL;
+
   const [booking, setBooking] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    // Giả lập việc lấy dữ liệu từ API/Firestore dựa trên bookingId
-    console.log("Fetching details for booking ID:", bookingId);
-    
-    // Giả lập độ trễ mạng
-    const timer = setTimeout(() => {
-      setBooking(mockBookingDetails);
-      setIsLoading(false);
-    }, 500);
+useEffect(() => {
+    const fetchBookingDetails = async () => {
+      if (!bookingId) {
+        setError("Mã đơn hàng không hợp lệ.");
+        setIsLoading(false);
+        return;
+      }
 
-    return () => clearTimeout(timer);
-  }, [bookingId]);
+      try {
+        setIsLoading(true);
+        
+        const user = auth.currentUser;
+        if (!user) {
+          // Nếu chưa đăng nhập, không thể lấy token
+          navigate('/login');
+          return;
+        }
+        
+        const token = await user.getIdToken();
+        const response = await fetch(`${API_URL}/api/orders/${bookingId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          const result = await response.json();
+          throw new Error(result.message || `Lỗi ${response.status}`);
+        }
+
+        const data = await response.json();
+        setBooking(data);
+
+      } catch (err) {
+        console.error("Lỗi khi tải chi tiết đơn hàng:", err);
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Chờ auth sẵn sàng rồi mới fetch
+    const unsubscribe = auth.onAuthStateChanged(user => {
+      if (user) {
+        fetchBookingDetails();
+      } else {
+        navigate('/login');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [bookingId, navigate, API_URL]);
+
+  // ... (các hàm handlers và logic render giữ nguyên)
 
   if (isLoading) {
     return <LoadingSpinner fullScreen text="Đang tải chi tiết đơn hàng..." />;
   }
 
-  if (!booking) {
-    return <DetailPageContainer><h1>Không tìm thấy đơn hàng</h1></DetailPageContainer>;
+  if (error) {
+    return <DetailPageContainer><h1>{error}</h1></DetailPageContainer>;
   }
 
+  if (!booking) {
+    return null;
+  }
+  const handleCompleteJob = () => {
+    alert(`(Chức năng đang phát triển) Xác nhận hoàn thành đơn hàng: ${booking.id}`);
+    // Logic cập nhật trạng thái đơn hàng sẽ ở đây
+  };
+
+  const handleReportIssue = () => {
+    alert(`(Chức năng đang phát triển) Báo cáo sự cố cho đơn hàng: ${booking.id}`);
+    // Logic gửi báo cáo sẽ ở đây
+  };
+
   const statusProps = getStatusProps(booking.status);
+  // Ước tính thu nhập của đối tác (ví dụ: 80%)
+  const partnerEarning = (booking.payment?.amount || 0) * 0.8;
 
   return (
     <DetailPageContainer>
       <DetailHeader>
         <HeaderInfo>
-          <ServiceTitle>{booking.service.name}</ServiceTitle>
+          <ServiceTitle>{booking.service?.name || 'Dịch vụ không xác định'}</ServiceTitle>
           <BookingId>Mã đơn hàng: {booking.id}</BookingId>
         </HeaderInfo>
         <StatusBadge bgColor={statusProps.bgColor} color={statusProps.color}>
@@ -194,14 +257,14 @@ const BookingDetailPage = () => {
                 <InfoIcon><Calendar size={20} /></InfoIcon>
                 <InfoContent>
                   <InfoLabel>Ngày làm việc</InfoLabel>
-                  <InfoValue>{new Date(booking.schedule.date).toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</InfoValue>
+                  <InfoValue>{new Date(booking.schedule?.date).toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</InfoValue>
                 </InfoContent>
               </InfoRow>
               <InfoRow>
                 <InfoIcon><Clock size={20} /></InfoIcon>
                 <InfoContent>
                   <InfoLabel>Thời gian & Thời lượng</InfoLabel>
-                  <InfoValue>{booking.schedule.time} (Ước tính {booking.schedule.area.duration} giờ)</InfoValue>
+                  <InfoValue>{booking.schedule?.time} (Ước tính {booking.schedule?.duration} giờ)</InfoValue>
                 </InfoContent>
               </InfoRow>
             </CardContent>
@@ -214,7 +277,7 @@ const BookingDetailPage = () => {
                 <InfoIcon><User size={20} /></InfoIcon>
                 <InfoContent>
                   <InfoLabel>Tên khách hàng</InfoLabel>
-                  <InfoValue>{booking.contact.name}</InfoValue>
+                  <InfoValue>{booking.contact?.name}</InfoValue>
                 </InfoContent>
               </InfoRow>
               <InfoRow>
@@ -222,8 +285,8 @@ const BookingDetailPage = () => {
                 <InfoContent>
                   <InfoLabel>Địa chỉ</InfoLabel>
                   <InfoValue>
-                    {`${booking.address.street}, ${booking.address.district}, ${booking.address.city}`}
-                    <a href={generateMapsLink(booking.address)} target="_blank" rel="noopener noreferrer" style={{color: '#3b82f6', marginLeft: '8px', textDecoration: 'underline'}}>Xem bản đồ</a>
+                    {booking.contact?.address}
+                    <a href={generateMapsLink(booking.contact?.address)} target="_blank" rel="noopener noreferrer" style={{color: '#3b82f6', marginLeft: '8px', textDecoration: 'underline'}}>Xem bản đồ</a>
                   </InfoValue>
                 </InfoContent>
               </InfoRow>
@@ -236,7 +299,7 @@ const BookingDetailPage = () => {
               <InfoRow>
                 <InfoIcon><FileText size={20} /></InfoIcon>
                 <InfoContent>
-                  <InfoValue>{booking.notes || 'Không có ghi chú nào.'}</InfoValue>
+                  <InfoValue>{booking.contact?.notes || 'Không có ghi chú nào.'}</InfoValue>
                 </InfoContent>
               </InfoRow>
             </CardContent>
@@ -251,14 +314,14 @@ const BookingDetailPage = () => {
                 <InfoIcon><DollarSign size={20} /></InfoIcon>
                 <InfoContent>
                   <InfoLabel>Khách hàng trả</InfoLabel>
-                  <InfoValue>{booking.summary.totalPrice.toLocaleString()}đ</InfoValue>
+                  <InfoValue>{(booking.payment?.amount || 0).toLocaleString()}đ</InfoValue>
                 </InfoContent>
               </InfoRow>
               <InfoRow>
                 <InfoIcon style={{color: '#16a34a'}}><DollarSign size={20} /></InfoIcon>
                 <InfoContent>
                   <InfoLabel>Thu nhập của bạn (Ước tính)</InfoLabel>
-                  <InfoValue style={{color: '#16a34a', fontWeight: 'bold'}}>{booking.summary.partnerEarning.toLocaleString()}đ</InfoValue>
+                  <InfoValue style={{color: '#16a34a', fontWeight: 'bold'}}>{partnerEarning.toLocaleString()}đ</InfoValue>
                 </InfoContent>
               </InfoRow>
             </CardContent>
@@ -267,13 +330,13 @@ const BookingDetailPage = () => {
           <Card>
             <CardHeader><CardTitle>Thao tác</CardTitle></CardHeader>
             <CardContent style={{display: 'flex', flexDirection: 'column', gap: '0.75rem'}}>
-              <ActionButton primary>
+              <ActionButton primary onClick={handleCompleteJob}>
                 <CheckCircle size={16} /> Hoàn thành công việc
               </ActionButton>
-              <ActionButton as="a" href={`tel:${booking.contact.phone}`}>
+              <ActionButton as="a" href={`tel:${booking.contact?.phone}`}>
                 <Phone size={16} /> Gọi cho khách hàng
               </ActionButton>
-              <ActionButton>
+              <ActionButton onClick={handleReportIssue}>
                 <AlertTriangle size={16} /> Báo cáo sự cố
               </ActionButton>
             </CardContent>
