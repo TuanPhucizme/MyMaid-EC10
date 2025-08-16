@@ -87,6 +87,78 @@ router.post('/', authMiddleware, async (req, res) => {
 });
 
 /**
+ * @route   GET /api/orders/available
+ * @desc    Lấy danh sách các đơn hàng đang chờ đối tác nhận
+ * @access  Private (Partner only)
+ */
+router.get('/available', authMiddleware, async (req, res, next) => {
+  try {
+    const ordersRef = db.collection('mm_orders'); // Giả sử tên collection là mm_orders
+    const q = ordersRef.where('status', '==', 'pending_confirmation').orderBy('createdAt', 'desc');
+    const snapshot = await q.get();
+
+    if (snapshot.empty) {
+      return res.status(200).json([]);
+    }
+
+    const availableOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    res.status(200).json(availableOrders);
+
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @route   PUT /api/orders/:orderId/accept
+ * @desc    Đối tác chấp nhận một đơn hàng
+ * @access  Private (Partner only)
+ */
+router.put('/:orderId/accept', authMiddleware, async (req, res, next) => {
+  const { uid: partnerId } = req.user;
+  const { orderId } = req.params;
+  const orderDocRef = db.collection('mm_orders').doc(orderId);
+
+  try {
+    // SỬ DỤNG TRANSACTION ĐỂ ĐẢM BẢO AN TOÀN DỮ LIỆU
+    // Giúp ngăn chặn 2 đối tác cùng nhận 1 đơn hàng
+    await db.runTransaction(async (transaction) => {
+      const orderDoc = await transaction.get(orderDocRef);
+      if (!orderDoc.exists) {
+        throw new Error('Đơn hàng không tồn tại.');
+      }
+
+      const orderData = orderDoc.data();
+      if (orderData.status !== 'pending_confirmation') {
+        throw new Error('Đơn hàng này đã được nhận hoặc đã bị hủy.');
+      }
+
+      // Cập nhật đơn hàng
+      transaction.update(orderDocRef, {
+        partnerId: partnerId,
+        status: 'confirmed',
+        updatedAt: FieldValue.serverTimestamp(),
+        statusHistory: FieldValue.arrayUnion({
+          status: 'confirmed',
+          note: `Được nhận bởi đối tác ${partnerId}`,
+          timestamp: FieldValue.serverTimestamp()
+        })
+      });
+    });
+
+    res.status(200).send({ message: 'Nhận đơn thành công!' });
+
+  } catch (error) {
+    console.error(`Lỗi khi partner ${partnerId} nhận đơn ${orderId}:`, error);
+    // Trả về lỗi 409 (Conflict) nếu đơn đã được nhận
+    if (error.message.includes('đã được nhận')) {
+      return res.status(409).send({ message: error.message });
+    }
+    next(error);
+  }
+});
+
+/**
  * @route   GET /api/orders
  * @desc    Lấy danh sách đơn hàng của user
  * @access  Private

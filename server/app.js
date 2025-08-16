@@ -6,9 +6,6 @@ const bodyParser = require('body-parser');
 const vnpayRouter = require('./routes/payment');
 const cors = require('cors');
 
-const serviceRoutes = require('./routes/serviceRoutes');
-const bookingRoutes = require('./routes/bookingRoutes');
-
 // Load environment variables từ root directory
 
 console.log('Loading routes...');
@@ -18,6 +15,10 @@ const partnerRoutes = require('./routes/partnerRoutes');
 console.log('Partner routes loaded');
 const orderRoutes = require('./routes/orderRoutes');
 console.log('Order routes loaded');
+const bookingRoutes = require('./routes/bookingRoutes');
+console.log('Booking routes loaded');
+const serviceRoutes = require('./routes/serviceRoutes');
+console.log('Service routes loaded');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
