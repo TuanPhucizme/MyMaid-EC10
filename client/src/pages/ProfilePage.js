@@ -291,11 +291,7 @@ const DisplayProfile = ({ profile }) => (
         <DetailLabel>Ngày tham gia</DetailLabel>
           <DetailValue>
             {profile.createdAt
-              ? profile.createdAt.toDate().toLocaleDateString('vi-VN', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })
+              ? new Date(profile.createdAt).toLocaleDateString('vi-VN')
               : 'Không rõ'}
           </DetailValue>
       </DetailContent>
