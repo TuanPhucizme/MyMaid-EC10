@@ -6,6 +6,12 @@ const bodyParser = require('body-parser');
 const vnpayRouter = require('./routes/payment');
 const cors = require('cors');
 
+const serviceRoutes = require('./routes/serviceRoutes');
+const bookingRoutes = require('./routes/bookingRoutes');
+console.log('Loading address routes...');
+const addressRoutes = require('./routes/addressRoutes');
+console.log('Address routes loaded:', typeof addressRoutes);
+
 // Load environment variables từ root directory
 
 console.log('Loading routes...');
@@ -94,6 +100,22 @@ try {
   console.error('Error mounting order routes:', error);
 }
 
+try {
+  console.log('About to mount address routes...');
+  console.log('addressRoutes type:', typeof addressRoutes);
+  console.log('addressRoutes stack length:', addressRoutes.stack ? addressRoutes.stack.length : 'undefined');
+  app.use('/api/addresses', addressRoutes);
+  console.log('Address routes mounted at /api/addresses');
+
+  // Test direct route
+  app.get('/api/addresses/direct-test', (req, res) => {
+    res.json({ message: 'Direct address route working!' });
+  });
+  console.log('Direct address test route added');
+} catch (error) {
+  console.error('Error mounting address routes:', error);
+}
+
 // Debug: Log all registered routes
 console.log('Registered routes:');
 console.log('- /api/users/*');
@@ -101,6 +123,7 @@ console.log('- /api/partners/*');
 console.log('- /api/services/*');
 console.log('- /api/payment/*');
 console.log('- /api/orders/*');
+console.log('- /api/addresses/*');
 
 // Test route registration
 app.get('/test', (req, res) => {
@@ -108,6 +131,58 @@ app.get('/test', (req, res) => {
   res.send('Test route working');
 });
 console.log('Test route /test added');
+
+// Test route để generate token cho test avatar upload
+app.get('/generate-test-token', async (req, res) => {
+  try {
+    const { auth } = require('./config/firebaseAdmin');
+    const testUserId = 'ZyESr5wCHIfnrgQPNAHUAurC1nA2';
+    
+    console.log('🔑 [TEST TOKEN] Generating token for user:', testUserId);
+    const customToken = await auth.createCustomToken(testUserId);
+    
+    res.json({
+      success: true,
+      token: customToken,
+      userId: testUserId,
+      message: 'Test token generated successfully'
+    });
+  } catch (error) {
+    console.error('💥 [TEST TOKEN] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      message: 'Failed to generate test token'
+    });
+  }
+});
+console.log('Test route /generate-test-token added');
+
+// Route để enable Firebase Storage
+app.get('/enable-storage', async (req, res) => {
+  try {
+    console.log('🔧 [ENABLE STORAGE] Request received');
+    const { enableFirebaseStorage } = require('./scripts/enableFirebaseStorage');
+    
+    const bucketName = await enableFirebaseStorage();
+    
+    res.json({
+      success: true,
+      bucketName: bucketName,
+      message: 'Firebase Storage enabled successfully',
+      instruction: 'You can now upload files to this bucket'
+    });
+  } catch (error) {
+    console.error('💥 [ENABLE STORAGE] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      message: 'Failed to enable Firebase Storage',
+      instruction: 'Please enable Firebase Storage manually in Firebase Console'
+    });
+  }
+});
+console.log('Test route /enable-storage added');
 
 // Debug: Check if routes are actually registered
 console.log('Checking app.router after adding test route...');

@@ -5,6 +5,7 @@ const { db, storage } = require('../config/firebaseAdmin');
 
 const { v4: uuidv4 } = require('uuid');
 const authMiddleware = require('../middleware/authMiddleware');
+const { ensureStorageBucket } = require('../middleware/storageMiddleware');
 
 const multer = require('multer');
 
@@ -18,38 +19,80 @@ const upload = multer({
  * @desc    Upload avatar cho người dùng đang đăng nhập
  * @access  Private
  */
-router.post('/avatar', [authMiddleware, upload.single('avatar')], async (req, res) => {
+router.post('/avatar', [authMiddleware, ensureStorageBucket, upload.single('avatar')], async (req, res) => {
   try {
+    console.log('🚀 [AVATAR UPLOAD] Starting avatar upload process...');
+    console.log('📋 [AVATAR UPLOAD] Request details:', {
+      user: req.user?.uid,
+      hasFile: !!req.file,
+      fileSize: req.file?.size,
+      fileMimetype: req.file?.mimetype,
+      fileOriginalname: req.file?.originalname,
+      workingBucket: req.workingBucket
+    });
+
     if (!req.file) {
+      console.log('❌ [AVATAR UPLOAD] No file provided in request');
       return res.status(400).send({ message: 'Vui lòng chọn một file ảnh.' });
     }
+
     const user = req.user;
-    const bucket = storage.bucket();
+    console.log('👤 [AVATAR UPLOAD] User authenticated:', user.uid);
+
+    // Sử dụng bucket đã được verify bởi middleware
+    const bucketName = req.workingBucket;
+    const bucket = storage.bucket(bucketName);
+    console.log('🪣 [AVATAR UPLOAD] Using verified bucket:', bucketName);
+
     const filename = `avatars/${user.uid}/avatar-${uuidv4()}`;
+    console.log('📁 [AVATAR UPLOAD] Target filename:', filename);
+
     const fileUpload = bucket.file(filename);
+    console.log('📤 [AVATAR UPLOAD] File upload object created');
 
-    const blobStream = fileUpload.createWriteStream({
-      metadata: { contentType: req.file.mimetype },
-    });
-
-    blobStream.on('error', (error) => {
-      throw error;
-    });
-
-    blobStream.on('finish', async () => {
-      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
-      // Cập nhật URL avatar trong document của user
-      await db.collection('mm_users').doc(user.uid).update({
-        avatarUrl: publicUrl,
+    // Sử dụng Promise để handle upload
+    const publicUrl = await new Promise((resolve, reject) => {
+      const blobStream = fileUpload.createWriteStream({
+        metadata: { contentType: req.file.mimetype },
       });
-      res.status(200).send({ message: 'Cập nhật ảnh đại diện thành công!', avatarUrl: publicUrl });
+
+      blobStream.on('error', (error) => {
+        console.error('❌ [AVATAR UPLOAD] Blob stream error:', error);
+        reject(error);
+      });
+
+      blobStream.on('finish', async () => {
+        console.log('✅ [AVATAR UPLOAD] File upload completed');
+        const url = `https://storage.googleapis.com/${bucketName}/${filename}`;
+        console.log('🔗 [AVATAR UPLOAD] Public URL generated:', url);
+        resolve(url);
+      });
+
+      blobStream.end(req.file.buffer);
+      console.log('📝 [AVATAR UPLOAD] Blob stream ended, waiting for completion...');
     });
 
-    blobStream.end(req.file.buffer);
+    // Cập nhật URL avatar trong document của user
+    await db.collection('mm_users').doc(user.uid).update({
+      avatarUrl: publicUrl,
+    });
+    console.log('💾 [AVATAR UPLOAD] Firestore updated successfully');
+
+    res.status(200).send({ 
+      message: 'Cập nhật ảnh đại diện thành công!', 
+      avatarUrl: publicUrl,
+      bucketUsed: bucketName
+    });
+    console.log('🎉 [AVATAR UPLOAD] Response sent successfully');
 
   } catch (error) {
-    console.error('Lỗi khi upload avatar:', error);
-    res.status(500).send({ message: 'Lỗi server khi upload ảnh.' });
+    console.error('💥 [AVATAR UPLOAD] Critical error:', {
+      message: error.message,
+      code: error.code,
+      status: error.status,
+      stack: error.stack
+    });
+    res.status(500).send({ message: 'Lỗi server khi upload ảnh.', error: error.message });
   }
 });
 

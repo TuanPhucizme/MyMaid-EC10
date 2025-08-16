@@ -54,6 +54,62 @@
   }
 }
 
+/* Mapbox Styles */
+.mapboxgl-map {
+  font-family: 'Inter', sans-serif;
+}
+
+.mapboxgl-popup-content {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.mapboxgl-popup-close-button {
+  padding: 8px;
+  font-size: 18px;
+  color: #6b7280;
+}
+
+.mapboxgl-popup-close-button:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+/* Marker Animation */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.6);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.mapbox-marker {
+  transition: all 0.3s ease;
+}
+
+.mapbox-marker:hover {
+  transform: scale(1.1);
+}
+
 /* Custom utilities */
 @layer utilities {
   .scrollbar-hide {

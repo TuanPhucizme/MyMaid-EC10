@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { User, Phone, Calendar, Edit3, Save, X, Globe } from 'lucide-react';
+import { User, Phone, Calendar, Edit3, Save, X, Globe, Image as ImageIcon, UploadCloud } from 'lucide-react';
 import styled from 'styled-components';
 
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -80,6 +80,39 @@ const Avatar = styled.div`
   color: white;
   font-size: 1.5rem;
   font-weight: bold;
+`;
+
+const AvatarImage = styled.img`
+  width: 5rem;
+  height: 5rem;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  margin: 0 auto 1rem;
+`;
+
+const UploadAvatarButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+
+  &:hover:not(:disabled) {
+    background: #e5e7eb;
+    color: #111827;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 `;
 
 const UserName = styled.h2`
@@ -352,6 +385,9 @@ const ProfilePage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState('');
+  const fileInputRef = useRef(null);
 
   const {
     register,
@@ -442,6 +478,112 @@ const ProfilePage = () => {
     return `${firstNameInitial}${lastNameInitial}`.toUpperCase();
   };
 
+  const handleOpenFileDialog = () => {
+    setAvatarError('');
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleAvatarChange = async (event) => {
+    try {
+      console.log('🚀 [CLIENT] Starting avatar upload process...');
+      setAvatarError('');
+      const file = event.target.files && event.target.files[0];
+      if (!file) {
+        console.log('❌ [CLIENT] No file selected');
+        return;
+      }
+
+      console.log('📋 [CLIENT] File details:', {
+        name: file.name,
+        size: file.size,
+        type: file.type
+      });
+
+      if (!file.type.startsWith('image/')) {
+        console.log('❌ [CLIENT] Invalid file type:', file.type);
+        setAvatarError('Vui lòng chọn một file ảnh hợp lệ.');
+        return;
+      }
+      const maxSizeBytes = 5 * 1024 * 1024;
+      if (file.size > maxSizeBytes) {
+        console.log('❌ [CLIENT] File too large:', file.size, 'bytes');
+        setAvatarError('Ảnh quá lớn (tối đa 5MB).');
+        return;
+      }
+
+      setIsUploadingAvatar(true);
+      const user = auth.currentUser;
+      if (!user) {
+        console.log('❌ [CLIENT] No authenticated user');
+        setAvatarError('Vui lòng đăng nhập lại.');
+        return;
+      }
+
+      console.log('👤 [CLIENT] User authenticated:', user.uid);
+      const token = await user.getIdToken();
+      console.log('🔑 [CLIENT] Token obtained, length:', token.length);
+
+      const formData = new FormData();
+      formData.append('avatar', file);
+      console.log('📦 [CLIENT] FormData created with file');
+
+      const rawBase = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const normalizedBase = rawBase.replace(/\/+$/, '');
+      // Nếu REACT_APP_API_URL đã có /api ở cuối thì không thêm nữa
+      const uploadUrl = normalizedBase.endsWith('/api')
+        ? `${normalizedBase}/users/avatar`
+        : `${normalizedBase}/api/users/avatar`;
+
+      console.log('🌐 [CLIENT] Upload URL constructed:', {
+        rawBase,
+        normalizedBase,
+        uploadUrl,
+        envVar: process.env.REACT_APP_API_URL
+      });
+
+      console.log('📤 [CLIENT] Sending request to:', uploadUrl);
+      const response = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      console.log('📥 [CLIENT] Response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      });
+
+      const result = await response.json().catch(() => ({}));
+      console.log('📄 [CLIENT] Response body:', result);
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Upload ảnh đại diện thất bại.');
+      }
+
+      const newUrl = result.avatarUrl;
+      console.log('✅ [CLIENT] Upload successful, new avatar URL:', newUrl);
+      
+      setProfileData(prev => ({ ...(prev || {}), avatarUrl: newUrl }));
+      setOriginalData(prev => ({ ...(prev || {}), avatarUrl: newUrl }));
+      setSuccess('Ảnh đại diện đã được cập nhật!');
+    } catch (e) {
+      console.error('💥 [CLIENT] Upload error:', {
+        message: e.message,
+        stack: e.stack
+      });
+      setAvatarError(e.message || 'Có lỗi xảy ra khi upload ảnh.');
+    } finally {
+      setIsUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      console.log('🏁 [CLIENT] Upload process completed');
+    }
+  };
+
   if (isLoading) {
     return <LoadingSpinner fullScreen text="Đang tải hồ sơ..." />;
   }
@@ -459,9 +601,34 @@ return (
 
     <ProfileCard>
       <ProfileSidebar>
-        <Avatar>{getInitials()}</Avatar>
+        {profileData.avatarUrl ? (
+          <AvatarImage src={profileData.avatarUrl} alt="Ảnh đại diện" />
+        ) : (
+          <Avatar>{getInitials()}</Avatar>
+        )}
         <UserName>{profileData.lastName || ''} {profileData.firstName || 'Người dùng'}</UserName>
         <UserEmail>{profileData.email}</UserEmail>
+        {avatarError && (
+          <span style={{ color: '#dc2626', fontSize: '0.875rem', display: 'block', marginTop: '0.25rem' }}>{avatarError}</span>
+        )}
+        <input
+          type="file"
+          accept="image/*"
+          ref={fileInputRef}
+          onChange={handleAvatarChange}
+          style={{ display: 'none' }}
+        />
+        <UploadAvatarButton type="button" onClick={handleOpenFileDialog} disabled={isUploadingAvatar}>
+          {isUploadingAvatar ? (
+            <>
+              <UploadCloud size={16} /> Đang tải...
+            </>
+          ) : (
+            <>
+              <ImageIcon size={16} /> Đổi ảnh đại diện
+            </>
+          )}
+        </UploadAvatarButton>
       </ProfileSidebar>
 
       <ProfileContent>
