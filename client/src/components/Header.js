@@ -14,7 +14,7 @@ const Header = () => {
 
   // 2. TẠO BIẾN CHO TÊN VÀ CHỮ CÁI ĐẦU
   // Ghép họ và tên, xử lý trường hợp profile chưa có
-  const fullName = userProfile ? `${userProfile.lastName} ${userProfile.firstName}`.trim() : null;
+  const fullName = userProfile ? `${userProfile.lastName} ${userProfile.firstName}`.trim() : (user?.displayName || 'User');
   // Lấy chữ cái đầu của tên, nếu không có thì lấy của email, cuối cùng là 'U'
   const userInitial = userProfile?.firstName ? userProfile.firstName.charAt(0).toUpperCase() : (user?.email?.charAt(0).toUpperCase() || 'U');
 
@@ -117,9 +117,11 @@ const Header = () => {
                   className="flex items-center space-x-2 p-2 rounded-lg hover:bg-neutral-100 transition-colors"
                 >
                   <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white font-medium">
-                    {user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}
+                    {userInitial}
                   </div>
-                  <span className="text-sm font-medium text-neutral-700">{user.displayName || 'User'}</span>
+                  <span className="text-sm font-medium text-neutral-700">
+                    {fullName}
+                  </span>
                   <svg className="w-4 h-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
