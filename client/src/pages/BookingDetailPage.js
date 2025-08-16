@@ -3,6 +3,8 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { Calendar, Clock, MapPin, User, Phone, FileText, DollarSign, CheckCircle, AlertTriangle } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
+import ConfirmationModal from '../components/ConfirmationModal';
+import toast from 'react-hot-toast';
 
 import { auth } from '../config/firebase';
 
@@ -154,6 +156,9 @@ const BookingDetailPage = () => {
 
   const [booking, setBooking] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
   const [error, setError] = useState(null);
 
 useEffect(() => {
@@ -222,9 +227,25 @@ useEffect(() => {
   if (!booking) {
     return null;
   }
-  const handleCompleteJob = () => {
-    alert(`(Chức năng đang phát triển) Xác nhận hoàn thành đơn hàng: ${booking.id}`);
-    // Logic cập nhật trạng thái đơn hàng sẽ ở đây
+  const handleRequestCompletion = async () => {
+    setIsProcessing(true);
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const response = await fetch(`${API_URL}/api/orders/${booking.id}/request-completion`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error('Gửi yêu cầu thất bại.');
+      
+      toast.success('Yêu cầu đã được gửi!');
+      setIsConfirmModalOpen(false);
+      // Tải lại dữ liệu trang
+      // fetchBookingDetails(); 
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleReportIssue = () => {
@@ -330,7 +351,7 @@ useEffect(() => {
           <Card>
             <CardHeader><CardTitle>Thao tác</CardTitle></CardHeader>
             <CardContent style={{display: 'flex', flexDirection: 'column', gap: '0.75rem'}}>
-              <ActionButton primary onClick={handleCompleteJob}>
+              <ActionButton primary onClick={() => setIsConfirmModalOpen(true)}>
                 <CheckCircle size={16} /> Hoàn thành công việc
               </ActionButton>
               <ActionButton as="a" href={`tel:${booking.contact?.phone}`}>
@@ -343,6 +364,17 @@ useEffect(() => {
           </Card>
         </Sidebar>
       </DetailGrid>
+
+      <ConfirmationModal
+        isOpen={isConfirmModalOpen}
+        onClose={() => setIsConfirmModalOpen(false)}
+        onConfirm={handleRequestCompletion}
+        title="Xác nhận hoàn thành?"
+        message="Một yêu cầu sẽ được gửi đến khách hàng để xác nhận rằng công việc đã hoàn tất. Bạn có chắc chắn không?"
+        confirmText="Gửi yêu cầu"
+        isProcessing={isProcessing}
+      />
+
     </DetailPageContainer>
   );
 };

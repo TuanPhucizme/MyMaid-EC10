@@ -2,6 +2,37 @@ const express = require('express');
 const router = express.Router();
 const { db } = require('../config/firebaseAdmin');
 const authMiddleware = require('../middleware/authMiddleware');
+const { FieldValue } = require('firebase-admin/firestore');
+
+// --- HÀM TIỆN ÍCH ĐỂ "ÁNH XẠ" DỮ LIỆU ---
+// Hàm này sẽ được tái sử dụng để tránh lặp lại code
+const enrichOrderData = async (doc) => {
+  const orderData = doc.data();
+  
+  // Lấy tên khách hàng
+  const userDoc = await db.collection('mm_users').doc(orderData.userId).get();
+  const customerName = userDoc.exists ? userDoc.data().name : 'Không rõ';
+
+  // Lấy tên đối tác (nếu có)
+  let partnerName = 'Chưa gán';
+  let partnerPhone = null;
+  if (orderData.partnerId) {
+    const partnerDoc = await db.collection('mm_users').doc(orderData.partnerId).get();
+    if (partnerDoc.exists) {
+      partnerName = partnerDoc.data().name;
+      partnerPhone = partnerDoc.data().phone || null;
+    }
+  }
+
+  return {
+    id: doc.id,
+    ...orderData,
+    customerName,
+    partnerName,
+    partnerPhone
+  };
+};
+
 
 /**
  * @route   POST /api/orders
@@ -189,7 +220,15 @@ router.get('/', authMiddleware, async (req, res) => {
 
     // Filter by status if provided
     if (status && status !== 'all') {
-      query = query.where('status', '==', status);
+      // Tách chuỗi status thành một mảng các giá trị
+      const statusArray = status.split(',');
+      
+      // Sử dụng toán tử 'in' của Firestore để lọc theo nhiều trạng thái
+      // Lưu ý: Firestore chỉ cho phép tối đa 10 giá trị trong một truy vấn 'in'
+      if (statusArray.length > 10) {
+        return res.status(400).send({ message: 'Không thể lọc quá 10 trạng thái cùng lúc.' });
+      }
+      query = query.where('status', 'in', statusArray);
     }
 
     // Pagination
@@ -200,14 +239,15 @@ router.get('/', authMiddleware, async (req, res) => {
     query = query.limit(parseInt(limit));
 
     const snapshot = await query.get();
+    const orders = await Promise.all(snapshot.docs.map(doc => enrichOrderData(doc)));
     
-    const orders = [];
-    snapshot.forEach(doc => {
-      orders.push({
-        id: doc.id,
-        ...doc.data()
-      });
-    });
+    // const orders = [];
+    // snapshot.forEach(doc => {
+    //   orders.push({
+    //     id: doc.id,
+    //     ...doc.data()
+    //   });
+    // });
 
     res.json({
       success: true,
@@ -256,8 +296,14 @@ router.get('/:orderId', authMiddleware, async (req, res, next) => {
       // if (userProfile.customClaims?.role !== 'admin') { ... }
       return res.status(403).send({ message: 'Bạn không có quyền xem đơn hàng này.' });
     }
+    const enrichedOrder = await enrichOrderData(orderDoc);
+    res.status(200).json(enrichedOrder);
 
-    res.status(200).json({ id: orderDoc.id, ...orderData });
+    //   res.status(200).json({ 
+    //   id: orderDoc.id, 
+    //   ...orderData,
+    //   partnerName, partnerPhone // Thêm tên đối tác vào response
+    // });
 
   } catch (error) {
     console.error(`Lỗi khi lấy chi tiết đơn hàng ${req.params.orderId}:`, error);
@@ -280,7 +326,8 @@ router.put('/:orderId/status', authMiddleware, async (req, res) => {
       'pending_payment', 
       'pending_confirmation', 
       'confirmed', 
-      'in_progress', 
+      'in_progress',
+      'pending_completion_approval', 
       'completed', 
       'cancelled'
     ];
@@ -488,13 +535,109 @@ router.put('/:orderId/payment-success', async (req, res) => {
   }
 });
 
+/**
+ * @route   PUT /api/orders/:orderId/request-completion
+ * @desc    Đối tác gửi yêu cầu xác nhận hoàn thành công việc
+ * @access  Private (Partner only)
+ */
+router.put('/:orderId/request-completion', authMiddleware, async (req, res, next) => {
+  try {
+    const { uid: partnerId } = req.user;
+    const { orderId } = req.params;
+    const orderDocRef = db.collection('orders').doc(orderId);
+
+    const doc = await orderDocRef.get();
+    if (!doc.exists) {
+      return res.status(404).send({ message: 'Đơn hàng không tồn tại.' });
+    }
+
+    const orderData = doc.data();
+    // Chỉ đối tác được gán mới có quyền yêu cầu
+    if (orderData.partnerId !== partnerId) {
+      return res.status(403).send({ message: 'Bạn không có quyền thực hiện hành động này.' });
+    }
+    // Chỉ có thể yêu cầu khi đơn hàng đang diễn ra
+    if (orderData.status !== 'confirmed' && orderData.status !== 'in_progress') {
+      return res.status(400).send({ message: 'Không thể yêu cầu hoàn thành cho đơn hàng này.' });
+    }
+
+    await orderDocRef.update({
+      status: 'pending_completion_approval',
+      completionRequestTimestamp: new Date(),
+      updatedAt: new Date(),
+      statusHistory: FieldValue.arrayUnion({
+        status: 'pending_completion_approval',
+        note: `Đối tác (ID: ${partnerId}) đã yêu cầu xác nhận hoàn thành.`,
+        timestamp: new Date()
+      })
+    });
+
+    res.status(200).send({ message: 'Yêu cầu xác nhận đã được gửi đến khách hàng.' });
+
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @route   PUT /api/orders/:orderId/confirm-completion
+ * @desc    Khách hàng xác nhận công việc đã hoàn thành
+ * @access  Private (Customer only)
+ */
+router.put('/:orderId/confirm-completion', authMiddleware, async (req, res, next) => {
+  try {
+    const { uid: userId } = req.user;
+    const { orderId } = req.params;
+    const orderDocRef = db.collection('orders').doc(orderId);
+    
+    // Dùng transaction để cập nhật cả đơn hàng và hồ sơ đối tác
+    await db.runTransaction(async (transaction) => {
+      const orderDoc = await transaction.get(orderDocRef);
+      if (!orderDoc.exists) throw new Error('Đơn hàng không tồn tại.');
+
+      const orderData = orderDoc.data();
+      // Chỉ khách hàng đặt đơn mới có quyền xác nhận
+      if (orderData.userId !== userId) {
+        throw new Error('Bạn không có quyền thực hiện hành động này.');
+      }
+      if (orderData.status !== 'pending_completion_approval') {
+        throw new Error('Đơn hàng không ở trạng thái chờ xác nhận.');
+      }
+
+      // Cập nhật đơn hàng
+      transaction.update(orderDocRef, {
+        status: 'completed',
+        updatedAt: new Date(),
+        statusHistory: FieldValue.arrayUnion({
+          status: 'completed',
+          note: `Khách hàng (ID: ${userId}) đã xác nhận hoàn thành.`,
+          timestamp: new Date()
+        })
+      });
+
+      // Cập nhật hồ sơ đối tác
+      if (orderData.partnerId) {
+        const partnerDocRef = db.collection('mm_partners').doc(orderData.partnerId);
+        transaction.update(partnerDocRef, {
+          'operational.jobsCompleted': FieldValue.increment(1)
+        });
+      }
+    });
+
+    res.status(200).send({ message: 'Xác nhận hoàn thành công việc thành công!' });
+
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Helper functions
 function isValidStatusTransition(currentStatus, newStatus) {
   const transitions = {
     'pending_payment': ['pending_confirmation', 'cancelled'],
     'pending_confirmation': ['confirmed', 'cancelled'],
     'confirmed': ['in_progress', 'cancelled'],
-    'in_progress': ['completed'],
+    'in_progress': ['completed', 'pending_completion_approval'],
     'completed': [], // No transitions from completed
     'cancelled': [] // No transitions from cancelled
   };

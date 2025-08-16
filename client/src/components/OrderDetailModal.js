@@ -16,7 +16,8 @@ import {
   XCircle,
   CreditCard,
   FileText,
-  MessageSquare
+  MessageSquare,
+  UserCheck
 } from 'lucide-react';
 
 const Modal = styled.div`
@@ -258,7 +259,7 @@ const ActionButton = styled.button`
   }}
 `;
 
-const OrderDetailModal = ({ order, isOpen, onClose, onCancel, onUpdate }) => {
+const OrderDetailModal = ({ order, isOpen, onClose, onCancel, onConfirmCompletion, isProcessing = false }) => {
   const [cancelReason, setCancelReason] = useState('');
   const [showCancelForm, setShowCancelForm] = useState(false);
 
@@ -309,7 +310,10 @@ const OrderDetailModal = ({ order, isOpen, onClose, onCancel, onUpdate }) => {
   };
 
   const canCancelOrder = () => {
-    return order.status === 'pending_confirmation';
+    return order.status === 'pending_confirmation' || order.status === 'confirmed';
+  };
+  const canConfirmCompletion = () => {
+    return order.status === 'pending_completion_approval';
   };
 
   const handleCancelOrder = async () => {
@@ -317,11 +321,16 @@ const OrderDetailModal = ({ order, isOpen, onClose, onCancel, onUpdate }) => {
       alert('Vui lòng nhập lý do hủy đơn');
       return;
     }
-
     if (onCancel) {
       await onCancel(order.id, cancelReason);
       setShowCancelForm(false);
       setCancelReason('');
+    }
+  };
+
+  const handleConfirmCompletion = async () => {
+    if (onConfirmCompletion) {
+      await onConfirmCompletion(order.id);
     }
   };
 
@@ -428,6 +437,33 @@ const OrderDetailModal = ({ order, isOpen, onClose, onCancel, onUpdate }) => {
             </InfoGrid>
           </Section>
 
+          {/* ✅ BƯỚC 2: THÊM KHU VỰC HIỂN THỊ THÔNG TIN ĐỐI TÁC */}
+          {/* Chỉ hiển thị khi đơn hàng đã có đối tác */}
+          {order.partnerId && (
+            <Section>
+              <SectionTitle>
+                <UserCheck size={16} />
+                Thông tin Đối tác
+              </SectionTitle>
+              <InfoGrid>
+                <InfoItem>
+                  <InfoLabel>
+                    <User size={12} />
+                    Người thực hiện
+                  </InfoLabel>
+                  <InfoValue>{order.partnerName || 'Đang cập nhật...'}</InfoValue>
+                </InfoItem>
+                <InfoItem>
+                  <InfoLabel>
+                    <User size={12} />
+                    Số điện thoại
+                  </InfoLabel>
+                    <InfoValue>{order.partnerPhone|| 'Đang cập nhật...'}</InfoValue>
+                </InfoItem>
+              </InfoGrid>
+            </Section>
+          )}
+
           {/* Thông tin thanh toán */}
           {order.payment && (
             <Section>
@@ -525,13 +561,14 @@ const OrderDetailModal = ({ order, isOpen, onClose, onCancel, onUpdate }) => {
 
           {/* Nút hành động */}
           <ActionButtons>
+            {/* Nút Hủy Đơn */}
             {!showCancelForm && canCancelOrder() && (
               <ActionButton 
                 variant="danger"
                 onClick={() => setShowCancelForm(true)}
+                disabled={isProcessing}
               >
-                <XCircle size={16} />
-                Hủy đơn hàng
+                <XCircle size={16} /> Hủy đơn hàng
               </ActionButton>
             )}
 
@@ -548,6 +585,17 @@ const OrderDetailModal = ({ order, isOpen, onClose, onCancel, onUpdate }) => {
                   Xác nhận hủy
                 </ActionButton>
               </>
+            )}
+
+            {/* Nút Xác Nhận Hoàn Thành */}
+            {canConfirmCompletion() && (
+              <ActionButton 
+                variant="primary"
+                onClick={handleConfirmCompletion}
+                disabled={isProcessing}
+              >
+                <CheckCircle size={16} /> {isProcessing ? 'Đang xử lý...' : 'Xác nhận hoàn thành'}
+              </ActionButton>
             )}
           </ActionButtons>
         </ModalBody>
@@ -575,6 +623,9 @@ OrderDetailModal.propTypes = {
       address: PropTypes.string,
       notes: PropTypes.string
     }),
+    partnerId: PropTypes.string,
+    partnerName: PropTypes.string,
+    partnerPhone: PropTypes.string,
     payment: PropTypes.shape({
       amount: PropTypes.number,
       vnpayTransactionId: PropTypes.string,
@@ -590,13 +641,16 @@ OrderDetailModal.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onCancel: PropTypes.func,
-  onUpdate: PropTypes.func
+  onConfirmCompletion: PropTypes.func,
+  isProcessing: PropTypes.bool
 };
 
 OrderDetailModal.defaultProps = {
   order: null,
   onCancel: null,
-  onUpdate: null
+  onUpdate: null,
+  onConfirmCompletion: null,
+  isProcessing: false
 };
 
 export default OrderDetailModal;

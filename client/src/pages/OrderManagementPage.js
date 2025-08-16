@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, use} from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '../context/AuthContext';
 import OrderDetailModal from '../components/OrderDetailModal';
+import toast from 'react-hot-toast';
 import { 
   Clock, 
   CheckCircle, 
@@ -18,6 +19,8 @@ import {
   Eye,
   X
 } from 'lucide-react';
+
+import { auth } from '../config/firebase';
 
 const Container = styled.div`
   min-height: calc(100vh - 4rem);
@@ -244,70 +247,83 @@ const OrderManagementPage = () => {
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const tabs = [
+  const tabs = React.useMemo(() => [
     { 
       id: 'pending_confirmation', 
       label: 'Chờ xác nhận', 
       icon: Clock,
-      color: '#f59e0b'
+      color: '#f59e0b',
+      statuses: 'pending_confirmation' 
     },
     { 
       id: 'confirmed', 
       label: 'Đã xác nhận', 
       icon: CheckCircle,
-      color: '#3b82f6'
+      color: '#3b82f6',
+      statuses: 'confirmed'
     },
     { 
       id: 'in_progress', 
       label: 'Đang thực hiện', 
       icon: PlayCircle,
-      color: '#10b981'
+      color: '#10b981',
+      statuses: 'confirmed,in_progress,pending_completion_approval'
     },
     { 
       id: 'completed', 
       label: 'Hoàn thành', 
       icon: Package,
-      color: '#059669'
+      color: '#059669',
+      statuses: 'completed'
     },
     { 
       id: 'all', 
       label: 'Tất cả', 
       icon: Package,
-      color: '#6b7280'
+      color: '#6b7280',
+      statuses: 'all'
     }
-  ];
+  ], []);
 
-  useEffect(() => {
-    if (user) {
-      fetchOrders(activeTab);
-    }
-  }, [user, activeTab]);
-
-  const fetchOrders = async (status) => {
+  const fetchOrders = useCallback(async () => {
+    if (!user) return;
+    
+    // Tìm tab hiện tại để lấy đúng chuỗi statuses
+    const currentTab = tabs.find(tab => tab.id === activeTab);
+    if (!currentTab) return;
+    
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:5000/api/orders?status=${status}`, {
+      const token = await user.getIdToken();
+      const response = await fetch(`http://localhost:5000/api/orders?status=${currentTab.statuses}`, {
         headers: {
-          'Authorization': `Bearer ${await user.getIdToken()}`
+          'Authorization': `Bearer ${token}`
         }
       });
-
+      
       if (response.ok) {
         const data = await response.json();
         setOrders(data.orders);
       } else {
         console.error('Error fetching orders:', response.statusText);
+        toast.error('Lỗi khi tải đơn hàng.');
         setOrders([]);
       }
     } catch (error) {
       console.error('Error fetching orders:', error);
+      toast.error('Lỗi khi tải đơn hàng.');
       setOrders([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, activeTab, tabs]);
 
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+  
   const getStatusText = (status) => {
     const statusTexts = {
       'pending_confirmation': 'Chờ xác nhận',
@@ -330,7 +346,7 @@ const OrderManagementPage = () => {
     const Icon = icons[status] || AlertCircle;
     return <Icon size={16} />;
   };
-
+  
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('vi-VN', {
       day: '2-digit',
@@ -386,13 +402,34 @@ const OrderManagementPage = () => {
     await handleCancelOrder(orderId);
   };
 
+  const handleConfirmCompletion = async (orderId) => {
+    if (!window.confirm("Bạn có chắc chắn công việc đã được hoàn thành đúng yêu cầu?")) return;
+    
+    setIsProcessing(true);
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/orders/${orderId}/confirm-completion`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message);
+
+      toast.success('Xác nhận hoàn thành thành công!');
+      setSelectedOrder(null); // Đóng modal
+      await fetchOrders(); // Tải lại danh sách đơn hàng
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const openOrderDetail = (order) => {
     setSelectedOrder(order);
-    setShowModal(true);
   };
 
   const closeModal = () => {
-    setShowModal(false);
     setSelectedOrder(null);
   };
 
@@ -475,11 +512,11 @@ const OrderManagementPage = () => {
                     </DetailItem>
                     <DetailItem>
                       <DetailIcon><User size={16} /></DetailIcon>
-                      {order.contact?.name}
+                      {order.partnerName || 'Đang tìm đối tác'}
                     </DetailItem>
                     <DetailItem>
                       <DetailIcon><Phone size={16} /></DetailIcon>
-                      {order.contact?.phone}
+                      {order.partnerPhone || 'Chưa có SĐT'}
                     </DetailItem>
                     <DetailItem>
                       <DetailIcon><DollarSign size={16} /></DetailIcon>
@@ -513,10 +550,11 @@ const OrderManagementPage = () => {
       {/* Order Detail Modal */}
       <OrderDetailModal
         order={selectedOrder}
-        isOpen={showModal}
+        isOpen={!!selectedOrder}
         onClose={closeModal}
+        onConfirmCompletion={handleConfirmCompletion}
         onCancel={handleCancelOrder}
-        onUpdate={() => fetchOrders(activeTab)}
+        isProcessing={isProcessing}
       />
     </Container>
   );
