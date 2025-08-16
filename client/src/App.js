@@ -33,6 +33,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ServicesPage from "./pages/ServicesPage";
 import UpdateInformationPage from "./pages/UpdateInformation";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
+import LeaveReviewPage from "./pages/ReviewPage";
 
 // Component cho nội dung trang chủ
 const HomePageContent = () => (
@@ -88,6 +89,7 @@ function App() {
         <Route path="/payment" element={<PaymentPage />} />
         <Route path="/payment-result" element={<PaymentResultPage />} />
         <Route path="/my-orders" element={<OrderManagementPage />} />
+        <Route path="/leave-review" element={<LeaveReviewPage />} />
 
         {/* --- CÁC ROUTE CỦA QUẢN TRỊ VIÊN --- */}
         {/* Lưu ý: Route này cần được bọc trong một AdminRoute */}
