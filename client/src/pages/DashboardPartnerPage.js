@@ -193,7 +193,7 @@ const fetchPartnerData = useCallback(async (firebaseUser) => {
       let revenue = 0;
       let completedCount = 0;
       myJobsData.forEach(job => {
-        const jobDate = job.createdAt?.toDate();
+        const jobDate = new Date(job.createdAt);
         if (job.status === 'completed' && jobDate && jobDate >= startOfMonth) {
           const commissionRate = 0.8; 
           revenue += (job.summary?.totalPrice || 0) * commissionRate;

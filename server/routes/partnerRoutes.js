@@ -148,7 +148,7 @@ router.get('/my-jobs', authMiddleware, async (req, res, next) => {
   try {
     const { uid: partnerId } = req.user;
 
-    const myJobsQuery = db.collection('bookings') // Sử dụng tên collection đúng
+    const myJobsQuery = db.collection('orders') // Sử dụng tên collection đúng
       .where('partnerId', '==', partnerId)
       .orderBy('createdAt', 'desc');
       

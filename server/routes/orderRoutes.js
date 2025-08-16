@@ -123,12 +123,14 @@ router.put('/:orderId/accept', authMiddleware, async (req, res, next) => {
   const { uid: partnerId } = req.user;
   const { orderId } = req.params;
   const orderDocRef = db.collection('orders').doc(orderId);
+  const partnerDocRef = db.collection('partners').doc(partnerId);
 
   try {
     // ✅ SỬ DỤNG TRANSACTION ĐỂ ĐẢM BẢO AN TOÀN DỮ LIỆU
     // Giúp ngăn chặn 2 đối tác cùng nhận 1 đơn hàng
     await db.runTransaction(async (transaction) => {
       const orderDoc = await transaction.get(orderDocRef);
+      const partnerDoc = await transaction.get(partnerDocRef);
       if (!orderDoc.exists) {
         throw new Error('Đơn hàng không tồn tại.');
       }
@@ -153,6 +155,9 @@ router.put('/:orderId/accept', authMiddleware, async (req, res, next) => {
         status: 'confirmed',  // Chuyển trạng thái
         updatedAt: new Date(),
         statusHistory: updatedStatusHistory
+      });
+      transaction.update(partnerDocRef, {
+        'operational.activeJobs': FieldValue.increment(1)
       });
     });
 
