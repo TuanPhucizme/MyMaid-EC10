@@ -139,6 +139,34 @@ router.get('/', [authMiddleware, adminMiddleware], async (req, res) => {
   }
 });
 
+/**
+ * @route   GET /api/partners/my-jobs
+ * @desc    Lấy danh sách các công việc đã được gán cho đối tác đang đăng nhập
+ * @access  Private (Partner only)
+ */
+router.get('/my-jobs', authMiddleware, async (req, res, next) => {
+  try {
+    const { uid: partnerId } = req.user;
+
+    const myJobsQuery = db.collection('bookings') // Sử dụng tên collection đúng
+      .where('partnerId', '==', partnerId)
+      .orderBy('createdAt', 'desc');
+      
+    const snapshot = await myJobsQuery.get();
+
+    if (snapshot.empty) {
+      return res.status(200).json([]);
+    }
+
+    const jobsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    res.status(200).json(jobsList);
+
+  } catch (error) {
+    console.error(`Error fetching jobs for partner ${req.user?.uid}:`, error);
+    next(error);
+  }
+});
+
 router.put('/:partnerId/status', [authMiddleware, adminMiddleware], async (req, res, next) => {
   try {
     const { partnerId } = req.params;

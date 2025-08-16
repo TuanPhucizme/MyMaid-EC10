@@ -32,6 +32,7 @@ router.post('/', authMiddleware, async (req, res) => {
     // Tạo order object
     const orderData = {
       userId,
+      partnerId: null,
       service: {
         id: service.id,
         name: service.name,
@@ -93,8 +94,11 @@ router.post('/', authMiddleware, async (req, res) => {
  */
 router.get('/available', authMiddleware, async (req, res, next) => {
   try {
-    const ordersRef = db.collection('mm_orders'); // Giả sử tên collection là mm_orders
-    const q = ordersRef.where('status', '==', 'pending_confirmation').orderBy('createdAt', 'desc');
+    const ordersRef = db.collection('orders');
+    // Lấy các đơn hàng chưa có partnerId và đang chờ xác nhận
+    const q = ordersRef
+      .where('status', '==', 'pending_confirmation')
+      .orderBy('createdAt', 'desc');
     const snapshot = await q.get();
 
     if (snapshot.empty) {
@@ -105,6 +109,7 @@ router.get('/available', authMiddleware, async (req, res, next) => {
     res.status(200).json(availableOrders);
 
   } catch (error) {
+    console.error('Lỗi khi lấy đơn hàng có sẵn:', error);
     next(error);
   }
 });
@@ -117,10 +122,10 @@ router.get('/available', authMiddleware, async (req, res, next) => {
 router.put('/:orderId/accept', authMiddleware, async (req, res, next) => {
   const { uid: partnerId } = req.user;
   const { orderId } = req.params;
-  const orderDocRef = db.collection('mm_orders').doc(orderId);
+  const orderDocRef = db.collection('orders').doc(orderId);
 
   try {
-    // SỬ DỤNG TRANSACTION ĐỂ ĐẢM BẢO AN TOÀN DỮ LIỆU
+    // ✅ SỬ DỤNG TRANSACTION ĐỂ ĐẢM BẢO AN TOÀN DỮ LIỆU
     // Giúp ngăn chặn 2 đối tác cùng nhận 1 đơn hàng
     await db.runTransaction(async (transaction) => {
       const orderDoc = await transaction.get(orderDocRef);
@@ -129,20 +134,25 @@ router.put('/:orderId/accept', authMiddleware, async (req, res, next) => {
       }
 
       const orderData = orderDoc.data();
+      // Kiểm tra lại trạng thái để chắc chắn đơn hàng vẫn còn khả dụng
       if (orderData.status !== 'pending_confirmation') {
         throw new Error('Đơn hàng này đã được nhận hoặc đã bị hủy.');
       }
+      const currentStatusHistory = orderData.statusHistory || [];
+
+      const newHistoryEntry = {
+        status: 'confirmed',
+        note: `Được nhận bởi đối tác (ID: ${partnerId})`,
+        timestamp: new Date() // Sử dụng new Date() thay vì serverTimestamp()
+      };
+      const updatedStatusHistory = [...currentStatusHistory, newHistoryEntry];
 
       // Cập nhật đơn hàng
       transaction.update(orderDocRef, {
-        partnerId: partnerId,
-        status: 'confirmed',
-        updatedAt: FieldValue.serverTimestamp(),
-        statusHistory: FieldValue.arrayUnion({
-          status: 'confirmed',
-          note: `Được nhận bởi đối tác ${partnerId}`,
-          timestamp: FieldValue.serverTimestamp()
-        })
+        partnerId: partnerId, // Gán ID của đối tác
+        status: 'confirmed',  // Chuyển trạng thái
+        updatedAt: new Date(),
+        statusHistory: updatedStatusHistory
       });
     });
 

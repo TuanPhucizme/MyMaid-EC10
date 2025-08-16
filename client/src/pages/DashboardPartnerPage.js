@@ -6,8 +6,6 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import toast from 'react-hot-toast';
 
-//import { mockPartner, mockBookings } from '../mockData'; // Đảm bảo đường dẫn đúng
-
 //1. IMPORT CÁC HÀM TỪ FIREBASE
 import { auth, db } from '../config/firebase';
 import { doc, getDoc, collection, query, where, getDocs, orderBy } from "firebase/firestore";
@@ -152,15 +150,14 @@ const PartnerDashboardPage = () => {
   const API_URL = process.env.REACT_APP_API_URL;
 
   const [partner, setPartner] = useState(null);
-  const [myJobs, setMyJobs] = useState([]);
-  const [availableJobs, setAvailableJobs] = useState([]);
+  const [myJobs, setMyJobs] = useState([]); // Các đơn hàng đã nhận
+  const [availableJobs, setAvailableJobs] = useState([]); // Các đơn hàng có sẵn
   const [stats, setStats] = useState({ revenueThisMonth: 0, completedJobsThisMonth: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
 const fetchPartnerData = useCallback(async (firebaseUser) => {
-    // Bắt đầu loading mỗi khi hàm được gọi
     setIsLoading(true);
     setError(null);
     try {
@@ -172,33 +169,25 @@ const fetchPartnerData = useCallback(async (firebaseUser) => {
       }
       setPartner(userDocSnap.data());
 
-      // 2. LẤY CÔNG VIỆC CỦA TÔI (đã được gán)
-      const myJobsQuery = query(
-        collection(db, "mm_bookings"),
-        where("partnerId", "==", firebaseUser.uid),
-        orderBy("createdAt", "desc")
-      );
+      // 2. GỌI CÁC API TỪ BACKEND
+      const token = await firebaseUser.getIdToken();
+      const headers = { 'Authorization': `Bearer ${token}` };
 
-      // 3. LẤY CÔNG VIỆC CÓ SẴN (chưa ai nhận)
-      const availableJobsQuery = query(
-        collection(db, "mm_bookings"),
-        where("status", "==", "pending_confirmation"),
-        orderBy("createdAt", "desc")
-      );
-
-      // Thực hiện cả hai truy vấn song song
-      const [myJobsSnapshot, availableJobsSnapshot] = await Promise.all([
-        getDocs(myJobsQuery),
-        getDocs(availableJobsQuery)
+      const [myJobsResponse, availableJobsResponse] = await Promise.all([
+        fetch(`${API_URL}/api/partners/my-jobs`, { headers }), // API lấy việc của tôi
+        fetch(`${API_URL}/api/orders/available`, { headers })  // API lấy việc có sẵn
       ]);
 
-      const myJobsData = myJobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      const availableJobsData = availableJobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      if (!myJobsResponse.ok) throw new Error('Không thể tải công việc của bạn.');
+      if (!availableJobsResponse.ok) throw new Error('Không thể tải các việc làm có sẵn.');
+
+      const myJobsData = await myJobsResponse.json();
+      const availableJobsData = await availableJobsResponse.json();
       
       setMyJobs(myJobsData);
       setAvailableJobs(availableJobsData);
 
-      // 4. Tính toán thống kê dựa trên công việc của tôi
+      // 3. Tính toán thống kê dựa trên công việc của tôi
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       let revenue = 0;
@@ -296,6 +285,7 @@ const fetchPartnerData = useCallback(async (firebaseUser) => {
         </StatCard>
       </StatsGrid>
 
+      {/* ✅ BẢNG MỚI: VIỆC LÀM CÓ SẴN */}
       <Card>
         <CardHeader><CardTitle>Việc Làm Có Sẵn ({availableJobs.length})</CardTitle></CardHeader>
         <CardContent>
@@ -317,8 +307,9 @@ const fetchPartnerData = useCallback(async (firebaseUser) => {
         </CardContent>
       </Card>
 
+      {/* Bảng cũ: Đơn đã nhận */}
       <Card>
-        <CardHeader><CardTitle>Đơn Hàng Của Tôi</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Công Việc Của Tôi</CardTitle></CardHeader>
         <CardContent>
           {myJobs.length > 0 ? myJobs.map(job => (
             <JobItem key={job.id}>
@@ -332,7 +323,7 @@ const fetchPartnerData = useCallback(async (firebaseUser) => {
               </JobInfo>
               <Link to={`/booking-details/${job.id}`} className="btn">Xem chi tiết</Link>
             </JobItem>
-          )) : <EmptyState>Bạn chưa nhận đơn hàng nào.</EmptyState>}
+          )) : <EmptyState>Bạn chưa nhận công việc nào.</EmptyState>}
         </CardContent>
       </Card>
     </DashboardContainer>

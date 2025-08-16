@@ -7,7 +7,6 @@ const vnpayRouter = require('./routes/payment');
 const cors = require('cors');
 
 const serviceRoutes = require('./routes/serviceRoutes');
-const bookingRoutes = require('./routes/bookingRoutes');
 console.log('Loading address routes...');
 const addressRoutes = require('./routes/addressRoutes');
 console.log('Address routes loaded:', typeof addressRoutes);
@@ -23,8 +22,6 @@ const orderRoutes = require('./routes/orderRoutes');
 console.log('Order routes loaded');
 const bookingRoutes = require('./routes/bookingRoutes');
 console.log('Booking routes loaded');
-const serviceRoutes = require('./routes/serviceRoutes');
-console.log('Service routes loaded');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
