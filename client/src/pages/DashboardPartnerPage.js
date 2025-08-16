@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { DollarSign, ListChecks, Bell } from 'lucide-react';
+import { DollarSign, ListChecks, Bell, CheckCircle } from 'lucide-react';
 import styled from 'styled-components';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
+import toast from 'react-hot-toast';
 
 //import { mockPartner, mockBookings } from '../mockData'; // Đảm bảo đường dẫn đúng
 
@@ -124,74 +125,103 @@ const EmptyState = styled.div`
   color: #6b7280;
 `;
 
+const Button = styled.button`
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #3b82f6;
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  &:hover:not(:disabled) {
+    background: #2563eb;
+  }
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+`;
+
 const PartnerDashboardPage = () => {
   const navigate = useNavigate();
+  const API_URL = process.env.REACT_APP_API_URL;
+
   const [partner, setPartner] = useState(null);
-  const [newJobs, setNewJobs] = useState([]);
+  const [myJobs, setMyJobs] = useState([]);
+  const [availableJobs, setAvailableJobs] = useState([]);
   const [stats, setStats] = useState({ revenueThisMonth: 0, completedJobsThisMonth: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+const fetchPartnerData = useCallback(async (firebaseUser) => {
+    // Bắt đầu loading mỗi khi hàm được gọi
+    setIsLoading(true);
+    setError(null);
+    try {
+      const userDocRef = doc(db, "mm_users", firebaseUser.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (!userDocSnap.exists() || userDocSnap.data().role !== 'partner') {
+        throw new Error("Bạn không có quyền truy cập trang này.");
+      }
+      setPartner(userDocSnap.data());
+
+      // 2. LẤY CÔNG VIỆC CỦA TÔI (đã được gán)
+      const myJobsQuery = query(
+        collection(db, "mm_bookings"),
+        where("partnerId", "==", firebaseUser.uid),
+        orderBy("createdAt", "desc")
+      );
+
+      // 3. LẤY CÔNG VIỆC CÓ SẴN (chưa ai nhận)
+      const availableJobsQuery = query(
+        collection(db, "mm_bookings"),
+        where("status", "==", "pending_confirmation"),
+        orderBy("createdAt", "desc")
+      );
+
+      // Thực hiện cả hai truy vấn song song
+      const [myJobsSnapshot, availableJobsSnapshot] = await Promise.all([
+        getDocs(myJobsQuery),
+        getDocs(availableJobsQuery)
+      ]);
+
+      const myJobsData = myJobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const availableJobsData = availableJobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      setMyJobs(myJobsData);
+      setAvailableJobs(availableJobsData);
+
+      // 4. Tính toán thống kê dựa trên công việc của tôi
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      let revenue = 0;
+      let completedCount = 0;
+      myJobsData.forEach(job => {
+        const jobDate = job.createdAt?.toDate();
+        if (job.status === 'completed' && jobDate && jobDate >= startOfMonth) {
+          const commissionRate = 0.8; 
+          revenue += (job.summary?.totalPrice || 0) * commissionRate;
+          completedCount++;
+        }
+      });
+      setStats({ revenueThisMonth: revenue, completedJobsThisMonth: completedCount });
+
+    } catch (err) {
+      console.error("Lỗi khi tải dữ liệu partner:", err);
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchPartnerData = async (firebaseUser) => {
-      try {
-        // 1. KIỂM TRA VAI TRÒ CỦA NGƯỜI DÙNG
-        const userDocRef = doc(db, "mm_users", firebaseUser.uid);
-        const userDocSnap = await getDoc(userDocRef);
-
-        if (!userDocSnap.exists() || userDocSnap.data().role !== 'partner') {
-          throw new Error("Bạn không có quyền truy cập trang này.");
-        }
-        setPartner(userDocSnap.data());
-
-        // 2. LẤY TẤT CẢ CÔNG VIỆC ĐƯỢC GÁN CHO PARTNER NÀY
-        const bookingsColRef = collection(db, "bookings");
-        const q = query(
-          bookingsColRef,
-          where("partnerId", "==", firebaseUser.uid),
-          orderBy("createdAt", "desc")
-        );
-        const querySnapshot = await getDocs(q);
-
-        const allJobs = [];
-        querySnapshot.forEach(doc => allJobs.push({ id: doc.id, ...doc.data() }));
-
-        // 3. PHÂN LOẠI CÔNG VIỆC VÀ TÍNH TOÁN THỐNG KÊ
-        const now = new Date();
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        
-        let revenue = 0;
-        let completedCount = 0;
-        const newAssignedJobs = [];
-
-        allJobs.forEach(job => {
-          const jobDate = job.createdAt.toDate();
-          
-          // Lọc các đơn mới được đặt (chưa hoàn thành)
-          if (job.status === 'confirmed') {
-            newAssignedJobs.push(job);
-          }
-
-          // Tính toán thống kê cho các đơn đã hoàn thành trong tháng này
-          if (job.status === 'completed' && jobDate >= startOfMonth) {
-            // Giả sử hoa hồng 20% cho đối tác
-            const commissionRate = 0.8; 
-            revenue += job.summary.totalPrice * commissionRate;
-            completedCount++;
-          }
-        });
-
-        setNewJobs(newAssignedJobs);
-        setStats({ revenueThisMonth: revenue, completedJobsThisMonth: completedCount });
-
-      } catch (err) {
-        console.error("Lỗi khi tải dữ liệu partner:", err);
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     const unsubscribe = auth.onAuthStateChanged(firebaseUser => {
       if (firebaseUser) {
         fetchPartnerData(firebaseUser);
@@ -199,9 +229,34 @@ const PartnerDashboardPage = () => {
         navigate('/login');
       }
     });
-
     return () => unsubscribe();
-  }, [navigate]);
+  }, [navigate, fetchPartnerData]);
+
+  // ✅ HÀM MỚI ĐỂ NHẬN ĐƠN
+  const handleAcceptJob = async (orderId) => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const response = await fetch(`${API_URL}/api/orders/${orderId}/accept`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || 'Nhận đơn thất bại.');
+      }
+
+      toast.success('Nhận đơn thành công!');
+      await fetchPartnerData(auth.currentUser); // Tải lại toàn bộ dữ liệu
+
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   if (isLoading) {
     return <LoadingSpinner fullScreen text="Đang tải dữ liệu đối tác..." />;
@@ -235,31 +290,51 @@ const PartnerDashboardPage = () => {
         <StatCard>
           <StatIcon bgColor="#fef3c7" color="#d97706"><Bell size={32} /></StatIcon>
           <StatContent>
-            <StatValue>{newJobs.length}</StatValue>
+            <StatValue>{myJobs.filter(job => job.status === 'confirmed').length}</StatValue>
             <StatLabel>Dịch vụ mới được giao</StatLabel>
           </StatContent>
         </StatCard>
       </StatsGrid>
 
       <Card>
-        <CardHeader><CardTitle>Đơn vừa được đặt</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Việc Làm Có Sẵn ({availableJobs.length})</CardTitle></CardHeader>
         <CardContent>
-          {newJobs.length > 0 ? newJobs.map(job => (
+          {availableJobs.length > 0 ? availableJobs.map(job => (
             <JobItem key={job.id}>
               <JobInfo>
-                <ServiceName>{job.service.name}</ServiceName>
+                <ServiceName>{job.service?.name || 'Dịch vụ không xác định'}</ServiceName>
                 <JobMeta>
-                  Ngày: {new Date(job.schedule.date).toLocaleDateString('vi-VN')} | 
-                  Giờ: {job.schedule.time} | 
-                  Khách hàng: {job.contact.name}
+                  Ngày: {job.schedule?.date ? new Date(job.schedule.date).toLocaleDateString('vi-VN') : 'N/A'} | 
+                  Giờ: {job.schedule?.time || 'N/A'} | 
+                  Địa chỉ: {job.contact?.address || 'N/A'}
+                </JobMeta>
+              </JobInfo>
+              <Button onClick={() => handleAcceptJob(job.id)} disabled={isProcessing}>
+                <CheckCircle size={16} /> Nhận Đơn
+              </Button>
+            </JobItem>
+          )) : <EmptyState>Hiện không có việc làm nào mới.</EmptyState>}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle>Đơn Hàng Của Tôi</CardTitle></CardHeader>
+        <CardContent>
+          {myJobs.length > 0 ? myJobs.map(job => (
+            <JobItem key={job.id}>
+              <JobInfo>
+                <ServiceName>{job.service?.name || 'Dịch vụ không xác định'}</ServiceName>
+                <JobMeta>
+                  Ngày: {job.schedule?.date ? new Date(job.schedule.date).toLocaleDateString('vi-VN') : 'N/A'} | 
+                  Giờ: {job.schedule?.time || 'N/A'} | 
+                  Khách hàng: {job.contact?.name || 'N/A'}
                 </JobMeta>
               </JobInfo>
               <Link to={`/booking-details/${job.id}`} className="btn">Xem chi tiết</Link>
             </JobItem>
-          )) : <EmptyState>Hiện tại không có dịch vụ nào mới được giao cho bạn.</EmptyState>}
+          )) : <EmptyState>Bạn chưa nhận đơn hàng nào.</EmptyState>}
         </CardContent>
       </Card>
-
     </DashboardContainer>
   );
 };
