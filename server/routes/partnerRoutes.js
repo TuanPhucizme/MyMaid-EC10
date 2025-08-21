@@ -134,9 +134,6 @@ router.get('/stats', authMiddleware, async (req, res, next) => {
       ratingAverage,
       ratingCount
     });
-
-    // ✅ LOG KẾT QUẢ CUỐI CÙNG
-    console.log('Final calculated stats:', stats);
     res.status(200).json(stats);
 
   } catch (error) {

@@ -57,13 +57,6 @@ const ConsultationPage = () => {
     }));
   };
 
-  const handleUrgencySelect = (urgencyId) => {
-    setFormData(prev => ({
-      ...prev,
-      urgency: urgencyId
-    }));
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);

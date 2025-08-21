@@ -6,7 +6,7 @@ export const services = [
     name: "Dọn Dẹp Nhà Cửa",
     subtitle: "Theo giờ",
     description: "Dịch vụ dọn dẹp nhà cửa chuyên nghiệp, linh hoạt theo nhu cầu",
-    price: "80,000",
+    price: 80000, // Đã chuyển đổi sang số nguyên
     unit: "giờ",
     duration: "2-4 giờ",
     icon: <Home className="w-6 h-6 text-blue-500" />,
@@ -26,9 +26,9 @@ export const services = [
     name: "Dọn Dẹp Nhà Cửa",
     subtitle: "Gói tháng",
     description: "Gói dịch vụ dọn dẹp định kỳ hàng tháng với giá ưu đãi",
-    price: "1,200,000",
+    price: 1200000, // Đã chuyển đổi sang số nguyên
     unit: "tháng",
-    duration: "8 lần/tháng",
+    duration: "",
     icon: <Calendar className="w-6 h-6 text-indigo-500" />,
     image: "https://media.gettyimages.com/id/1417833124/photo/professional-cleaner-cleaning-a-table-at-a-house.jpg?s=2048x2048&w=gi&k=20&c=SmRzdfXzybOYcYytzD2i_am_RfwykpAlgDY44Pbx57Q=",
     features: [
@@ -43,11 +43,11 @@ export const services = [
     discount: 20
   },
   {
-    id: 4,
+    id: 3,
     name: "Dịch Vụ Chuyển Nhà",
     subtitle: "Đóng gói & vận chuyển",
     description: "Hỗ trợ đóng gói, dọn dẹp và sắp xếp khi chuyển nhà",
-    price: "500,000",
+    price: 500000, // Đã chuyển đổi sang số nguyên
     unit: "lần",
     duration: "1 ngày",
     icon: <Package className="w-6 h-6 text-green-500" />,
@@ -64,11 +64,11 @@ export const services = [
     isNew: true
   },
   {
-    id: 7,
+    id: 4,
     name: "Giặt Ủi Quần Áo",
     subtitle: "Nhận & Giao Tận Nơi",
     description: "Nhân viên đến nhà nhận quần áo cần giặt, xử lý tại cơ sở chuyên nghiệp và giao trả tận nơi.",
-    price: "25,000",
+    price: 25000, // Đã chuyển đổi sang số nguyên
     unit: "kg",
     duration: "24-48h",
     icon: <Shirt className="w-6 h-6 text-purple-500" />,
@@ -83,11 +83,11 @@ export const services = [
     bookings: 2100
   },
   {
-    id: 8,
+    id: 5,
     name: "Chăm Sóc Trẻ Em",
     subtitle: "Babysitting",
     description: "Dịch vụ chăm sóc trẻ em chuyên nghiệp, an toàn",
-    price: "100,000",
+    price: 100000, // Đã chuyển đổi sang số nguyên
     unit: "giờ",
     duration: "Linh hoạt",
     icon: <Baby className="w-6 h-6 text-pink-500" />,
@@ -109,14 +109,14 @@ export const serviceCategories = [
     id: 1,
     name: "Dọn Dẹp Nhà Cửa",
     icon: <Home className="w-5 h-5" />,
-    count: 3,
+    count: 2, // Đã cập nhật: Có 2 dịch vụ dọn dẹp nhà cửa trong mảng `services`
     color: "bg-blue-100 text-blue-600"
   },
   {
     id: 2,
     name: "Vệ Sinh Chuyên Sâu",
     icon: <Sparkles className="w-5 h-5" />,
-    count: 3,
+    count: 0, // Đã cập nhật: Hiện không có dịch vụ nào với icon Sparkles trong mảng `services`
     color: "bg-green-100 text-green-600"
   },
   {

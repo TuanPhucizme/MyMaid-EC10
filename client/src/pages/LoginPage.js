@@ -8,8 +8,9 @@ import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import styled, { keyframes } from 'styled-components'; // ✅ Thêm keyframes
 import ErrorMessage from '../components/ErrorMessage';
 import EmailVerificationStatus from '../components/EmailVerificationStatus';
+import { doc, getDoc } from 'firebase/firestore'; // Import getDoc
+import { db } from '../config/firebase'; // Import db
 
-// ✅ 1. THÊM CÁC KEYFRAMES CHO ANIMATION
 const fadeIn = keyframes`
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -20,7 +21,6 @@ const slideIn = keyframes`
   to { opacity: 1; transform: translateX(0); }
 `;
 
-// ✅ 2. NÂNG CẤP TOÀN BỘ STYLED COMPONENTS
 const LoginContainer = styled.div`
   min-height: calc(100vh - 4rem);
   display: flex;
@@ -235,9 +235,29 @@ const LoginPage = () => {
     setIsLoading(true);
     setError('');
     try {
+       // Hàm login chỉ xác thực, trả về user object của Firebase Auth
       const result = await login(data.email, data.password);
-      if (result.success) {
-        navigate('/');
+      
+      if (result.success && result.user) {
+        // LẤY HỒ SƠ TỪ FIRESTORE ĐỂ KIỂM TRA VAI TRÒ
+        const userDocRef = doc(db, "mm_users", result.user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (userDocSnap.exists()) {
+          const userProfile = userDocSnap.data();
+          if (userProfile.role === 'partner') {
+            navigate('/dashboard-partner', { replace: true }); // Chuyển partner đến dashboard
+          } 
+          // else if (userProfile.role === 'admin') {
+          //   navigate('/admin', { replace: true }); // Chuyển admin đến trang admin
+          // }
+          else {
+            navigate('/', { replace: true }); // Chuyển customer về trang chủ
+          }
+        } else {
+          // Xử lý trường hợp hiếm gặp
+          navigate('/');
+        }
       } else {
         setError(result.error);
       }
