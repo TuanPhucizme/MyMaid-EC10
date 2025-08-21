@@ -5,6 +5,7 @@ import styled from 'styled-components';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import toast from 'react-hot-toast';
+import "../index.css";
 
 //1. IMPORT CÁC HÀM TỪ FIREBASE
 import { auth, db } from '../config/firebase';

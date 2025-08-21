@@ -134,7 +134,6 @@ router.get('/stats', authMiddleware, async (req, res, next) => {
       ratingAverage,
       ratingCount
     });
-    res.status(200).json(stats);
 
   } catch (error) {
     console.error(`Error fetching stats for partner ${req.user?.uid}:`, error);
@@ -161,7 +160,7 @@ router.get('/', [authMiddleware, adminMiddleware], async (req, res) => {
       const userDocRef = db.collection('mm_users').doc(pDoc.id);
       const userDoc = await userDocRef.get();
 
-      if (userDoc.exists() && partnerData) {
+      if (userDoc.exists && partnerData) {
         return {
           uid: pDoc.id,
           name: userDoc.data().name || 'N/A',

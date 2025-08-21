@@ -248,9 +248,9 @@ const LoginPage = () => {
           if (userProfile.role === 'partner') {
             navigate('/dashboard-partner', { replace: true }); // Chuyển partner đến dashboard
           } 
-          // else if (userProfile.role === 'admin') {
-          //   navigate('/admin', { replace: true }); // Chuyển admin đến trang admin
-          // }
+          else if (userProfile.role === 'admin') {
+            navigate('/admin', { replace: true }); // Chuyển admin đến trang admin
+          }
           else {
             navigate('/', { replace: true }); // Chuyển customer về trang chủ
           }

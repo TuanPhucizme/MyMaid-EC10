@@ -22,7 +22,7 @@ import CheckLinkPage from "./pages/CheckLinkPage";
 import DashboardPartnerPage from "./pages/DashboardPartnerPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import LoginPage from "./pages/LoginPage";
-import PartnerPage from "./pages/RegisterPartnerPage"; // Đổi tên để khớp với cách sử dụng trong route
+import PartnerPage from "./pages/RegisterPartnerPage";
 import PartnerSuccessPage from "./pages/PartnerSuccessPage";
 import PaymentPage from "./pages/PaymentPage";
 import PaymentResultPage from "./pages/PaymentResult";
@@ -57,21 +57,42 @@ function App() {
       return; // Đợi cho đến khi xác thực xong
     }
 
-    // Danh sách các trang công khai mà đối tác KHÔNG được phép truy cập
-    // Lưu ý: '/home' và '/blog' được giữ lại từ code gốc dù không có route cụ thể trong khối <Routes>
-    const publicPages = ['/', '/services', '/consultation'];
+    // Danh sách các trang công khai mà người dùng đã đăng nhập nên được điều hướng khỏi
+    // bao gồm cả các trang xác thực (login, register)
+    const publicAndAuthPages = [
+      '/',
+      '/services',
+      '/consultation',
+      '/login',
+      '/register',
+      '/forgot-password',
+      '/reset-password',
+      '/verify-email',
+      '/check-link',
+      '/partner', // Trang đăng ký đối tác cũng nên được xử lý nếu người dùng đã đăng nhập
+      '/partner-registration-success'
+    ];
 
+    // Nếu người dùng đã đăng nhập và có userProfile
     if (user && userProfile) {
-      // Nếu là đối tác và đang ở trang công khai -> đá về dashboard
-      if (userProfile.role === 'partner') {
-        navigate('/dashboard-partner', { replace: true });
-      }
-      // (Tùy chọn) Nếu là admin và đang ở trang công khai -> đá về trang admin
-      else if (userProfile.role === 'admin') {
-        navigate('/', { replace: true });
+      // Chỉ điều hướng nếu người dùng hiện đang ở trên một trong các trang công khai/xác thực
+      if (publicAndAuthPages.includes(location.pathname)) {
+        if (userProfile.role === 'partner') {
+          navigate('/dashboard-partner', { replace: true });
+        } else if (userProfile.role === 'admin') {
+          navigate('/admin', { replace: true });
+        } else {
+          // Đối với khách hàng thông thường, nếu họ đang ở trang đăng nhập/đăng ký
+          // hoặc trang công khai sau khi đăng nhập, hãy đưa họ về trang chủ.
+          // Hoặc bạn có thể quyết định để họ ở lại trang công khai nếu đó là ý định của họ.
+          // Ở đây, chúng ta sẽ đưa họ về trang chủ nếu họ ở trên trang auth, còn public page thì không redirect
+          if (['/login', '/register', '/forgot-password', '/reset-password', '/verify-email', '/check-link'].includes(location.pathname)) {
+            navigate('/', { replace: true });
+          }
+        }
       }
     }
-  }, [user, userProfile, loading, navigate, location]);
+  }, [user, userProfile, loading, navigate, location.pathname]); // Thêm location.pathname vào dependency array
 
   if (loading) {
     return <LoadingSpinner fullScreen />;
@@ -89,7 +110,7 @@ function App() {
 
       <Header />
 
-      {/* ✅ CHỈ SỬ DỤNG MỘT KHỐI <Routes> DUY NHẤT */}
+      <main className="pt-16">
       <Routes>
         {/* --- CÁC ROUTE CÔNG KHAI & CHÍNH --- */}
         <Route path="/" element={<HomePageContent />} />
@@ -106,7 +127,11 @@ function App() {
         <Route path="/check-link" element={<CheckLinkPage />} />
 
         {/* --- CÁC ROUTE CỦA NGƯỜI DÙNG & ĐỐI TÁC (YÊU CẦU ĐĂNG NHẬP) --- */}
-        {/* Lưu ý: Các route này cần được bọc trong một ProtectedRoute hoặc kiểm tra quyền truy cập bên trong component để hoạt động đúng */}
+        {/* LƯU Ý QUAN TRỌNG: Các route này *nên* được bọc trong một ProtectedRoute component
+             để đảm bảo rằng chỉ người dùng đã đăng nhập mới có thể truy cập.
+             Nếu không có ProtectedRoute, người dùng chưa đăng nhập có thể truy cập URL
+             trực tiếp và thấy các component này (mặc dù dữ liệu có thể trống hoặc gây lỗi
+             do thiếu thông tin user). */}
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/partner" element={<PartnerPage />} />
         <Route path="/partner-registration-success" element={<PartnerSuccessPage />} />
@@ -119,13 +144,14 @@ function App() {
         <Route path="/leave-review/:bookingId" element={<LeaveReviewPage />} />
 
         {/* --- CÁC ROUTE CỦA QUẢN TRỊ VIÊN --- */}
-        {/* Lưu ý: Route này cần được bọc trong một AdminRoute hoặc kiểm tra quyền truy cập bên trong component */}
+        {/* LƯU Ý QUAN TRỌNG: Route này *nên* được bọc trong một AdminRoute component
+             để đảm bảo chỉ quản trị viên mới có thể truy cập. */}
         <Route path="/admin" element={<AdminPage />} />
 
         {/* --- ROUTE BẮT LỖI 404 --- */}
         <Route path="*" element={<h1 className="text-center text-2xl p-8">404 - Page Not Found</h1>} />
       </Routes>
-
+      </main>
       <Footer />
       <ScrollToTop />
     </div>

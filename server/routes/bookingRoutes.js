@@ -26,13 +26,13 @@ router.get('/', [authMiddleware, adminMiddleware], async (req, res, next) => {
       
       // Lấy thông tin khách hàng
       const userDoc = await db.collection('mm_users').doc(bookingData.userId).get();
-      const customerName = userDoc.exists() ? userDoc.data().name : 'Không rõ';
+      const customerName = userDoc.exists ? userDoc.data().name : 'Không rõ';
 
       // Lấy thông tin đối tác (nếu có)
       let partnerName = 'Chưa gán';
       if (bookingData.partnerId) {
         const partnerDoc = await db.collection('mm_users').doc(bookingData.partnerId).get();
-        if (partnerDoc.exists()) {
+        if (partnerDoc.exists) {
           partnerName = partnerDoc.data().name;
         }
       }
