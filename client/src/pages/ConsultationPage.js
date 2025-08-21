@@ -41,12 +41,6 @@ const ConsultationPage = () => {
     '15:00 - 17:00', '17:00 - 19:00', '19:00 - 21:00'
   ];
 
-  const urgencyLevels = [
-    { id: 'low', name: 'Không gấp', color: 'text-green-600' },
-    { id: 'normal', name: 'Bình thường', color: 'text-blue-600' },
-    { id: 'high', name: 'Gấp', color: 'text-orange-600' },
-    { id: 'urgent', name: 'Rất gấp', color: 'text-red-600' }
-  ];
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -83,7 +77,6 @@ const ConsultationPage = () => {
   };
 
   const selectedService = services.find(s => s.id === formData.service);
-  const selectedUrgency = urgencyLevels.find(u => u.id === formData.urgency);
 
   return (
     <div ref={pageRef} className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 py-20">
@@ -192,30 +185,6 @@ const ConsultationPage = () => {
                               {service.name}
                             </span>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Urgency Level */}
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-4">
-                      Mức độ ưu tiên
-                    </label>
-                    <div className="grid md:grid-cols-4 gap-3">
-                      {urgencyLevels.map((urgency) => (
-                        <div
-                          key={urgency.id}
-                          onClick={() => handleUrgencySelect(urgency.id)}
-                          className={`p-3 border-2 rounded-lg cursor-pointer transition-all text-center ${
-                            formData.urgency === urgency.id
-                              ? 'border-primary-600 bg-primary-50'
-                              : 'border-neutral-200 hover:border-primary-300'
-                          }`}
-                        >
-                          <span className={`font-medium ${urgency.color}`}>
-                            {urgency.name}
-                          </span>
                         </div>
                       ))}
                     </div>
@@ -374,13 +343,6 @@ const ConsultationPage = () => {
                     <div>
                       <p className="font-semibold text-neutral-900">Thời gian</p>
                       <p className="text-neutral-600">{formData.preferredTime || 'Chưa chọn'}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <span className="text-2xl">🚨</span>
-                    <div>
-                      <p className="font-semibold text-neutral-900">Mức độ ưu tiên</p>
-                      <p className={`${selectedUrgency?.color}`}>{selectedUrgency?.name}</p>
                     </div>
                   </div>
                 </div>

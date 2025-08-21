@@ -81,8 +81,8 @@ const ServiceCard = ({ service, index }) => {
         </div>
 
         {/* Info */}
-        <CardHeader>
-          <div className="flex items-center justify-between mb-2">
+        <CardHeader className="space-y-2">
+          <div className="flex items-center justify-between">
             <span className="text-2xl">{service.icon}</span>
             <span className="text-sm text-neutral-500">{service.bookings} đặt</span>
           </div>
@@ -92,35 +92,35 @@ const ServiceCard = ({ service, index }) => {
           )}
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="space-y-4">
           <p className="text-neutral-600 text-sm">{service.description}</p>
 
           {/* Features */}
           <div className="space-y-2">
             {service.features.slice(0, 3).map((feature, idx) => (
-              <div key={idx} className="flex items-center text-sm text-neutral-600">
-                <IconCheck />
-                {feature}
-              </div>
+            <div key={idx} className="flex items-center text-sm text-neutral-600 gap-2">
+              <IconCheck className="text-primary-600" />
+              {feature}
+            </div>
             ))}
           </div>
 
           {/* Price & Duration */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between">
             <div>
               <span className="text-2xl font-bold text-primary-600">
                 {service.price.toLocaleString()}đ
               </span>
-              <span className="text-neutral-500">/{service.unit}</span>
+              <span className="ml-1 text-neutral-500">/{service.unit}</span>
             </div>
             <span className="text-sm text-neutral-500">{service.duration}</span>
           </div>
 
-          {/* Button */}
-          <Button
-            className="w-full group"
-            onClick={() => navigate("/booking", { state: { serviceType: service.id } })}
-          >
+            {/* Button */}
+            <Button
+              className="w-full group"
+              onClick={() => navigate("/booking", { state: { serviceType: service.id } })}
+            >
             Đặt ngay
             <IconArrowRight />
           </Button>
