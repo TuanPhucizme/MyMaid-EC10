@@ -4,10 +4,11 @@ import { services, serviceCategories } from '../data/services';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
+import ServiceDetailModal from '../components/ServiceDetailModal';
 import { useGSAP, animations } from '../hooks/useGSAP';
 import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
 
-const ServiceCard = ({ service, index }) => {
+const ServiceCard = ({ service, index, onViewDetails }) => {
   const navigate = useNavigate();
   const { ref, hasIntersected } = useIntersectionObserver();
 
@@ -91,22 +92,31 @@ const ServiceCard = ({ service, index }) => {
           <div className="flex items-center justify-between mb-4">
             <div>
               <span className="text-2xl font-bold text-primary-600">
-                {service.price.toLocaleString()}đ
+                {service.serviceType === 'laundry' ? 'Từ ' : ''}{service.price.toLocaleString()}đ
               </span>
               <span className="text-neutral-500">/{service.unit}</span>
             </div>
             <span className="text-sm text-neutral-500">{service.duration}</span>
           </div>
 
-          <Button 
-            className="w-full group"
-            onClick={() => navigate('/booking', { state: { serviceType: service.id } })}
-          >
-            Đặt ngay
-            <svg className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => onViewDetails(service)}
+            >
+              Xem chi tiết
+            </Button>
+            <Button
+              className="flex-1 group"
+              onClick={() => navigate('/booking', { state: { serviceType: service.id } })}
+            >
+              Đặt ngay
+              <svg className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
@@ -118,6 +128,8 @@ const ServicesPage = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('popular');
+  const [selectedService, setSelectedService] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { ref: sectionRef, hasIntersected } = useIntersectionObserver();
 
@@ -152,6 +164,25 @@ const ServicesPage = () => {
         return b.bookings - a.bookings;
     }
   });
+
+  const handleViewDetails = (service) => {
+    setSelectedService(service);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedService(null);
+  };
+
+  const handleBookService = (service, serviceData) => {
+    navigate('/booking', {
+      state: {
+        serviceType: service.id,
+        serviceData: serviceData
+      }
+    });
+  };
 
   return (
     <div className="pt-20 pb-16 bg-gradient-to-br from-neutral-50 to-white min-h-screen">
@@ -242,7 +273,12 @@ const ServicesPage = () => {
         {filteredServices.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredServices.map((service, index) => (
-              <ServiceCard key={service.id} service={service} index={index} />
+              <ServiceCard
+                key={service.id}
+                service={service}
+                index={index}
+                onViewDetails={handleViewDetails}
+              />
             ))}
           </div>
         ) : (
@@ -289,6 +325,14 @@ const ServicesPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Service Detail Modal */}
+      <ServiceDetailModal
+        service={selectedService}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onBookService={handleBookService}
+      />
     </div>
   );
 };

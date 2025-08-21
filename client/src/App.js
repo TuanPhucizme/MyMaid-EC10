@@ -24,7 +24,7 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import LoginPage from "./pages/LoginPage";
 import PartnerPage from "./pages/RegisterPartnerPage";
 import PartnerSuccessPage from "./pages/PartnerSuccessPage";
-import PaymentPage from "./pages/PaymentPage";
+import PaymentPage from "./pages/PaymentPageNew";
 import PaymentResultPage from "./pages/PaymentResult";
 import ProfilePage from "./pages/ProfilePage";
 import OrderManagementPage from "./pages/OrderManagementPage";
@@ -34,6 +34,7 @@ import ServicesPage from "./pages/ServicesPage";
 import UpdateInformationPage from "./pages/UpdateInformation";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
 import LeaveReviewPage from "./pages/ReviewPage";
+import ServiceFlowDemo from "./pages/ServiceFlowDemo";
 
 // Component cho nội dung trang chủ
 const HomePageContent = () => (
@@ -67,6 +68,7 @@ function App() {
         {/* --- CÁC ROUTE CÔNG KHAI & CHÍNH --- */}
         <Route path="/" element={<HomePageContent />} />
         <Route path="/services" element={<ServicesPage />} />
+        <Route path="/demo" element={<ServiceFlowDemo />} />
         <Route path="/blog" element={<BlogDetailPage />} />
 
         {/* --- LUỒNG XÁC THỰC NGƯỜI DÙNG --- */}

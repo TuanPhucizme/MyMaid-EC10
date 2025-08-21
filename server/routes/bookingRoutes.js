@@ -54,4 +54,77 @@ router.get('/', [authMiddleware, adminMiddleware], async (req, res, next) => {
   }
 });
 
+/**
+ * @route   POST /api/bookings
+ * @desc    Tạo booking mới với dữ liệu service mở rộng
+ * @access  Private
+ */
+router.post('/', authMiddleware, async (req, res, next) => {
+  try {
+    const { uid: userId } = req.user;
+    const {
+      serviceType,
+      serviceData,
+      date,
+      time,
+      address,
+      addressCoordinates,
+      addressComponents,
+      formattedAddress,
+      phone,
+      name,
+      email,
+      notes,
+      frequency
+    } = req.body;
+
+    // Validate required fields
+    if (!serviceType || !date || !time || !address || !phone || !name || !email) {
+      return res.status(400).json({
+        message: 'Thiếu thông tin bắt buộc'
+      });
+    }
+
+    // Tạo booking data
+    const bookingData = {
+      userId,
+      serviceType,
+      serviceData: serviceData || {},
+      schedule: {
+        date,
+        time,
+        frequency: frequency || 'one-time'
+      },
+      address: {
+        formatted: formattedAddress || address,
+        coordinates: addressCoordinates,
+        components: addressComponents,
+        raw: address
+      },
+      customer: {
+        name,
+        phone,
+        email
+      },
+      notes: notes || '',
+      status: 'pending',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    // Lưu vào database
+    const docRef = await db.collection('orders').add(bookingData);
+
+    res.status(201).json({
+      success: true,
+      orderId: docRef.id,
+      message: 'Đặt dịch vụ thành công'
+    });
+
+  } catch (error) {
+    console.error('Error creating booking:', error);
+    next(error);
+  }
+});
+
 module.exports = router;
