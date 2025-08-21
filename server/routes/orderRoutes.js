@@ -12,6 +12,9 @@ const enrichOrderData = async (doc) => {
   // Lấy tên khách hàng
   const userDoc = await db.collection('mm_users').doc(orderData.userId).get();
   const customerName = userDoc.exists ? userDoc.data().name : 'Không rõ';
+  const reviewQuery = db.collection('mm_reviews').where('bookingId', '==', doc.id).limit(1);
+  const reviewSnapshot = await reviewQuery.get();
+  const hasBeenReviewed = !reviewSnapshot.empty;
 
   // Lấy tên đối tác (nếu có)
   let partnerName = 'Chưa gán';
@@ -29,7 +32,8 @@ const enrichOrderData = async (doc) => {
     ...orderData,
     customerName,
     partnerName,
-    partnerPhone
+    partnerPhone,
+    hasBeenReviewed,
   };
 };
 

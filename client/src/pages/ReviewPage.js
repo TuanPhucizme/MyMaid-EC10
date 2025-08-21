@@ -107,11 +107,19 @@ const SubmitButton = styled.button`
   &:disabled { opacity: 0.7; cursor: not-allowed; }
 `;
 
+const PartnerName = styled.p`
+  font-size: 1rem;
+  font-weight: 500;
+  color: #374151;
+  margin-top: 0.5rem;
+`;
+
 const LeaveReviewPage = () => {
   const { bookingId } = useParams();
   const navigate = useNavigate();
 
   const [booking, setBooking] = useState(null);
+  const [partnerName, setPartnerName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -129,11 +137,20 @@ const LeaveReviewPage = () => {
         return;
       }
       try {
-        const docRef = doc(db, "bookings", bookingId);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          setBooking({ id: docSnap.id, ...docSnap.data() });
-        } else {
+        const bookingDocRef = doc(db, "orders", bookingId);
+        const bookingSnap = await getDoc(bookingDocRef);
+        if (bookingSnap.exists()) {
+          const bookingData = { id: bookingSnap.id, ...bookingSnap.data() };
+          setBooking(bookingData)
+          if (bookingData.partnerId) {
+            const partnerbookingDocRef = doc(db, "mm_users", bookingData.partnerId);
+            const partnerSnap = await getDoc(partnerbookingDocRef);
+            if (partnerSnap.exists()) {
+              setPartnerName(partnerSnap.data().name);
+            }
+          }
+        } 
+        else {
           setError("Không tìm thấy đơn hàng này.");
         }
       } catch (err) {
@@ -196,6 +213,7 @@ const LeaveReviewPage = () => {
           <ServiceDate>
             Hoàn thành ngày: {new Date(booking?.schedule?.date).toLocaleDateString('vi-VN')}
           </ServiceDate>
+            {partnerName && <PartnerName>Nhân viên thực hiện: {partnerName}</PartnerName>}
         </BookingSummary>
 
         <Form onSubmit={handleSubmit}>

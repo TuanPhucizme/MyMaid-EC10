@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useCallback, use} from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '../context/AuthContext';
-import OrderDetailModal from '../components/OrderDetailModal';
 import toast from 'react-hot-toast';
+
+import OrderDetailModal from '../components/OrderDetailModal';
+import ReviewDetailModal from '../components/ReviewDetailModal';
+
 import { 
   Clock, 
   CheckCircle, 
@@ -17,7 +20,8 @@ import {
   User,
   DollarSign,
   Eye,
-  X
+  X,
+  Star
 } from 'lucide-react';
 
 import { auth } from '../config/firebase';
@@ -248,6 +252,21 @@ const OrderManagementPage = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  const canReviewOrder = (order) => {return order.status === 'completed';};
+
+  // State để quản lý modal xem review
+  const [viewingReviewFor, setViewingReviewFor] = useState(null);
+
+  const handleReviewClick = (order) => {
+    if (order.hasBeenReviewed) {
+      // Nếu đã có review, mở modal để xem
+      setViewingReviewFor(order.id);
+    } else {
+      // Nếu chưa có, chuyển đến trang để viết review mới
+      navigate(`/leave-review/${order.id}`);
+    }
+  };
 
   const tabs = React.useMemo(() => [
     { 
@@ -496,7 +515,7 @@ const OrderManagementPage = () => {
                         </StatusBadge>
                       </OrderTitle>
                       <OrderMeta>
-                        Đơn hàng #{order.id.slice(-8)} • {formatDate(order.createdAt)}
+                        Đơn hàng #{order.id.slice(-8)} • {formatDate(order.schedule?.date)}
                       </OrderMeta>
                     </OrderInfo>
                   </OrderHeader>
@@ -539,6 +558,18 @@ const OrderManagementPage = () => {
                         Hủy đơn
                       </ActionButton>
                     )}
+
+                    {/* --- NÚT ĐÁNH GIÁ MỚI --- */}
+                    {order.status === 'completed' && (
+                      <ActionButton 
+                        variant="primary"
+                        onClick={() => handleReviewClick(order)}
+                      >
+                        <Star size={16} />
+                        {/* Hiển thị văn bản khác nhau dựa trên trạng thái review */}
+                        {order.hasBeenReviewed ? 'Xem đánh giá' : 'Đánh giá'}
+                      </ActionButton>
+                    )}
                   </OrderActions>
                 </OrderCard>
               ))}
@@ -555,6 +586,12 @@ const OrderManagementPage = () => {
         onConfirmCompletion={handleConfirmCompletion}
         onCancel={handleCancelOrder}
         isProcessing={isProcessing}
+      />
+
+      <ReviewDetailModal
+        isOpen={!!viewingReviewFor}
+        bookingId={viewingReviewFor}
+        onClose={() => setViewingReviewFor(null)}
       />
     </Container>
   );

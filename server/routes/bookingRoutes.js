@@ -13,7 +13,7 @@ const adminMiddleware = require('../middleware/adminMiddleware');
  */
 router.get('/', [authMiddleware, adminMiddleware], async (req, res, next) => {
   try {
-    const bookingsRef = db.collection('mm_bookings');
+    const bookingsRef = db.collection('orders');
     const snapshot = await bookingsRef.orderBy('createdAt', 'desc').get();
 
     if (snapshot.empty) {
