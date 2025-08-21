@@ -170,35 +170,6 @@ const Testimonials = () => {
           <h2 className="text-4xl lg:text-5xl font-bold text-neutral-900 mb-4">
             Khách hàng nói gì về chúng tôi
           </h2>
-          <p className="text-xl text-neutral-600 max-w-3xl mx-auto">
-            Hàng nghìn khách hàng đã tin tưởng và hài lòng với dịch vụ của MyMaid
-          </p>
-        </div>
-
-        {/* Stats */}
-        <div ref={statsRef} className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16">
-          <div className="stat-item text-center">
-            <div className="counter text-3xl lg:text-4xl font-bold text-primary-600" data-count={testimonialStats.totalReviews}>0</div>
-            <div className="text-neutral-600 mt-1">Đánh giá</div>
-          </div>
-          <div className="stat-item text-center">
-            <div className="text-3xl lg:text-4xl font-bold text-secondary-600">
-              <span className="counter" data-count={testimonialStats.averageRating * 10}>0</span>/50
-            </div>
-            <div className="text-neutral-600 mt-1">Điểm trung bình</div>
-          </div>
-          <div className="stat-item text-center">
-            <div className="text-3xl lg:text-4xl font-bold text-accent-600">
-              <span className="counter" data-count={testimonialStats.fiveStarPercent}>0</span>%
-            </div>
-            <div className="text-neutral-600 mt-1">5 sao</div>
-          </div>
-          <div className="stat-item text-center">
-            <div className="text-3xl lg:text-4xl font-bold text-green-600">
-              <span className="counter" data-count="99">0</span>%
-            </div>
-            <div className="text-neutral-600 mt-1">Sẽ giới thiệu</div>
-          </div>
         </div>
 
         {/* Testimonials Grid - Desktop */}
@@ -234,27 +205,6 @@ const Testimonials = () => {
                 }`}
               />
             ))}
-          </div>
-        </div>
-
-        {/* CTA Section */}
-        <div className="mt-16 text-center space-y-6">
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" onClick={handleWriteReview}>
-              Viết đánh giá
-            </Button>
-            <Button variant="outline" size="lg" onClick={handleViewAllReviews}>
-              Xem tất cả đánh giá
-            </Button>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button variant="ghost" onClick={handleLearnMore}>
-              Tìm hiểu thêm về MyMaid
-            </Button>
-            <Button variant="ghost" onClick={() => navigate('/services')}>
-              Đặt dịch vụ ngay
-            </Button>
           </div>
         </div>
       </div>

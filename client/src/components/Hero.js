@@ -135,47 +135,35 @@ const Hero = () => {
               </Button>
             </div>
 
-            {/* Additional CTA */}
-            <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <Button 
-                variant="ghost" 
-                size="lg"
-                onClick={handleLearnMore}
-                className="group"
-              >
-                Tìm hiểu thêm
-                <svg className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </Button>
-              <Link to="/blog">
-                <Button variant="ghost" size="lg" className="group">
-                  Xem mẹo vặt
-                  <svg className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </Button>
-              </Link>
-            </div>
-
-            {/* Stats */}
-            <div ref={statsRef} className="hero-stats mt-12 grid grid-cols-3 gap-8">
+            {/* Highlights */}
+            <div className="hero-stats mt-12 grid grid-cols-3 gap-8">
               <div className="text-center lg:text-left">
-                <div className="counter text-3xl lg:text-4xl font-bold text-primary-600" data-count="1250">0</div>
-                <div className="text-neutral-600 mt-1">Người giúp việc</div>
-              </div>
-              <div className="text-center lg:text-left">
-                <div className="counter text-3xl lg:text-4xl font-bold text-secondary-600" data-count="15600">0</div>
-                <div className="text-neutral-600 mt-1">Đơn hoàn thành</div>
-              </div>
-              <div className="text-center lg:text-left">
-                <div className="text-3xl lg:text-4xl font-bold text-accent-600">
-                  <span className="counter" data-count="98">0</span>%
+                <div className="text-2xl lg:text-3xl font-bold text-primary-600 whitespace-nowrap">
+                  Nhanh chóng
                 </div>
-                <div className="text-neutral-600 mt-1">Hài lòng</div>
+                <div className="text-neutral-600 mt-1">
+                  Đặt dịch vụ chỉ trong vài phút
+                </div>
+              </div>
+              <div className="text-center lg:text-left">
+                <div className="text-2xl lg:text-3xl font-bold text-secondary-600 whitespace-nowrap">
+                  Tin cậy
+                </div>
+                <div className="text-neutral-600 mt-1">
+                  Là sự lựa chọn của nhiều gia đình
+                </div>
+              </div>
+              <div className="text-center lg:text-left">
+                <div className="text-2xl lg:text-3xl font-bold text-accent-600 whitespace-nowrap">
+                  An tâm
+                </div>
+                <div className="text-neutral-600 mt-1">
+                  Cam kết chất lượng & bảo mật thông tin
+                </div>
               </div>
             </div>
           </div>
+
 
           {/* Right content - Hero image/illustration */}
           <div className="relative">

@@ -135,18 +135,6 @@ const MaidCard = ({ maid, index }) => {
             ))}
           </div>
 
-          {/* Specialties */}
-          <div className="mb-4">
-            <h4 className="font-semibold text-sm text-neutral-900 mb-2">Chuyên môn:</h4>
-            <div className="flex flex-wrap gap-1">
-              {maid.specialties.map((specialty, idx) => (
-                <Badge key={idx} variant="secondary" size="sm">
-                  {specialty}
-                </Badge>
-              ))}
-            </div>
-          </div>
-
           {/* Stats */}
           <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
             <div>
@@ -187,53 +175,8 @@ const MaidCard = ({ maid, index }) => {
                   ))}
                 </div>
               </div>
-
-              {/* Availability */}
-              <div>
-                <h4 className="font-semibold text-sm text-neutral-900 mb-2">Lịch làm việc:</h4>
-                <p className="text-sm text-neutral-600">{maid.availability}</p>
-              </div>
             </div>
           )}
-
-          {/* Price and actions */}
-          <div className="mt-6 pt-4 border-t border-neutral-200">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <span className="text-2xl font-bold text-primary-600">
-                  {maid.hourlyRate.toLocaleString()}đ
-                </span>
-                <span className="text-neutral-500">/giờ</span>
-              </div>
-              <button
-                onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
-                className="text-primary-600 text-sm font-medium hover:text-primary-700"
-              >
-                {isExpanded ? 'Thu gọn' : 'Xem thêm'}
-              </button>
-            </div>
-            
-            <div className="flex space-x-2">
-                          <Button 
-              className="flex-1 group"
-              onClick={(e) => { e.stopPropagation(); navigate('/consultation'); }}
-            >
-              Liên hệ
-              <svg className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-            </Button>
-              <Button 
-                variant="outline"
-                onClick={handleFavorite}
-                className={isFavorite ? 'text-red-500 border-red-500 hover:bg-red-50' : ''}
-              >
-                <svg className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                </svg>
-              </Button>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>
@@ -285,50 +228,11 @@ const MaidProfiles = () => {
           </p>
         </div>
 
-        {/* Stats */}
-        <div ref={statsRef} className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16">
-          <div className="stat-item text-center">
-            <div className="counter text-3xl lg:text-4xl font-bold text-primary-600" data-count={maidStats.totalMaids}>0</div>
-            <div className="text-neutral-600 mt-1">Người giúp việc</div>
-          </div>
-          <div className="stat-item text-center">
-            <div className="text-3xl lg:text-4xl font-bold text-secondary-600">
-              <span className="counter" data-count={maidStats.averageRating * 10}>0</span>/50
-            </div>
-            <div className="text-neutral-600 mt-1">Đánh giá TB</div>
-          </div>
-          <div className="stat-item text-center">
-            <div className="counter text-3xl lg:text-4xl font-bold text-accent-600" data-count={maidStats.totalBookings}>0</div>
-            <div className="text-neutral-600 mt-1">Đơn hoàn thành</div>
-          </div>
-          <div className="stat-item text-center">
-            <div className="text-3xl lg:text-4xl font-bold text-green-600">
-              <span className="counter" data-count={maidStats.satisfactionRate}>0</span>%
-            </div>
-            <div className="text-neutral-600 mt-1">Hài lòng</div>
-          </div>
-        </div>
-
         {/* Maid Profiles Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {maids.map((maid, index) => (
             <MaidCard key={maid.id} maid={maid} index={index} />
           ))}
-        </div>
-
-        {/* CTA */}
-        <div className="text-center mt-16 space-y-4">
-          <Button size="lg" variant="outline" onClick={handleViewAllMaids}>
-            Xem tất cả người giúp việc
-          </Button>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button variant="ghost" onClick={handleBecomePartner}>
-              Trở thành đối tác
-            </Button>
-                    <Button variant="ghost" onClick={() => navigate('/services')}>
-          Xem dịch vụ
-        </Button>
-          </div>
         </div>
       </div>
     </section>

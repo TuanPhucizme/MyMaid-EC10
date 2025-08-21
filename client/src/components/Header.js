@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 
 // Component Logo
 const Logo = () => (
-  <Link to="/" className="flex items-center space-x-3 group">
+  <Link to="/" className="flex items-center space-x-3 group no-underline"> {/* Thêm no-underline ở đây */}
     <div className="logo relative">
       <img
         src="/logo.png"
@@ -215,12 +215,12 @@ const Header = () => {
   const isPartner = userProfile?.role === 'partner';
 
   // Xử lý logic tên và chữ cái đầu rõ ràng hơn
-  const fullName = userProfile 
+  const fullName = userProfile
     ? `${userProfile.lastName || ''} ${userProfile.firstName || ''}`.trim() || user?.displayName || 'User'
     : user?.displayName || 'User';
-  
-  const userInitial = userProfile?.firstName 
-    ? userProfile.firstName.charAt(0).toUpperCase() 
+
+  const userInitial = userProfile?.firstName
+    ? userProfile.firstName.charAt(0).toUpperCase()
     : (user?.displayName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U');
 
   const headerRef = useGSAP((gsap, element) => {
@@ -260,7 +260,6 @@ const Header = () => {
   const navItems = [
     { name: 'Trang chủ', path: '/' },
     { name: 'Dịch vụ', path: '/services' },
-    { name: 'Blog', path: '/blog' },
     { name: 'Đối tác', path: '/partner' }
   ];
 

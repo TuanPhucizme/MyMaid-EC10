@@ -8,6 +8,7 @@ import AddressSelector from '../components/AddressSelector';
 import LaundryServiceForm from '../components/LaundryServiceForm';
 import PricingCalculator from '../components/PricingCalculator';
 import { services } from '../data/services';
+import { Shirt, SprayCan, Home, Baby} from "lucide-react";
 
 const BookingPage = () => {
   const navigate = useNavigate();
@@ -52,6 +53,12 @@ const BookingPage = () => {
     }
   }, [formData.serviceType]);
 
+const serviceTypes = [
+  { id: 'cleaning', name: 'Dọn dẹp nhà cửa', price: 220000, icon: <SprayCan className="w-6 h-6 text-blue-500" /> },
+  { id: 'laundry', name: 'Giặt sấy', price: 250000, icon: <Shirt className="w-6 h-6 text-sky-500" /> },
+  { id: 'moving-house', name: 'Chuyển nhà', price: 300000, icon: <Home className="w-6 h-6 text-green-500" /> },
+  { id: 'childcare', name: 'Chăm sóc trẻ em', price: 200000, icon: <Baby className="w-6 h-6 text-pink-500" /> },
+];
 
 
   const timeSlots = [

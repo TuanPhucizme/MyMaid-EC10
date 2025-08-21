@@ -526,3 +526,69 @@ input:focus {
   transform: translateY(-4px);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
 }
+
+/* ================================================================== */
+/*  Responsive Adjustments for Full HD (1920px) and larger screens  */
+/* ================================================================== */
+
+@media (min-width: 1920px) {
+  
+  /* Tăng kích thước font chữ cơ bản cho toàn bộ trang */
+  body {
+    font-size: 18px; /* Tăng từ 16px (mặc định) lên 18px */
+  }
+
+  /* Tăng kích thước cho các container chính để nội dung không bị quá hẹp */
+  .container-custom,
+  .max-w-7xl { /* Áp dụng cho cả class của Tailwind */
+    max-width: 1440px; /* Tăng từ 1200px hoặc 1280px lên 1440px */
+  }
+
+  /* Điều chỉnh lại các component cụ thể */
+  @layer components {
+    
+    /* Tăng kích thước nút bấm */
+    .btn {
+      @apply px-8 py-4 text-lg; /* Tăng padding và kích thước chữ */
+    }
+
+    /* Tăng kích thước card */
+    .card {
+      @apply p-8; /* Tăng padding từ p-6 lên p-8 */
+    }
+
+    /* Tăng kích thước font cho các tiêu đề trong card */
+    .card-title {
+      @apply text-2xl;
+    }
+  }
+
+  /* Điều chỉnh lại các lớp tiện ích cụ thể */
+  @layer utilities {
+    
+    /* Tăng kích thước cho các tiêu đề lớn */
+    .text-5xl {
+      @apply text-6xl;
+    }
+    
+    .text-7xl {
+      @apply text-8xl;
+    }
+  }
+
+  /* Điều chỉnh riêng cho các trang cụ thể nếu cần */
+  
+  /* Ví dụ: Tăng khoảng cách trong Hero Section */
+  .hero-section {
+    padding-top: 10rem;
+    padding-bottom: 10rem;
+  }
+
+  /* Ví dụ: Tăng kích thước font cho các mục highlights */
+  .highlight-item h3 {
+    font-size: 1.5rem; /* text-2xl */
+  }
+  .highlight-item p {
+    font-size: 1.125rem; /* text-lg */
+  }
+}
