@@ -128,7 +128,15 @@ const PaymentPage = () => {
     return null;
   };
 
-  const totalPrice = bookingData.serviceData?.totalPrice || parseInt(selectedService.price.replace(/,/g, ''));
+  // Xử lý price có thể là string hoặc number
+  let basePrice;
+  if (typeof selectedService.price === 'string') {
+    basePrice = parseInt(selectedService.price.replace(/,/g, ''));
+  } else {
+    basePrice = selectedService.price;
+  }
+
+  const totalPrice = bookingData.serviceData?.totalPrice || basePrice;
 
   return (
     <div className="min-h-screen bg-neutral-50 py-20">
