@@ -120,7 +120,6 @@ router.get('/', [authMiddleware, adminMiddleware], async (req, res) => {
           name: userDoc.data().name || 'N/A',
           email: userDoc.data().email || 'N/A',
           phone: userDoc.data().phone || 'N/A',
-          // ✅ SỬA LỖI 2: DÙNG OPTIONAL CHAINING ĐỂ AN TOÀN HƠN
           status: partnerData.operational?.status || 'unknown',
           rating: partnerData.operational?.rating?.average || 0,
           jobsCompleted: partnerData.operational?.jobsCompleted || 0,
