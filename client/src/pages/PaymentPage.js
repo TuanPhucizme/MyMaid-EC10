@@ -35,7 +35,7 @@ const PaymentPage = () => {
         </div>
       </div>
     );
-  }
+  };
 
   const renderServiceDetails = () => {
     if (!bookingData.serviceData) return null;

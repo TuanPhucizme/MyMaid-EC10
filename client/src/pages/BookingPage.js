@@ -59,6 +59,17 @@ const BookingPage = () => {
     '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'
   ];
 
+  // Define areaOptions based on selected service
+  const areaOptions = selectedService?.areaOptions || [
+    { id: "small", name: "Nhỏ (< 50m²)", label: "Nhỏ (< 50m²)", multiplier: 1, duration: 2 },
+    { id: "medium", name: "Vừa (50-80m²)", label: "Vừa (50-80m²)", multiplier: 1.3, duration: 3 },
+    { id: "large", name: "Lớn (80-120m²)", label: "Lớn (80-120m²)", multiplier: 1.6, duration: 4 },
+    { id: "extra-large", name: "Rất lớn (> 120m²)", label: "Rất lớn (> 120m²)", multiplier: 2, duration: 6 }
+  ];
+
+  // Define selectedAreaInfo based on current area selection
+  const selectedAreaInfo = areaOptions.find(option => option.id === formData.area) || areaOptions[0];
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -271,7 +282,7 @@ const BookingPage = () => {
                             >
                               {areaOptions.map(option => (
                                 <option key={option.id} value={option.id}>
-                                  {option.label}
+                                  {option.name || option.label}
                                 </option>
                               ))}
                             </select>
@@ -486,7 +497,7 @@ const BookingPage = () => {
                         </p>
                         {/* Hiển thị thời gian được quy đổi */}
                         <p className="text-sm text-neutral-600">
-                          Quy mô: {selectedAreaInfo.label}
+                          Quy mô: {selectedAreaInfo.name || selectedAreaInfo.label}
                         </p>
                       </div>
                     </div>

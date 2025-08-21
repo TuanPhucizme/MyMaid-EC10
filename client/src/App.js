@@ -24,7 +24,7 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import LoginPage from "./pages/LoginPage";
 import PartnerPage from "./pages/RegisterPartnerPage";
 import PartnerSuccessPage from "./pages/PartnerSuccessPage";
-import PaymentPage from "./pages/PaymentPageNew";
+import PaymentPage from "./pages/PaymentPage";
 import PaymentResultPage from "./pages/PaymentResult";
 import ProfilePage from "./pages/ProfilePage";
 import OrderManagementPage from "./pages/OrderManagementPage";
