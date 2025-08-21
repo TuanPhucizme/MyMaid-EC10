@@ -1,241 +1,297 @@
 import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
-import { CreditCard, DollarSign, FileText } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import { CreditCard, DollarSign, FileText, Package, Scale, Clock, MapPin, User, Phone, Mail } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import Button from '../components/ui/Button';
+import { services } from '../data/services';
 
-const PaymentContainer = styled.div`
-  min-height: calc(100vh - 4rem);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem 1rem;
-  background: #f8fafc;
-`;
-
-const PaymentCard = styled.div`
-  background: white;
-  padding: 2rem;
-  border-radius: 0.75rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  max-width: 500px;
-`;
-
-const SectionTitle = styled.h2`
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #1a202c;
-  margin-bottom: 1rem;
-`;
-
-const InfoRow = styled.div`
-  display: flex;
-  align-items: center;
-  margin-bottom: 1rem;
-`;
-
-const IconWrapper = styled.div`
-  color: #3b82f6;
-  margin-right: 1rem;
-`;
-
-const InfoText = styled.div`
-  flex-grow: 1;
-`;
-
-const Label = styled.p`
-  margin: 0;
-  color: #6b7280;
-  font-size: 0.875rem;
-`;
-
-const Value = styled.p`
-  margin: 0;
-  font-weight: 500;
-  color: #111827;
-`;
-
-const PayButton = styled.button`
-  width: 100%;
-  padding: 0.75rem;
-  background: #10b981;
-  color: white;
-  border: none;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  margin-top: 1.5rem;
-  transition: background-color 0.2s;
-
-  &:hover {
-    background: #059669;
-  }
-`;
-
-const PaymentDetailPage = () => {
+const PaymentPage = () => {
   const location = useLocation();
-  
-  // Lấy dữ liệu booking từ state của location
-  const bookingDetails = location.state?.bookingDetails;
+  const navigate = useNavigate();
+  const [bookingData, setBookingData] = useState(null);
+  const [selectedService, setSelectedService] = useState(null);
 
   useEffect(() => {
-    localStorage.setItem('bookingDetails', JSON.stringify(bookingDetails));
-  }, [bookingDetails]);
+    if (location.state) {
+      setBookingData(location.state);
+      if (location.state.serviceType) {
+        const service = services.find(s => s.id === location.state.serviceType);
+        setSelectedService(service);
+      }
+    }
+  }, [location.state]);
 
-  // Nếu không có dữ liệu, có thể điều hướng về trang trước đó
-  if (!bookingDetails) {
-    // Xử lý trường hợp người dùng truy cập trực tiếp vào trang thanh toán
-    return <div>Dữ liệu đặt hàng không hợp lệ. Vui lòng thử lại.</div>;
+  const handlePaymentClick = () => {
+    // Xử lý thanh toán ở đây
+    alert('Chức năng thanh toán đang được phát triển!');
+  };
+
+  if (!bookingData || !selectedService) {
+    return (
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-neutral-900 mb-4">Không tìm thấy thông tin đặt dịch vụ</h2>
+          <Button onClick={() => navigate('/booking')}>Quay lại đặt dịch vụ</Button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderServiceDetails = () => {
+    if (!bookingData.serviceData) return null;
+
+    const { serviceData } = bookingData;
+
+    if (selectedService.serviceType === 'laundry') {
+      return (
+        <div className="space-y-3">
+          <div className="flex justify-between text-sm">
+            <span className="flex items-center gap-2">
+              <Scale className="w-4 h-4" />
+              Cân nặng
+            </span>
+            <span>{serviceData.weight}kg</span>
+          </div>
+          
+          {serviceData.selectedOptions && Object.entries(serviceData.selectedOptions).map(([key, isSelected]) => {
+            if (!isSelected) return null;
+            const option = selectedService.laundryOptions[key];
+            if (!option) return null;
+            return (
+              <div key={key} className="flex justify-between text-sm">
+                <span className="flex items-center gap-2">
+                  <span>{option.icon}</span>
+                  {option.name}
+                </span>
+                <span>+{option.price.toLocaleString('vi-VN')}đ</span>
+              </div>
+            );
+          })}
+          
+          {serviceData.selectedClothingTypes && serviceData.selectedClothingTypes.length > 0 && (
+            <div className="text-sm">
+              <span className="flex items-center gap-2 mb-2">
+                <Package className="w-4 h-4" />
+                Loại quần áo:
+              </span>
+              <div className="flex flex-wrap gap-1">
+                {serviceData.selectedClothingTypes.map(typeId => {
+                  const type = selectedService.clothingTypes.find(t => t.id === typeId);
+                  return type ? (
+                    <span key={typeId} className="text-xs bg-neutral-100 px-2 py-1 rounded">
+                      {type.icon} {type.name}
+                    </span>
+                  ) : null;
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    } else if (selectedService.serviceType === 'cleaning') {
+      return (
+        <div className="space-y-3">
+          <div className="flex justify-between text-sm">
+            <span className="flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              Thời gian
+            </span>
+            <span>{serviceData.duration} giờ</span>
+          </div>
+          
+          <div className="flex justify-between text-sm">
+            <span className="flex items-center gap-2">
+              <Package className="w-4 h-4" />
+              Diện tích
+            </span>
+            <span>{selectedService.areaOptions?.find(a => a.id === serviceData.selectedArea)?.name}</span>
+          </div>
+          
+          {serviceData.selectedOptions && Object.entries(serviceData.selectedOptions).map(([key, isSelected]) => {
+            if (!isSelected) return null;
+            const option = selectedService.cleaningOptions?.[key];
+            if (!option) return null;
+            return (
+              <div key={key} className="flex justify-between text-sm">
+                <span className="flex items-center gap-2">
+                  <span>{option.icon}</span>
+                  {option.name}
+                </span>
+                <span>+{option.price.toLocaleString('vi-VN')}đ</span>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+    
+    return null;
+  };
+
+  // Xử lý price có thể là string hoặc number
+  let basePrice;
+  if (typeof selectedService.price === 'string') {
+    basePrice = parseInt(selectedService.price.replace(/,/g, ''));
+  } else {
+    basePrice = selectedService.price;
   }
 
-  // Bây giờ bạn có thể sử dụng dữ liệu này để hiển thị và tạo thanh toán
-  const { service, summary, contact, schedule } = bookingDetails;
+  const totalPrice = bookingData.serviceData?.totalPrice || basePrice;
 
-  const handlePayment = async () => {
-    try {
-      // Bước 1: Tạo đơn hàng trong database trước
-      const orderResponse = await fetch('http://localhost:5000/api/orders', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await getCurrentUserToken()}`
-        },
-        body: JSON.stringify({
-          service: bookingDetails.service,
-          schedule: bookingDetails.schedule,
-          contact: bookingDetails.contact,
-          summary: bookingDetails.summary,
-          paymentMethod: 'vnpay'
-        })
-      });
-
-      if (!orderResponse.ok) {
-        throw new Error('Không thể tạo đơn hàng');
-      }
-
-      const orderData = await orderResponse.json();
-      console.log('Order created:', orderData);
-
-      // Bước 2: Tạo URL thanh toán với order ID
-      const paymentResponse = await fetch('http://localhost:5000/api/payment/create_payment_url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: summary.totalPrice, 
-          orderDescription: summary.orderDescription, 
-          language: 'vn',
-          bankCode: '',
-          orderDbId: orderData.orderId
-        })
-      });
-
-      if (!paymentResponse.ok) {
-        throw new Error('Lỗi từ server: ' + paymentResponse.status);
-      }
-
-      return paymentResponse.json();
-    } catch (error) {
-      console.error('Lỗi khi tạo đơn hàng hoặc thanh toán:', error);
-      alert('Có lỗi xảy ra: ' + error.message);
-      return null;
-    }
-  };
-
-  const getCurrentUserToken = async () => {
-    // Import auth từ firebase config
-    const { auth } = await import('../config/firebase');
-    const user = auth.currentUser;
-    if (user) {
-      return await user.getIdToken();
-    }
-    throw new Error('Vui lòng đăng nhập để tiếp tục');
-  };
-
-  const handlePaymentClick = async () => {
-    const data = await handlePayment();
-    
-    if (data && data.paymentUrl) {
-      // Lưu thông tin booking và order ID vào localStorage
-      localStorage.setItem('bookingDetails', JSON.stringify(bookingDetails));
-      localStorage.setItem('orderDbId', data.orderDbId);
-      // Chuyển hướng người dùng đến URL thanh toán
-      window.location.href = data.paymentUrl;
-    } else if (data === null) {
-      // Lỗi đã được xử lý trong handlePayment
-      return;
-    } else {
-      console.error('Không nhận được URL thanh toán từ server.');
-      alert('Không thể lấy được URL thanh toán. Vui lòng kiểm tra lại.');
-    }
-  };
-  
   return (
-    <PaymentContainer>
-      <PaymentCard>
-        {/* Hiển thị thông tin dịch vụ và giá tiền từ bookingDetails */}
-        <SectionTitle>Chi Tiết Thanh Toán</SectionTitle>
-        
-        <InfoRow>
-          <IconWrapper>{/* Icon */}</IconWrapper>
-          <InfoText>
-            <Label>Dịch vụ</Label>
-            <Value>{service.name}</Value>
-          </InfoText>
-        </InfoRow>
+    <div className="min-h-screen bg-neutral-50 py-20">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-neutral-900 mb-4">
+            Xác nhận thanh toán
+          </h1>
+          <p className="text-xl text-neutral-600">
+            Vui lòng kiểm tra thông tin đặt dịch vụ trước khi thanh toán
+          </p>
+        </div>
 
-        <InfoRow>
-          <IconWrapper>{/* Icon */}</IconWrapper>
-          <InfoText>
-            <Label>Khách hàng</Label>
-            <Value>{contact.name}</Value>
-          </InfoText>
-        </InfoRow>
+        <div className="grid lg:grid-cols-2 gap-8">
+          {/* Order Summary */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-primary-600" />
+                Chi tiết đơn hàng
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Service Info */}
+              <div>
+                <h3 className="font-semibold text-neutral-900 mb-3">Dịch vụ</h3>
+                <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-lg">
+                  <span className="text-2xl">{selectedService.icon}</span>
+                  <div>
+                    <div className="font-medium">{selectedService.name}</div>
+                    <div className="text-sm text-neutral-600">{selectedService.subtitle}</div>
+                  </div>
+                </div>
+              </div>
 
-        <InfoRow>
-          <IconWrapper>{/* Icon */}</IconWrapper>
-          <InfoText>
-            <Label>Địa chỉ</Label>
-            <Value>{contact.address}</Value>
-          </InfoText>
-        </InfoRow>
+              {/* Service Details */}
+              {renderServiceDetails()}
 
-        <InfoRow>
-          <IconWrapper>{/* Icon */}</IconWrapper>
-          <InfoText>
-            <Label>Số điện thoại</Label>
-            <Value>{contact.phone}</Value>
-          </InfoText>
-        </InfoRow>
+              {/* Customer Info */}
+              <div>
+                <h3 className="font-semibold text-neutral-900 mb-3">Thông tin khách hàng</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <User className="w-4 h-4 text-neutral-500" />
+                    <span>{bookingData.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Phone className="w-4 h-4 text-neutral-500" />
+                    <span>{bookingData.phone}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Mail className="w-4 h-4 text-neutral-500" />
+                    <span>{bookingData.email}</span>
+                  </div>
+                </div>
+              </div>
 
-        <InfoRow>
-          <IconWrapper>{/* Icon */}</IconWrapper>
-          <InfoText>
-            <Label>Lịch trình</Label>
-            <Value>{schedule.date} - {schedule.time} - {schedule.duration} giờ</Value>
-          </InfoText>
-        </InfoRow>
+              {/* Schedule & Address */}
+              <div>
+                <h3 className="font-semibold text-neutral-900 mb-3">Lịch hẹn</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Clock className="w-4 h-4 text-neutral-500" />
+                    <span>{bookingData.date} - {bookingData.time}</span>
+                  </div>
+                  <div className="flex items-start gap-2 text-sm">
+                    <MapPin className="w-4 h-4 text-neutral-500 mt-0.5" />
+                    <span>{bookingData.formattedAddress || bookingData.address}</span>
+                  </div>
+                </div>
+              </div>
 
-        <InfoRow>
-          <IconWrapper>{/* Icon */}</IconWrapper>
-          <InfoText>
-            <Label>Ghi chú</Label>
-            <Value>{contact.notes}</Value>
-          </InfoText>
-        </InfoRow>
+              {/* Notes */}
+              {bookingData.notes && (
+                <div>
+                  <h3 className="font-semibold text-neutral-900 mb-3">Ghi chú</h3>
+                  <p className="text-sm text-neutral-600 bg-neutral-50 p-3 rounded-lg">
+                    {bookingData.notes}
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-        <InfoRow>
-          <IconWrapper>{/* Icon */}</IconWrapper>
-          <InfoText>
-            <Label>Tổng tiền</Label>
-            <Value>{summary.totalPrice.toLocaleString()} VNĐ</Value>
-          </InfoText>
-        </InfoRow>
-        
-        <PayButton onClick={handlePaymentClick}>Thanh toán ngay</PayButton>
-      </PaymentCard>
-    </PaymentContainer>
+          {/* Payment Summary */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-primary-600" />
+                Thanh toán
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Price Breakdown */}
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span>Giá dịch vụ</span>
+                  <span>{totalPrice.toLocaleString('vi-VN')}đ</span>
+                </div>
+                
+                {bookingData.frequency !== 'one-time' && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Giảm giá ({bookingData.frequency === 'weekly' ? '10%' : '20%'})</span>
+                    <span>-{Math.round(totalPrice * (bookingData.frequency === 'weekly' ? 0.1 : 0.2)).toLocaleString('vi-VN')}đ</span>
+                  </div>
+                )}
+                
+                <hr className="border-neutral-200" />
+                <div className="flex justify-between text-lg font-bold text-primary-700">
+                  <span>Tổng cộng</span>
+                  <span>
+                    {bookingData.frequency === 'one-time' 
+                      ? totalPrice.toLocaleString('vi-VN')
+                      : Math.round(totalPrice * (bookingData.frequency === 'weekly' ? 0.9 : 0.8)).toLocaleString('vi-VN')
+                    }đ
+                  </span>
+                </div>
+              </div>
+
+              {/* Payment Methods */}
+              <div>
+                <h3 className="font-semibold text-neutral-900 mb-3">Phương thức thanh toán</h3>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-3 p-3 border border-neutral-200 rounded-lg cursor-pointer hover:border-primary-300">
+                    <input type="radio" name="payment" value="cash" defaultChecked className="text-primary-600" />
+                    <DollarSign className="w-5 h-5 text-green-600" />
+                    <span>Thanh toán khi hoàn thành</span>
+                  </label>
+                  <label className="flex items-center gap-3 p-3 border border-neutral-200 rounded-lg cursor-pointer hover:border-primary-300">
+                    <input type="radio" name="payment" value="online" className="text-primary-600" />
+                    <CreditCard className="w-5 h-5 text-blue-600" />
+                    <span>Thanh toán online</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-3">
+                <Button onClick={handlePaymentClick} className="w-full" size="lg">
+                  Xác nhận đặt dịch vụ
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate('/booking', { state: bookingData })} 
+                  className="w-full"
+                >
+                  Quay lại chỉnh sửa
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
   );
 };
 
-export default PaymentDetailPage;
+export default PaymentPage;

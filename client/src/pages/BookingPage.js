@@ -1,17 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { useGSAP } from '../hooks/useGSAP';
 import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
 import AddressSelector from '../components/AddressSelector';
-import { Shirt, SprayCan, Home, Baby} from "lucide-react";
+import LaundryServiceForm from '../components/LaundryServiceForm';
+import PricingCalculator from '../components/PricingCalculator';
+import { services } from '../data/services';
+
 
 const BookingPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [formData, setFormData] = useState({
     serviceType: location.state?.serviceType || '',
+    serviceData: location.state?.serviceData || {},
     date: '',
     time: '',
     area: 'small', // Thêm 'area' với giá trị mặc định
@@ -28,6 +32,7 @@ const BookingPage = () => {
 
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedService, setSelectedService] = useState(null);
 
   const { ref: pageRef, hasIntersected } = useIntersectionObserver();
   
@@ -40,24 +45,29 @@ const BookingPage = () => {
     }
   }, [hasIntersected]);
 
-const serviceTypes = [
-  { id: 'cleaning', name: 'Dọn dẹp nhà cửa', price: 220000, icon: <SprayCan className="w-6 h-6 text-blue-500" /> },
-  { id: 'laundry', name: 'Giặt sấy', price: 250000, icon: <Shirt className="w-6 h-6 text-sky-500" /> },
-  { id: 'moving-house', name: 'Chuyển nhà', price: 300000, icon: <Home className="w-6 h-6 text-green-500" /> },
-  { id: 'childcare', name: 'Chăm sóc trẻ em', price: 200000, icon: <Baby className="w-6 h-6 text-pink-500" /> },
-];
-
-  const areaOptions = [
-    { id: 'small', label: 'Nhỏ (< 50m² / 1-2 phòng)', duration: 2 },
-    { id: 'medium', label: 'Vừa (50-80m² / 2-3 phòng)', duration: 4 },
-    { id: 'large', label: 'Lớn (80-120m² / 3-4 phòng)', duration: 6 },
-    { id: 'extra-large', label: 'Rất lớn (> 120m²)', duration: 8 },
-  ];
+  // Tìm service được chọn từ dữ liệu services
+  useEffect(() => {
+    if (formData.serviceType) {
+      const service = services.find(s => s.id === formData.serviceType);
+      setSelectedService(service);
+    }
+  }, [formData.serviceType]);
 
   const timeSlots = [
     '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', 
     '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'
   ];
+
+  // Define areaOptions based on selected service
+  const areaOptions = selectedService?.areaOptions || [
+    { id: "small", name: "Nhỏ (< 50m²)", label: "Nhỏ (< 50m²)", multiplier: 1, duration: 2 },
+    { id: "medium", name: "Vừa (50-80m²)", label: "Vừa (50-80m²)", multiplier: 1.3, duration: 3 },
+    { id: "large", name: "Lớn (80-120m²)", label: "Lớn (80-120m²)", multiplier: 1.6, duration: 4 },
+    { id: "extra-large", name: "Rất lớn (> 120m²)", label: "Rất lớn (> 120m²)", multiplier: 2, duration: 6 }
+  ];
+
+  // Define selectedAreaInfo based on current area selection
+  const selectedAreaInfo = areaOptions.find(option => option.id === formData.area) || areaOptions[0];
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -75,19 +85,29 @@ const serviceTypes = [
   };
 
   const calculatePrice = () => {
-    const selectedService = serviceTypes.find(s => s.id === formData.serviceType);
-    if (!selectedService) return 0;
-    
-    // Tính toán giá dựa trên diện tích và lấy ra thời lượng tương ứng
-    const selectedArea = areaOptions.find(a => a.id === formData.area);
-    const duration = selectedArea ? selectedArea.duration : 2; // Mặc định là 2 giờ nếu không tìm thấy
+    // Nếu có serviceData với totalPrice, sử dụng giá đó
+    if (formData.serviceData && formData.serviceData.totalPrice) {
+      const frequencyDiscount = formData.frequency === 'weekly' ? 0.9 :
+                               formData.frequency === 'monthly' ? 0.8 : 1;
+      return Math.round(formData.serviceData.totalPrice * frequencyDiscount);
+    }
 
-    const basePrice = selectedService.price;
-    const durationMultiplier = duration / 2;
-    const frequencyDiscount = formData.frequency === 'weekly' ? 0.9 : 
+    // Fallback cho các service cũ
+    const selectedService = services.find(s => s.id === formData.serviceType);
+    if (!selectedService) return 0;
+
+    // Xử lý price có thể là string hoặc number
+    let basePrice;
+    if (typeof selectedService.price === 'string') {
+      basePrice = parseInt(selectedService.price.replace(/,/g, ''));
+    } else {
+      basePrice = selectedService.price;
+    }
+
+    const frequencyDiscount = formData.frequency === 'weekly' ? 0.9 :
                              formData.frequency === 'monthly' ? 0.8 : 1;
-    
-    return Math.round(basePrice * durationMultiplier * frequencyDiscount);
+
+    return Math.round(basePrice * frequencyDiscount);
   };
 
   const handleNext = () => {
@@ -116,40 +136,12 @@ const serviceTypes = [
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const bookingDetails = {
-      service: {
-        id: selectedService.id,
-        name: selectedService.name,
-        icon: selectedService.icon,
-      },
-      schedule: {
-        date: formData.date,
-        time: formData.time,
-        duration: selectedAreaInfo.duration,
-        frequency: formData.frequency,
-      },
-      contact: {
-        name: formData.name,
-        phone: formData.phone,
-        email: formData.email,
-        address: formData.address,
-        addressCoordinates: formData.addressCoordinates,
-        addressComponents: formData.addressComponents,
-        formattedAddress: formData.formattedAddress,
-        notes: formData.notes,
-      },
-      summary: {
-        totalPrice: totalPrice,
-        orderDescription: `Thanh toan cho dich vu ${selectedService.name}`
-      }
-    };
     setIsSubmitting(true);
-    // chuyến hướng dữ liệu và người dùng đến trang payment
-    navigate('/payment', { state: { bookingDetails: bookingDetails } });
+
+    // Chuyển hướng đến trang payment với dữ liệu mới
+    navigate('/payment', { state: formData });
   };
 
-  const selectedService = serviceTypes.find(s => s.id === formData.serviceType);
-  const selectedAreaInfo = areaOptions.find(a => a.id === formData.area);
   const totalPrice = calculatePrice();
 
   return (
@@ -198,8 +190,8 @@ const serviceTypes = [
                     <h2 className="text-2xl font-bold text-neutral-900 mb-6">
                       Bước 1: Chọn Dịch Vụ
                     </h2>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      {serviceTypes.map((service) => (
+                    <div className="grid md:grid-cols-2 gap-4 mb-8">
+                      {services.map((service) => (
                         <div
                           key={service.id}
                           onClick={() => handleServiceSelect(service.id)}
@@ -216,13 +208,35 @@ const serviceTypes = [
                                 {service.name}
                               </h3>
                               <p className="text-sm text-neutral-600">
-                                Từ {service.price.toLocaleString()}đ/2h
+                                {service.serviceType === 'laundry' ? 'Từ ' : ''}{service.price}đ/{service.unit}
                               </p>
                             </div>
                           </div>
                         </div>
                       ))}
                     </div>
+
+                    {/* Service Configuration */}
+                    {selectedService && (
+                      <div className="mt-8">
+                        <h3 className="text-lg font-semibold text-neutral-900 mb-4">
+                          Tùy chỉnh dịch vụ
+                        </h3>
+                        {selectedService.serviceType === 'laundry' ? (
+                          <LaundryServiceForm
+                            service={selectedService}
+                            onDataChange={(data) => setFormData(prev => ({ ...prev, serviceData: data }))}
+                            formData={formData.serviceData}
+                          />
+                        ) : (
+                          <PricingCalculator
+                            service={selectedService}
+                            onDataChange={(data) => setFormData(prev => ({ ...prev, serviceData: data }))}
+                            formData={formData.serviceData}
+                          />
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -274,7 +288,7 @@ const serviceTypes = [
                             >
                               {areaOptions.map(option => (
                                 <option key={option.id} value={option.id}>
-                                  {option.label}
+                                  {option.name || option.label}
                                 </option>
                               ))}
                             </select>
@@ -489,7 +503,7 @@ const serviceTypes = [
                         </p>
                         {/* Hiển thị thời gian được quy đổi */}
                         <p className="text-sm text-neutral-600">
-                          Quy mô: {selectedAreaInfo.label}
+                          Quy mô: {selectedAreaInfo.name || selectedAreaInfo.label}
                         </p>
                       </div>
                     </div>

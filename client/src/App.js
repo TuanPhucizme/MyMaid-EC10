@@ -34,6 +34,7 @@ import ServicesPage from "./pages/ServicesPage";
 import UpdateInformationPage from "./pages/UpdateInformation";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
 import LeaveReviewPage from "./pages/ReviewPage";
+import ServiceFlowDemo from "./pages/ServiceFlowDemo";
 import ConsultationPage from "./pages/ConsultationPage";
 
 // Component cho nội dung trang chủ
@@ -115,6 +116,7 @@ function App() {
         {/* --- CÁC ROUTE CÔNG KHAI & CHÍNH --- */}
         <Route path="/" element={<HomePageContent />} />
         <Route path="/services" element={<ServicesPage />} />
+        <Route path="/demo" element={<ServiceFlowDemo />} />
         <Route path="/consultation" element={<ConsultationPage />} />
 
         {/* --- LUỒNG XÁC THỰC NGƯỜI DÙNG --- */}

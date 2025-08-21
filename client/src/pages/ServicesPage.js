@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { services } from "../data/services";
+import { services, serviceCategories } from "../data/services";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/Card";
 import Badge from "../components/ui/Badge";
 import Button from "../components/ui/Button";
+import ServiceDetailModal from "../components/ServiceDetailModal";
 import { useGSAP, animations } from "../hooks/useGSAP";
 import { useIntersectionObserver } from "../hooks/useIntersectionObserver";
 
@@ -33,7 +34,7 @@ const IconArrowRight = () => (
 );
 
 // === Service Card ===
-const ServiceCard = ({ service, index }) => {
+const ServiceCard = ({ service, index, onViewDetails }) => {
   const navigate = useNavigate();
   const { ref, hasIntersected } = useIntersectionObserver();
 
@@ -109,21 +110,29 @@ const ServiceCard = ({ service, index }) => {
           <div className="flex items-center justify-between">
             <div>
               <span className="text-2xl font-bold text-primary-600">
-                {service.price.toLocaleString()}đ
+                {service.serviceType === 'laundry' ? 'Từ ' : ''}{service.price.toLocaleString()}đ
               </span>
               <span className="ml-1 text-neutral-500">/{service.unit}</span>
             </div>
             <span className="text-sm text-neutral-500">{service.duration}</span>
           </div>
 
-            {/* Button */}
+          <div className="flex gap-2">
             <Button
-              className="w-full group"
-              onClick={() => navigate("/booking", { state: { serviceType: service.id } })}
+              variant="outline"
+              className="flex-1"
+              onClick={() => onViewDetails(service)}
             >
-            Đặt ngay
-            <IconArrowRight />
-          </Button>
+              Xem chi tiết
+            </Button>
+            <Button
+              className="flex-1 group"
+              onClick={() => navigate('/booking', { state: { serviceType: service.id } })}
+            >
+              Đặt ngay
+              <IconArrowRight />
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
@@ -133,8 +142,11 @@ const ServiceCard = ({ service, index }) => {
 // === Main Page ===
 const ServicesPage = () => {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("popular");
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('popular');
+  const [selectedService, setSelectedService] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { ref: sectionRef, hasIntersected } = useIntersectionObserver();
 
@@ -169,6 +181,25 @@ const ServicesPage = () => {
         }
       });
   }, [searchTerm, sortBy]);
+
+  const handleViewDetails = (service) => {
+    setSelectedService(service);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedService(null);
+  };
+
+  const handleBookService = (service, serviceData) => {
+    navigate('/booking', {
+      state: {
+        serviceType: service.id,
+        serviceData: serviceData
+      }
+    });
+  };
 
   return (
     <div className="pt-20 pb-16 bg-gradient-to-br from-neutral-50 to-white min-h-screen">
@@ -218,7 +249,12 @@ const ServicesPage = () => {
         {filteredServices.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredServices.map((service, index) => (
-              <ServiceCard key={service.id} service={service} index={index} />
+              <ServiceCard
+                key={service.id}
+                service={service}
+                index={index}
+                onViewDetails={handleViewDetails}
+              />
             ))}
           </div>
         ) : (
@@ -255,6 +291,14 @@ const ServicesPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Service Detail Modal */}
+      <ServiceDetailModal
+        service={selectedService}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onBookService={handleBookService}
+      />
     </div>
   );
 };
