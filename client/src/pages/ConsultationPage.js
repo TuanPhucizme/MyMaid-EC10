@@ -33,11 +33,6 @@ const ConsultationPage = () => {
   const services = [
     { id: 'cleaning', name: 'Dọn dẹp nhà cửa', icon: '🏠' },
     { id: 'laundry', name: 'Giặt ủi', icon: '👕' },
-    { id: 'childcare', name: 'Chăm sóc trẻ em', icon: '👶' },
-    { id: 'cooking', name: 'Nấu ăn', icon: '🍳' },
-    { id: 'elderly-care', name: 'Chăm sóc người già', icon: '👴' },
-    { id: 'deep-cleaning', name: 'Vệ sinh chuyên sâu', icon: '🧹' },
-    { id: 'moving', name: 'Chuyển nhà', icon: '📦' },
     { id: 'other', name: 'Dịch vụ khác', icon: '✨' }
   ];
 
