@@ -17,7 +17,6 @@ import VerificationBanner from "./components/VerificationBanner";
 import AdminPage from "./pages/AdminPage";
 import BookingDetailPage from "./pages/BookingDetailPage";
 import BookingPage from "./pages/BookingPage";
-import BlogDetailPage from "./pages/BlogDetailPage";
 import CheckLinkPage from "./pages/CheckLinkPage";
 import DashboardPartnerPage from "./pages/DashboardPartnerPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
@@ -34,6 +33,7 @@ import ServicesPage from "./pages/ServicesPage";
 import UpdateInformationPage from "./pages/UpdateInformation";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
 import LeaveReviewPage from "./pages/ReviewPage";
+import ConsultationPage from "./pages/ConsultationPage";
 
 // Component cho nội dung trang chủ
 const HomePageContent = () => (
@@ -67,7 +67,7 @@ function App() {
         {/* --- CÁC ROUTE CÔNG KHAI & CHÍNH --- */}
         <Route path="/" element={<HomePageContent />} />
         <Route path="/services" element={<ServicesPage />} />
-        <Route path="/blog" element={<BlogDetailPage />} />
+        <Route path="/consultation" element={<ConsultationPage />} />
 
         {/* --- LUỒNG XÁC THỰC NGƯỜI DÙNG --- */}
         <Route path="/login" element={<LoginPage />} />

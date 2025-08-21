@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { DollarSign, ListChecks, Bell, CheckCircle } from 'lucide-react';
+import { DollarSign, ListChecks, Bell, CheckCircle, Star } from 'lucide-react';
 import styled from 'styled-components';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 
 //1. IMPORT CÁC HÀM TỪ FIREBASE
 import { auth, db } from '../config/firebase';
-import { doc, getDoc, collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 
 // --- Styled Components ---
 const DashboardContainer = styled.div`
@@ -152,7 +152,12 @@ const PartnerDashboardPage = () => {
   const [partner, setPartner] = useState(null);
   const [myJobs, setMyJobs] = useState([]); // Các đơn hàng đã nhận
   const [availableJobs, setAvailableJobs] = useState([]); // Các đơn hàng có sẵn
-  const [stats, setStats] = useState({ revenueThisMonth: 0, completedJobsThisMonth: 0, newJobsCount: 0 });
+  const [stats, setStats] = useState({ 
+    revenueThisMonth: 0, 
+    completedJobsThisMonth: 0, 
+    newJobsCount: 0,
+    ratingAverage: 0,
+    ratingCount: 0});
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -198,7 +203,7 @@ const fetchPartnerData = useCallback(async (firebaseUser) => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [ API_URL]);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(firebaseUser => {
@@ -260,6 +265,13 @@ const fetchPartnerData = useCallback(async (firebaseUser) => {
           </StatContent>
         </StatCard>
         <StatCard>
+          <StatIcon bgColor="#fef9c3" color="#ca8a04"><Star size={32} /></StatIcon>
+          <StatContent>
+            <StatValue>{stats.ratingAverage.toFixed(1)}</StatValue>
+            <StatLabel>Đánh giá trung bình ({stats.ratingCount} lượt)</StatLabel>
+          </StatContent>
+        </StatCard>
+        <StatCard>
           <StatIcon bgColor="#e0e7ff" color="#3b82f6"><ListChecks size={32} /></StatIcon>
           <StatContent>
             <StatValue>{stats.completedJobsThisMonth}</StatValue>
@@ -275,7 +287,6 @@ const fetchPartnerData = useCallback(async (firebaseUser) => {
         </StatCard>
       </StatsGrid>
 
-      {/* ✅ BẢNG MỚI: VIỆC LÀM CÓ SẴN */}
       <Card>
         <CardHeader><CardTitle>Việc Làm Có Sẵn ({availableJobs.length})</CardTitle></CardHeader>
         <CardContent>
@@ -297,7 +308,6 @@ const fetchPartnerData = useCallback(async (firebaseUser) => {
         </CardContent>
       </Card>
 
-      {/* Bảng cũ: Đơn đã nhận */}
       <Card>
         <CardHeader><CardTitle>Công Việc Của Tôi</CardTitle></CardHeader>
         <CardContent>

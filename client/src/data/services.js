@@ -1,3 +1,5 @@
+import { Home, Calendar, Package, Shirt, Baby, Sparkles } from "lucide-react";
+
 export const services = [
   {
     id: 1,
@@ -7,7 +9,7 @@ export const services = [
     price: "80,000",
     unit: "giờ",
     duration: "2-4 giờ",
-    icon: "🏠",
+    icon: <Home className="w-6 h-6 text-blue-500" />,
     image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400",
     features: [
       "Quét, lau nhà",
@@ -27,8 +29,8 @@ export const services = [
     price: "1,200,000",
     unit: "tháng",
     duration: "8 lần/tháng",
-    icon: "📅",
-    image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400",
+    icon: <Calendar className="w-6 h-6 text-indigo-500" />,
+    image: "https://media.gettyimages.com/id/1417833124/photo/professional-cleaner-cleaning-a-table-at-a-house.jpg?s=2048x2048&w=gi&k=20&c=SmRzdfXzybOYcYytzD2i_am_RfwykpAlgDY44Pbx57Q=",
     features: [
       "2 lần/tuần",
       "Dọn dẹp toàn bộ nhà",
@@ -41,26 +43,6 @@ export const services = [
     discount: 20
   },
   {
-    id: 3,
-    name: "Tổng Vệ Sinh",
-    subtitle: "Deep cleaning",
-    description: "Vệ sinh tổng thể, làm sạch sâu mọi ngóc ngách trong nhà",
-    price: "300,000",
-    unit: "lần",
-    duration: "4-6 giờ",
-    icon: "✨",
-    image: "https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?w=400",
-    features: [
-      "Vệ sinh sâu tất cả phòng",
-      "Lau kính, cửa sổ",
-      "Vệ sinh thiết bị điện",
-      "Khử trùng toàn bộ"
-    ],
-    popular: false,
-    rating: 4.7,
-    bookings: 650
-  },
-  {
     id: 4,
     name: "Dịch Vụ Chuyển Nhà",
     subtitle: "Đóng gói & vận chuyển",
@@ -68,8 +50,8 @@ export const services = [
     price: "500,000",
     unit: "lần",
     duration: "1 ngày",
-    icon: "📦",
-    image: "https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=400",
+    icon: <Package className="w-6 h-6 text-green-500" />,
+    image: "https://images.unsplash.com/photo-1614359835514-92f8ba196357?q=80&w=1172&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     features: [
       "Đóng gói đồ đạc",
       "Dọn dẹp nhà cũ",
@@ -82,60 +64,19 @@ export const services = [
     isNew: true
   },
   {
-    id: 5,
-    name: "Vệ Sinh Máy Lạnh",
-    subtitle: "Chuyên sâu",
-    description: "Vệ sinh máy lạnh chuyên nghiệp, tăng hiệu suất làm lạnh",
-    price: "150,000",
-    unit: "máy",
-    duration: "1-2 giờ",
-    icon: "❄️",
-    image: "https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=400",
-    features: [
-      "Vệ sinh dàn lạnh",
-      "Vệ sinh dàn nóng",
-      "Kiểm tra gas",
-      "Bảo hành 3 tháng"
-    ],
-    popular: false,
-    rating: 4.8,
-    bookings: 780
-  },
-  {
-    id: 6,
-    name: "Vệ Sinh Sofa & Thảm",
-    subtitle: "Giặt khô chuyên nghiệp",
-    description: "Vệ sinh sofa, thảm, rèm cửa bằng công nghệ hiện đại",
-    price: "200,000",
-    unit: "bộ",
-    duration: "2-3 giờ",
-    icon: "🛋️",
-    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
-    features: [
-      "Giặt khô chuyên nghiệp",
-      "Khử mùi, diệt khuẩn",
-      "Làm mới màu sắc",
-      "Bảo vệ chất liệu"
-    ],
-    popular: false,
-    rating: 4.7,
-    bookings: 450
-  },
-  {
     id: 7,
     name: "Giặt Ủi Quần Áo",
-    subtitle: "Pickup & delivery",
-    description: "Dịch vụ giặt ủi tại nhà với pickup và giao hàng miễn phí",
+    subtitle: "Nhận & Giao Tận Nơi",
+    description: "Nhân viên đến nhà nhận quần áo cần giặt, xử lý tại cơ sở chuyên nghiệp và giao trả tận nơi.",
     price: "25,000",
     unit: "kg",
     duration: "24-48h",
-    icon: "👕",
+    icon: <Shirt className="w-6 h-6 text-purple-500" />,
     image: "https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?w=400",
     features: [
-      "Nhận và giao tại nhà",
-      "Giặt theo chất liệu",
-      "Ủi phẳng, thơm tho",
-      "Đóng gói cẩn thận"
+      "Giặt sấy tại cơ sở chuyên nghiệp",
+      "Ủi thẳng, thơm tho sạch sẽ",
+      "Giao trả tận nơi miễn phí"
     ],
     popular: true,
     rating: 4.9,
@@ -149,7 +90,7 @@ export const services = [
     price: "100,000",
     unit: "giờ",
     duration: "Linh hoạt",
-    icon: "👶",
+    icon: <Baby className="w-6 h-6 text-pink-500" />,
     image: "https://images.unsplash.com/photo-1476703993599-0035a21b17a9?w=400",
     features: [
       "Chăm sóc trẻ tại nhà",
@@ -167,28 +108,28 @@ export const serviceCategories = [
   {
     id: 1,
     name: "Dọn Dẹp Nhà Cửa",
-    icon: "🏠",
+    icon: <Home className="w-5 h-5" />,
     count: 3,
     color: "bg-blue-100 text-blue-600"
   },
   {
     id: 2,
     name: "Vệ Sinh Chuyên Sâu",
-    icon: "✨",
+    icon: <Sparkles className="w-5 h-5" />,
     count: 3,
     color: "bg-green-100 text-green-600"
   },
   {
     id: 3,
     name: "Giặt Ủi",
-    icon: "👕",
+    icon: <Shirt className="w-5 h-5" />,
     count: 1,
     color: "bg-purple-100 text-purple-600"
   },
   {
     id: 4,
     name: "Chăm Sóc",
-    icon: "👶",
+    icon: <Baby className="w-5 h-5" />,
     count: 1,
     color: "bg-pink-100 text-pink-600"
   }

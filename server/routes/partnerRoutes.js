@@ -72,17 +72,31 @@ router.get('/stats', authMiddleware, async (req, res, next) => {
   try {
     const { uid: partnerId } = req.user;
 
+    // ✅ 1. LẤY DỮ LIỆU TỪ HỒ SƠ PARTNER TRƯỚC
+    const partnerDocRef = db.collection('mm_partners').doc(partnerId);
+    const partnerDoc = await partnerDocRef.get();
+
+    let ratingAverage = 0;
+    let ratingCount = 0;
+
+    if (partnerDoc.exists) {
+      const partnerData = partnerDoc.data();
+      ratingAverage = partnerData.operational?.rating?.average || 0;
+      ratingCount = partnerData.operational?.rating?.count || 0;
+    }
+
     // 1. LẤY CÁC CÔNG VIỆC CỦA ĐỐI TÁC
-    const myJobsQuery = db.collection('orders')
-      .where('partnerId', '==', partnerId);
-      
+    const myJobsQuery = db.collection('orders').where('partnerId', '==', partnerId);
     const snapshot = await myJobsQuery.get();
+
     if (snapshot.empty) {
       console.log('No jobs found for this partner.');
       return res.status(200).json({
         revenueThisMonth: 0,
         completedJobsThisMonth: 0,
-        newJobsCount: 0
+        newJobsCount: 0,
+        ratingAverage, // Trả về rating đã có
+        ratingCount
       });
     }
 
@@ -116,7 +130,9 @@ router.get('/stats', authMiddleware, async (req, res, next) => {
     res.status(200).json({
       revenueThisMonth: revenue,
       completedJobsThisMonth: completedCount,
-      newJobsCount: newJobsCount
+      newJobsCount: newJobsCount,
+      ratingAverage,
+      ratingCount
     });
 
     // ✅ LOG KẾT QUẢ CUỐI CÙNG

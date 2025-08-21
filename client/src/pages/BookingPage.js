@@ -5,6 +5,7 @@ import { Card } from '../components/ui/Card';
 import { useGSAP } from '../hooks/useGSAP';
 import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
 import AddressSelector from '../components/AddressSelector';
+import { Shirt, SprayCan, Home, Baby} from "lucide-react";
 
 const BookingPage = () => {
   const navigate = useNavigate();
@@ -39,13 +40,12 @@ const BookingPage = () => {
     }
   }, [hasIntersected]);
 
-  const serviceTypes = [
-    { id: 'cleaning', name: 'Dọn dẹp nhà cửa', price: 220000, icon: '🧹' },
-    { id: 'deep-cleaning', name: 'Tổng vệ sinh', price: 660000, icon: '✨' },
-    { id: 'moving-house', name: 'Chuyển nhà', price: 300000, icon: '🏠' },
-    { id: 'airconditioner-cleaning', name: 'Vệ sinh máy lạnh', price: 250000, icon: '❄️' },
-    { id: 'childcare', name: 'Chăm sóc trẻ em', price: 200000, icon: '👶' },
-  ];
+const serviceTypes = [
+  { id: 'cleaning', name: 'Dọn dẹp nhà cửa', price: 220000, icon: <SprayCan className="w-6 h-6 text-blue-500" /> },
+  { id: 'laundry', name: 'Giặt sấy', price: 250000, icon: <Shirt className="w-6 h-6 text-sky-500" /> },
+  { id: 'moving-house', name: 'Chuyển nhà', price: 300000, icon: <Home className="w-6 h-6 text-green-500" /> },
+  { id: 'childcare', name: 'Chăm sóc trẻ em', price: 200000, icon: <Baby className="w-6 h-6 text-pink-500" /> },
+];
 
   const areaOptions = [
     { id: 'small', label: 'Nhỏ (< 50m² / 1-2 phòng)', duration: 2 },
