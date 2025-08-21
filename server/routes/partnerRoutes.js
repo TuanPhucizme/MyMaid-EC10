@@ -63,35 +63,69 @@ router.post('/register', authMiddleware, async (req, res) => {
   }
 });
 
-router.get('/stats', [authMiddleware, adminMiddleware], async (req, res) => {
+/**
+ * @route   GET /api/partners/stats
+ * @desc    Tính toán và lấy dữ liệu thống kê cho dashboard của Partner
+ * @access  Private (Partner only)
+ */
+router.get('/stats', authMiddleware, async (req, res, next) => {
   try {
+    const { uid: partnerId } = req.user;
+
+    // 1. LẤY CÁC CÔNG VIỆC CỦA ĐỐI TÁC
+    const myJobsQuery = db.collection('orders')
+      .where('partnerId', '==', partnerId);
+      
+    const snapshot = await myJobsQuery.get();
+    if (snapshot.empty) {
+      console.log('No jobs found for this partner.');
+      return res.status(200).json({
+        revenueThisMonth: 0,
+        completedJobsThisMonth: 0,
+        newJobsCount: 0
+      });
+    }
+
+    // 2. TÍNH TOÁN THỐNG KÊ TRÊN SERVER
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-    const bookingsQuery = db.collection("mm_bookings").where("createdAt", ">=", startOfMonth);
-    const bookingsSnapshot = await bookingsQuery.get();
-    
     let revenue = 0;
-    bookingsSnapshot.forEach(doc => {
-      if (doc.data().status === 'completed') {
-        revenue += doc.data().summary.totalPrice;
+    let completedCount = 0;
+    let newJobsCount = 0;
+
+    snapshot.forEach(doc => {
+      const job = doc.data();
+      const jobDate = job.createdAt.toDate(); // Dữ liệu ở backend là Timestamp object
+
+      console.log(`Processing job ID: ${doc.id}, Status: ${job.status}, Date: ${jobDate.toISOString()}`);
+      // Tính số việc mới được giao
+      if (job.status === 'confirmed') {
+        newJobsCount++;
+      }
+
+      // Tính doanh thu và số việc hoàn thành trong tháng
+      if (job.status === 'completed' && jobDate >= startOfMonth) {
+        const commissionRate = 0.8; 
+        revenue += (job.payment?.amount || 0) * commissionRate;
+        completedCount++;
+        console.log(`  -> COUNTED! Status is 'completed' and date is in this month. Adding ${revenue * commissionRate} to revenue.`);
       }
     });
 
-    const pendingPartnersQuery = db.collection("mm_partners").where("operational.status", "==", "pending_approval");
-    const pendingPartnersSnapshot = await pendingPartnersQuery.get();
-
-    const stats = {
+    // 3. TRẢ VỀ KẾT QUẢ ĐÃ TÍNH TOÁN
+    res.status(200).json({
       revenueThisMonth: revenue,
-      bookingsThisMonth: bookingsSnapshot.size,
-      pendingPartners: pendingPartnersSnapshot.size
-    };
+      completedJobsThisMonth: completedCount,
+      newJobsCount: newJobsCount
+    });
 
+    // ✅ LOG KẾT QUẢ CUỐI CÙNG
+    console.log('Final calculated stats:', stats);
     res.status(200).json(stats);
 
   } catch (error) {
-    console.error('Error fetching admin stats:', error);
-    res.status(500).send({ message: 'Internal Server Error' });
+    console.error(`Error fetching stats for partner ${req.user?.uid}:`, error);
+    next(error);
   }
 });
 

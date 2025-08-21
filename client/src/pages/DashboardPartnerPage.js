@@ -152,7 +152,8 @@ const PartnerDashboardPage = () => {
   const [partner, setPartner] = useState(null);
   const [myJobs, setMyJobs] = useState([]); // Các đơn hàng đã nhận
   const [availableJobs, setAvailableJobs] = useState([]); // Các đơn hàng có sẵn
-  const [stats, setStats] = useState({ revenueThisMonth: 0, completedJobsThisMonth: 0 });
+  const [stats, setStats] = useState({ revenueThisMonth: 0, completedJobsThisMonth: 0, newJobsCount: 0 });
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -173,34 +174,23 @@ const fetchPartnerData = useCallback(async (firebaseUser) => {
       const token = await firebaseUser.getIdToken();
       const headers = { 'Authorization': `Bearer ${token}` };
 
-      const [myJobsResponse, availableJobsResponse] = await Promise.all([
+      const [myJobsResponse, availableJobsResponse, statsResponse] = await Promise.all([
         fetch(`${API_URL}/api/partners/my-jobs`, { headers }), // API lấy việc của tôi
-        fetch(`${API_URL}/api/orders/available`, { headers })  // API lấy việc có sẵn
+        fetch(`${API_URL}/api/orders/available`, { headers }),  // API lấy việc có sẵn
+        fetch(`${API_URL}/api/partners/stats`, { headers }), // API lấy thống kê
       ]);
 
       if (!myJobsResponse.ok) throw new Error('Không thể tải công việc của bạn.');
       if (!availableJobsResponse.ok) throw new Error('Không thể tải các việc làm có sẵn.');
+      if (!statsResponse.ok) throw new Error('Không thể tải thống kê.');
 
       const myJobsData = await myJobsResponse.json();
       const availableJobsData = await availableJobsResponse.json();
+      const statsData = await statsResponse.json();
       
       setMyJobs(myJobsData);
       setAvailableJobs(availableJobsData);
-
-      // 3. Tính toán thống kê dựa trên công việc của tôi
-      const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      let revenue = 0;
-      let completedCount = 0;
-      myJobsData.forEach(job => {
-        const jobDate = new Date(job.createdAt);
-        if (job.status === 'completed' && jobDate && jobDate >= startOfMonth) {
-          const commissionRate = 0.8; 
-          revenue += (job.summary?.totalPrice || 0) * commissionRate;
-          completedCount++;
-        }
-      });
-      setStats({ revenueThisMonth: revenue, completedJobsThisMonth: completedCount });
+      setStats(statsData);
 
     } catch (err) {
       console.error("Lỗi khi tải dữ liệu partner:", err);
@@ -258,7 +248,7 @@ const fetchPartnerData = useCallback(async (firebaseUser) => {
   return (
     <DashboardContainer>
       <DashboardHeader>
-        <WelcomeTitle>Chào mừng, {partner?.name || 'Đối tác'}!</WelcomeTitle>
+        <WelcomeTitle>Chào mừng, {`${partner?.lastName || ''} ${partner?.firstName || ''}`.trim() || 'Đối tác'}!</WelcomeTitle>
       </DashboardHeader>
 
       <StatsGrid>
@@ -266,7 +256,7 @@ const fetchPartnerData = useCallback(async (firebaseUser) => {
           <StatIcon bgColor="#dcfce7" color="#16a34a"><DollarSign size={32} /></StatIcon>
           <StatContent>
             <StatValue>{stats.revenueThisMonth.toLocaleString()}đ</StatValue>
-            <StatLabel>Doanh thu tháng này</StatLabel>
+            <StatLabel>Thu nhập tháng này</StatLabel>
           </StatContent>
         </StatCard>
         <StatCard>
@@ -279,7 +269,7 @@ const fetchPartnerData = useCallback(async (firebaseUser) => {
         <StatCard>
           <StatIcon bgColor="#fef3c7" color="#d97706"><Bell size={32} /></StatIcon>
           <StatContent>
-            <StatValue>{myJobs.filter(job => job.status === 'confirmed').length}</StatValue>
+            <StatValue>{stats.newJobsCount}</StatValue>
             <StatLabel>Dịch vụ mới được giao</StatLabel>
           </StatContent>
         </StatCard>
