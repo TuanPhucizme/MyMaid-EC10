@@ -3,7 +3,6 @@ let router = express.Router();
 const request = require('request');
 const moment = require('moment');
 const crypto = require("crypto");
-// Giả sử file config của bạn ở thư mục gốc
 const config = require('../config/default.json'); // Điều chỉnh đường dẫn nếu cần
 const querystring = require('qs');
 

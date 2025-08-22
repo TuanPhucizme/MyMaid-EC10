@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, use} from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback} from 'react';
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -23,8 +23,6 @@ import {
   X,
   Star
 } from 'lucide-react';
-
-import { auth } from '../config/firebase';
 
 const Container = styled.div`
   min-height: calc(100vh - 4rem);
@@ -250,10 +248,7 @@ const OrderManagementPage = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [showModal, setShowModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-
-  const canReviewOrder = (order) => {return order.status === 'completed';};
 
   // State để quản lý modal xem review
   const [viewingReviewFor, setViewingReviewFor] = useState(null);
@@ -327,12 +322,12 @@ const OrderManagementPage = () => {
         setOrders(data.orders);
       } else {
         console.error('Error fetching orders:', response.statusText);
-        toast.error('Lỗi khi tải đơn hàng.');
+        toast.error('Lỗi khi tải Dịch vụ.');
         setOrders([]);
       }
     } catch (error) {
       console.error('Error fetching orders:', error);
-      toast.error('Lỗi khi tải đơn hàng.');
+      toast.error('Lỗi khi tải Dịch vụ.');
       setOrders([]);
     } finally {
       setLoading(false);
@@ -401,7 +396,7 @@ const OrderManagementPage = () => {
       });
 
       if (response.ok) {
-        alert('Hủy đơn hàng thành công');
+        alert('Hủy Dịch vụ thành công');
         fetchOrders(activeTab); // Refresh the list
         closeModal(); // Close modal after successful cancellation
       } else {
@@ -410,12 +405,12 @@ const OrderManagementPage = () => {
       }
     } catch (error) {
       console.error('Error cancelling order:', error);
-      alert('Có lỗi xảy ra khi hủy đơn hàng');
+      alert('Có lỗi xảy ra khi hủy Dịch vụ');
     }
   };
 
   const handleQuickCancelOrder = async (orderId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) {
+    if (!window.confirm('Bạn có chắc chắn muốn hủy Dịch vụ này?')) {
       return;
     }
     await handleCancelOrder(orderId);
@@ -436,7 +431,7 @@ const OrderManagementPage = () => {
 
       toast.success('Xác nhận hoàn thành thành công!');
       setSelectedOrder(null); // Đóng modal
-      await fetchOrders(); // Tải lại danh sách đơn hàng
+      await fetchOrders(); // Tải lại danh sách Dịch vụ
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -456,8 +451,8 @@ const OrderManagementPage = () => {
     return (
       <Container>
         <Header>
-          <Title>Quản lý đơn hàng</Title>
-          <Subtitle>Vui lòng đăng nhập để xem đơn hàng của bạn</Subtitle>
+          <Title>Quản lý Dịch vụ</Title>
+          <Subtitle>Vui lòng đăng nhập để xem Dịch vụ của bạn</Subtitle>
         </Header>
       </Container>
     );
@@ -466,8 +461,8 @@ const OrderManagementPage = () => {
   return (
     <Container>
       <Header>
-        <Title>Quản lý đơn hàng</Title>
-        <Subtitle>Theo dõi trạng thái và quản lý các đơn hàng của bạn</Subtitle>
+        <Title>Quản lý Dịch vụ</Title>
+        <Subtitle>Theo dõi trạng thái và quản lý các Dịch vụ của bạn</Subtitle>
       </Header>
 
       <TabContainer>
@@ -491,15 +486,15 @@ const OrderManagementPage = () => {
           {loading ? (
             <LoadingSpinner>
               <AlertCircle size={24} />
-              <span style={{ marginLeft: '0.5rem' }}>Đang tải đơn hàng...</span>
+              <span style={{ marginLeft: '0.5rem' }}>Đang tải Dịch vụ...</span>
             </LoadingSpinner>
           ) : orders.length === 0 ? (
             <EmptyState>
               <EmptyIcon>
                 <Package size={48} />
               </EmptyIcon>
-              <h3>Không có đơn hàng nào</h3>
-              <p>Bạn chưa có đơn hàng nào ở trạng thái này</p>
+              <h3>Không có Dịch vụ nào</h3>
+              <p>Bạn chưa có Dịch vụ nào ở trạng thái này</p>
             </EmptyState>
           ) : (
             <OrderList>
@@ -515,7 +510,7 @@ const OrderManagementPage = () => {
                         </StatusBadge>
                       </OrderTitle>
                       <OrderMeta>
-                        Đơn hàng #{order.id.slice(-8)} • {formatDate(order.schedule?.date)}
+                        Dịch vụ #{order.id.slice(-8)} • {formatDate(order.schedule?.date)}
                       </OrderMeta>
                     </OrderInfo>
                   </OrderHeader>

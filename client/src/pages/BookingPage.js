@@ -151,7 +151,7 @@ const BookingPage = () => {
           {/* Header */}
           <div className="text-center mb-12">
             <h1 className="text-4xl lg:text-5xl font-bold text-neutral-900 mb-4">
-              Thanh Toán
+              Đặt Dịch Vụ
             </h1>
             <p className="text-xl text-neutral-600 max-w-2xl mx-auto">
               Chọn dịch vụ phù hợp và đặt lịch ngay hôm nay để được phục vụ bởi đội ngũ chuyên nghiệp
@@ -452,7 +452,7 @@ const BookingPage = () => {
                           value={formData.notes}
                           onChange={handleInputChange}
                           rows="4"
-                          placeholder="Mô tả thêm về yêu cầu dịch vụ..."
+                          placeholder="Ghi chú thêm thông tin khi làm dịch vụ..."
                           className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         />
                       </div>
