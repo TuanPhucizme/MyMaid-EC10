@@ -72,7 +72,7 @@ const UserDropdown = ({ fullName, userInitial, setIsUserMenuOpen, isUserMenuOpen
       {isUserMenuOpen && (
         <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-neutral-200 py-2">
           <Link to={ordersPath} className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
-            {isPartner ? 'Quản lý Đơn hàng' : 'Đơn hàng của tôi'} {/* Thay đổi text cho rõ ràng hơn */}
+            {isPartner ? 'Quản lý Dịch vụ' : 'Dịch vụ của tôi'} {/* Thay đổi text cho rõ ràng hơn */}
           </Link>
           <Link to={profilePath} className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
             {isPartner ? 'Hồ sơ đối tác' : 'Hồ sơ'} {/* Thay đổi text cho rõ ràng hơn */}
@@ -80,7 +80,7 @@ const UserDropdown = ({ fullName, userInitial, setIsUserMenuOpen, isUserMenuOpen
           <Link to="/services" className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
             Đặt dịch vụ
           </Link>
-          {/* Đã loại bỏ một link 'Đơn hàng của tôi' trùng lặp */}
+          {/* Đã loại bỏ một link 'Dịch vụ của tôi' trùng lặp */}
           <hr className="my-2" />
           <button
             onClick={handleLogout}
@@ -167,7 +167,7 @@ const MobileNav = ({ navItems, location, user, userProfile, handleLogout, closeM
           </div>
           <Link to={ordersPath} onClick={closeMobileMenu}>
             <Button variant="ghost" className="w-full justify-center">
-              {isPartner ? 'Quản lý Đơn hàng' : 'Đơn hàng của tôi'}
+              {isPartner ? 'Quản lý Dịch vụ' : 'Dịch vụ của tôi'}
             </Button>
           </Link>
           <Link to={profilePath} onClick={closeMobileMenu}>
@@ -175,7 +175,7 @@ const MobileNav = ({ navItems, location, user, userProfile, handleLogout, closeM
               {isPartner ? 'Hồ sơ đối tác' : 'Hồ sơ'}
             </Button>
           </Link>
-          {/* Đã loại bỏ một link 'Đơn hàng của tôi' trùng lặp */}
+          {/* Đã loại bỏ một link 'Dịch vụ của tôi' trùng lặp */}
           <div onClick={() => { handleLogout(); closeMobileMenu(); }}>
             <Button variant="danger" className="w-full justify-center">
               Đăng xuất

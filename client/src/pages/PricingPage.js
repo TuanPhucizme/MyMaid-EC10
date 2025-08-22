@@ -65,48 +65,6 @@ const PricingPage = () => {
         'Báo cáo tình hình'
       ]
     },
-    {
-      id: 'cooking',
-      name: 'Nấu ăn',
-      icon: '🍳',
-      description: 'Nấu các bữa ăn ngon, đảm bảo dinh dưỡng',
-      basePrice: 180000,
-      features: [
-        'Nấu bữa sáng, trưa, tối',
-        'Chuẩn bị nguyên liệu',
-        'Đảm bảo vệ sinh an toàn',
-        'Phù hợp khẩu vị',
-        'Dọn dẹp sau nấu'
-      ]
-    },
-    {
-      id: 'elderly-care',
-      name: 'Chăm sóc người già',
-      icon: '👴',
-      description: 'Chăm sóc người cao tuổi, hỗ trợ sinh hoạt',
-      basePrice: 250000,
-      features: [
-        'Hỗ trợ sinh hoạt hàng ngày',
-        'Theo dõi sức khỏe',
-        'Trò chuyện, tâm sự',
-        'Hỗ trợ vận động',
-        'Báo cáo gia đình'
-      ]
-    },
-    {
-      id: 'deep-cleaning',
-      name: 'Vệ sinh chuyên sâu',
-      icon: '🧹',
-      description: 'Vệ sinh sâu, làm sạch các khu vực khó tiếp cận',
-      basePrice: 300000,
-      features: [
-        'Vệ sinh sâu toàn bộ nhà',
-        'Làm sạch khe kẽ, góc cạnh',
-        'Vệ sinh máy lạnh, quạt',
-        'Đánh bóng đồ gỗ',
-        'Khử mùi, diệt khuẩn'
-      ]
-    }
   ];
 
   const durations = [
