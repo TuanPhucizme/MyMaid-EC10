@@ -54,108 +54,6 @@ export const services = [
   },
   {
     id: 2,
-    name: "Dọn Dẹp Nhà Cửa",
-    subtitle: "Gói tháng",
-    description: "Gói dịch vụ dọn dẹp định kỳ hàng tháng với giá ưu đãi",
-    price: "1,200,000",
-    unit: "tháng",
-    duration: "8 lần/tháng",
-    icon: "📅",
-    image: "https://media.gettyimages.com/id/1417833124/photo/professional-cleaner-cleaning-a-table-at-a-house.jpg?s=2048x2048&w=gi&k=20&c=SmRzdfXzybOYcYytzD2i_am_RfwykpAlgDY44Pbx57Q=",
-    features: [
-      "2 lần/tuần",
-      "Dọn dẹp toàn bộ nhà",
-      "Giặt ủi cơ bản",
-      "Hỗ trợ 24/7"
-    ],
-    popular: false,
-    rating: 4.9,
-    bookings: 890,
-    discount: 20
-  },
-  {
-    id: 3,
-    name: "Tổng Vệ Sinh",
-    subtitle: "Deep cleaning",
-    description: "Vệ sinh tổng thể, làm sạch sâu mọi ngóc ngách trong nhà",
-    price: "300,000",
-    unit: "lần",
-    duration: "4-6 giờ",
-    icon: "✨",
-    image: "https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?w=400",
-    features: [
-      "Vệ sinh sâu tất cả phòng",
-      "Lau kính, cửa sổ",
-      "Vệ sinh thiết bị điện",
-      "Khử trùng toàn bộ"
-    ],
-    popular: false,
-    rating: 4.7,
-    bookings: 650
-  },
-  {
-    id: 4,
-    name: "Dịch Vụ Chuyển Nhà",
-    subtitle: "Đóng gói & vận chuyển",
-    description: "Hỗ trợ đóng gói, dọn dẹp và sắp xếp khi chuyển nhà",
-    price: "500,000",
-    unit: "lần",
-    duration: "1 ngày",
-    icon: "📦",
-    image: "https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=400",
-    features: [
-      "Đóng gói đồ đạc",
-      "Dọn dẹp nhà cũ",
-      "Sắp xếp nhà mới",
-      "Vận chuyển nhỏ"
-    ],
-    popular: false,
-    rating: 4.6,
-    bookings: 320,
-    isNew: true
-  },
-  {
-    id: 5,
-    name: "Vệ Sinh Máy Lạnh",
-    subtitle: "Chuyên nghiệp",
-    description: "Vệ sinh máy lạnh chuyên nghiệp, tăng hiệu suất làm mát",
-    price: "150,000",
-    unit: "máy",
-    duration: "1-2 giờ",
-    icon: "❄️",
-    image: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=400",
-    features: [
-      "Vệ sinh dàn lạnh",
-      "Vệ sinh dàn nóng",
-      "Kiểm tra gas",
-      "Bảo dưỡng tổng thể"
-    ],
-    popular: false,
-    rating: 4.8,
-    bookings: 750
-  },
-  {
-    id: 6,
-    name: "Vệ Sinh Sofa & Thảm",
-    subtitle: "Giặt khô chuyên nghiệp",
-    description: "Vệ sinh sofa, thảm, rèm cửa bằng công nghệ hiện đại",
-    price: "200,000",
-    unit: "bộ",
-    duration: "2-3 giờ",
-    icon: "🛋️",
-    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
-    features: [
-      "Giặt khô chuyên nghiệp",
-      "Khử mùi, diệt khuẩn",
-      "Làm mới màu sắc",
-      "Bảo vệ chất liệu"
-    ],
-    popular: false,
-    rating: 4.7,
-    bookings: 450
-  },
-  {
-    id: 7,
     name: "Giặt Ủi Quần Áo",
     subtitle: "Pickup & delivery",
     description: "Dịch vụ giặt ủi tại nhà với pickup và giao hàng miễn phí",
@@ -235,7 +133,7 @@ export const services = [
     ]
   },
   {
-    id: 8,
+    id: 3,
     name: "Chăm Sóc Trẻ Em",
     subtitle: "Babysitting",
     description: "Dịch vụ chăm sóc trẻ em chuyên nghiệp, an toàn",
@@ -266,20 +164,13 @@ export const serviceCategories = [
   },
   {
     id: 2,
-    name: "Vệ Sinh Chuyên Sâu",
-    icon: "✨",
-    count: 3,
-    color: "bg-green-100 text-green-600"
-  },
-  {
-    id: 3,
     name: "Giặt Ủi",
     icon: "👕",
     count: 1,
     color: "bg-purple-100 text-purple-600"
   },
   {
-    id: 4,
+    id: 3,
     name: "Chăm Sóc",
     icon: "👶",
     count: 1,
