@@ -69,7 +69,7 @@ router.post('/create_payment_url', function (req, res, next) {
     vnp_Params['vnp_ReturnUrl'] = returnUrl;
     vnp_Params['vnp_IpAddr'] = ipAddr;
     vnp_Params['vnp_CreateDate'] = createDate;
-    if(bankCode !== null && bankCode !== ''){
+    if(bankCode){
         vnp_Params['vnp_BankCode'] = bankCode;
     }
 
