@@ -200,6 +200,7 @@ if (app.router && app.router.stack) {
 }
 
 app.use('/api/bookings', bookingRoutes);
+console.log('Booking routes mounted at /api/bookings');
 
 // Start server with route checking
 app.listen(PORT, () => {

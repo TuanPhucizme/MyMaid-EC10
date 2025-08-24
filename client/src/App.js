@@ -14,6 +14,7 @@ import VerificationBanner from "./components/VerificationBanner";
 import ScrollToTop from "./components/ScrollToTop";
 import LoadingSpinner from "./components/LoadingSpinner";
 import ToastNotification from "./components/ToastNotification";
+import AdminRoute from "./components/AdminRoutes";
 
 // Pages
 import AdminPage from "./pages/AdminPage";
@@ -151,9 +152,10 @@ function App() {
         <Route path="/leave-review/:bookingId" element={<LeaveReviewPage />} />
 
         {/* --- CÁC ROUTE CỦA QUẢN TRỊ VIÊN --- */}
-        {/* LƯU Ý QUAN TRỌNG: Route này *nên* được bọc trong một AdminRoute component
-             để đảm bảo chỉ quản trị viên mới có thể truy cập. */}
-        <Route path="/admin" element={<AdminPage />} />
+        {/* Route được bảo vệ bởi AdminRoute component */}
+        <Route path="/admin" element={<AdminRoute />}>
+          <Route index element={<AdminPage />} />
+        </Route>
 
         {/* --- ROUTE BẮT LỖI 404 --- */}
         <Route path="*" element={<h1 className="text-center text-2xl p-8">404 - Page Not Found</h1>} />

@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { DollarSign, ListChecks, UserCheck, User, Users, Home } from 'lucide-react';
+import { DollarSign, ListChecks, UserCheck, User, Users, Home, Settings } from 'lucide-react';
 
 // Import Components
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 
-// Import Firebase
-import { auth } from '../config/firebase';
+// Import API services
+import { adminAPI } from '../services/api';
 
 // --- Styled Components ---
 const AdminContainer = styled.div`
@@ -118,67 +118,155 @@ const CardTitle = styled.h2`
   color: #1a202c;
 `;
 
+const TabContainer = styled.div`
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 2rem;
+`;
+
+const TabList = styled.div`
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+`;
+
+const TabButton = styled.button`
+  padding: 1rem 1.5rem;
+  border: none;
+  background: none;
+  font-weight: 500;
+  color: ${props => props.active ? '#3b82f6' : '#6b7280'};
+  border-bottom: 2px solid ${props => props.active ? '#3b82f6' : 'transparent'};
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+
+  &:hover {
+    color: #3b82f6;
+    background-color: #f8fafc;
+  }
+`;
+
+const TabContent = styled.div`
+  display: ${props => props.active ? 'block' : 'none'};
+`;
+
+const TableContainer = styled.div`
+  overflow-x: auto;
+  width: 100%;
+`;
+
 // --- Hàm tiện ích ---
-const getPartnerStatusProps = (status) => { /* ... */ };
-const getBookingStatusProps = (status) => { /* ... */ };
+const getPartnerStatusProps = (status) => {
+  switch (status) {
+    case 'active':
+      return { bgColor: '#dcfce7', color: '#16a34a', text: 'Hoạt động' };
+    case 'suspended':
+      return { bgColor: '#fef2f2', color: '#dc2626', text: 'Tạm ngưng' };
+    case 'pending':
+      return { bgColor: '#fef3c7', color: '#d97706', text: 'Chờ duyệt' };
+    default:
+      return { bgColor: '#f3f4f6', color: '#6b7280', text: 'Không rõ' };
+  }
+};
+
+const getBookingStatusProps = (status) => {
+  switch (status) {
+    case 'completed':
+      return { bgColor: '#dcfce7', color: '#16a34a', text: 'Hoàn thành' };
+    case 'confirmed':
+      return { bgColor: '#e0e7ff', color: '#3b82f6', text: 'Đã xác nhận' };
+    case 'in_progress':
+      return { bgColor: '#fef3c7', color: '#d97706', text: 'Đang thực hiện' };
+    case 'pending_confirmation':
+      return { bgColor: '#f0f9ff', color: '#0369a1', text: 'Chờ xác nhận' };
+    case 'pending_payment':
+      return { bgColor: '#fdf4ff', color: '#a855f7', text: 'Chờ thanh toán' };
+    case 'cancelled':
+      return { bgColor: '#fef2f2', color: '#dc2626', text: 'Đã hủy' };
+    default:
+      return { bgColor: '#f3f4f6', color: '#6b7280', text: 'Không rõ' };
+  }
+};
 
 const AdminPage = () => {
   const navigate = useNavigate();
-  const API_URL = process.env.REACT_APP_API_URL;
 
   // States
   const [partners, setPartners] = useState([]);
-  const [bookings, setBookings] = useState([]);
-  const [stats, setStats] = useState({ revenueThisMonth: 0, bookingsThisMonth: 0, pendingPartners: 0 });
+  const [users, setUsers] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [stats, setStats] = useState({
+    revenueThisMonth: 0,
+    bookingsThisMonth: 0,
+    pendingPartners: 0,
+    totalUsers: 0,
+    totalOrders: 0
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('overview'); // overview, users, orders, partners
 
   // --- Data Fetching ---
   const fetchAdminData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const user = auth.currentUser;
-      if (!user) throw new Error("Vui lòng đăng nhập.");
-      
-      const token = await user.getIdToken();
-      const headers = { 'Authorization': `Bearer ${token}` };
-
-      const [partnersResponse, statsResponse, bookingsResponse] = await Promise.all([
-        fetch(`${API_URL}/api/partners`, { headers }),
-        fetch(`${API_URL}/api/partners/stats`, { headers }),
-        fetch(`${API_URL}/api/bookings`, { headers })
+      // Fetch all data using adminAPI
+      const [partnersResponse, usersResponse, ordersResponse] = await Promise.all([
+        adminAPI.getAllPartners({ limit: 50 }),
+        adminAPI.getAllUsers({ limit: 50 }),
+        adminAPI.getAllOrders({ limit: 50 })
       ]);
 
-      if (!partnersResponse.ok) throw new Error('Không thể tải danh sách đối tác.');
-      if (!statsResponse.ok) throw new Error('Không thể tải dữ liệu thống kê.');
-      if (!bookingsResponse.ok) throw new Error('Không thể tải lịch sử dịch vụ.');
+      setPartners(partnersResponse.data || []);
+      setUsers(usersResponse.data.users || []);
+      setOrders(ordersResponse.data.orders || []);
 
-      const partnersData = await partnersResponse.json();
-      const statsData = await statsResponse.json();
-      const bookingsData = await bookingsResponse.json();
+      // Calculate stats from the data
+      const totalUsers = usersResponse.data.pagination?.total || usersResponse.data.users?.length || 0;
+      const totalOrders = ordersResponse.data.pagination?.total || ordersResponse.data.orders?.length || 0;
+      const pendingPartners = partnersResponse.data?.filter(p => p.operational?.status === 'pending')?.length || 0;
 
-      setPartners(partnersData);
-      setStats(statsData);
-      setBookings(bookingsData);
+      // Calculate revenue from completed orders
+      const completedOrders = ordersResponse.data.orders?.filter(order => order.status === 'completed') || [];
+      const revenueThisMonth = completedOrders.reduce((sum, order) => {
+        const orderDate = new Date(order.createdAt?.seconds ? order.createdAt.seconds * 1000 : order.createdAt);
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+
+        if (orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear) {
+          return sum + (order.payment?.amount || 0);
+        }
+        return sum;
+      }, 0);
+
+      const bookingsThisMonth = ordersResponse.data.orders?.filter(order => {
+        const orderDate = new Date(order.createdAt?.seconds ? order.createdAt.seconds * 1000 : order.createdAt);
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+        return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
+      })?.length || 0;
+
+      setStats({
+        revenueThisMonth,
+        bookingsThisMonth,
+        pendingPartners,
+        totalUsers,
+        totalOrders
+      });
 
     } catch (err) {
-      setError(err.message);
+      console.error('Error fetching admin data:', err);
+      setError(err.response?.data?.message || err.message || 'Có lỗi xảy ra khi tải dữ liệu');
     } finally {
       setIsLoading(false);
     }
-  }, [API_URL]);
+  }, []);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(user => {
-      if (user) {
-        fetchAdminData();
-      } else {
-        navigate('/login');
-      }
-    });
-    return () => unsubscribe();
-  }, [navigate, fetchAdminData]);
+    // Fetch data when component mounts
+    fetchAdminData();
+  }, [fetchAdminData]);
 
   if (isLoading) return <LoadingSpinner fullScreen text="Đang tải trang quản trị..." />;
   if (error) return <AdminContainer><ErrorMessage message={error} /></AdminContainer>;
@@ -210,69 +298,204 @@ const AdminPage = () => {
             <StatLabel>Đối tác chờ duyệt</StatLabel>
           </StatContent>
         </StatCard>
+        <StatCard>
+          <StatIcon bgColor="#f3e8ff" color="#8b5cf6"><Users size={32} /></StatIcon>
+          <StatContent>
+            <StatValue>{stats.totalUsers}</StatValue>
+            <StatLabel>Tổng người dùng</StatLabel>
+          </StatContent>
+        </StatCard>
+        <StatCard>
+          <StatIcon bgColor="#fef2f2" color="#ef4444"><Settings size={32} /></StatIcon>
+          <StatContent>
+            <StatValue>{stats.totalOrders}</StatValue>
+            <StatLabel>Tổng đơn hàng</StatLabel>
+          </StatContent>
+        </StatCard>
       </StatsGrid>
 
-      {/* --- PHẦN 2: BẢNG DANH SÁCH ĐỐI TÁC --- */}
-      <TableCard>
-        <CardHeader><CardTitle>Danh Sách Đối Tác ({partners.length})</CardTitle></CardHeader>
-        <Table>
-          <thead>
-            <tr>
-              <th><Users size={16} /> Tên Đối Tác</th>
-              <th>Trạng Thái</th>
-              <th>Ngày Đăng Ký</th>
-            </tr>
-          </thead>
-          <tbody>
-            {partners.map(partner => {
-              const status = getPartnerStatusProps(partner.status);
-              return (
-                <tr key={partner.uid}>
-                  <td>{partner.name}</td>
-                  <td>
-                    <StatusBadge bgColor={status.bgColor} color={status.color}>{status.text}</StatusBadge>
-                  </td>
-                  <td>{new Date(partner.registeredAt).toLocaleDateString('vi-VN')}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </Table>
-      </TableCard>
+      {/* --- PHẦN 2: TABS NAVIGATION --- */}
+      <TabContainer>
+        <TabList>
+          <TabButton
+            active={activeTab === 'overview'}
+            onClick={() => setActiveTab('overview')}
+          >
+            📊 Tổng quan
+          </TabButton>
+          <TabButton
+            active={activeTab === 'users'}
+            onClick={() => setActiveTab('users')}
+          >
+            👥 Người dùng ({users.length})
+          </TabButton>
+          <TabButton
+            active={activeTab === 'orders'}
+            onClick={() => setActiveTab('orders')}
+          >
+            📋 Đơn hàng ({orders.length})
+          </TabButton>
+          <TabButton
+            active={activeTab === 'partners'}
+            onClick={() => setActiveTab('partners')}
+          >
+            🤝 Đối tác ({partners.length})
+          </TabButton>
+        </TabList>
+      </TabContainer>
 
-      {/* --- PHẦN 3: BẢNG LỊCH SỬ GIAO DỊCH --- */}
-      <TableCard>
-        <CardHeader><CardTitle>Lịch Sử Giao Dịch ({bookings.length})</CardTitle></CardHeader>
-        <Table>
-          <thead>
-            <tr>
-              <th><Home size={16} /> Dịch Vụ</th>
-              <th><User size={16} /> Khách Hàng</th>
-              <th>Đối Tác</th>
-              <th>Ngày Đặt</th>
-              <th>Giá</th>
-              <th>Trạng Thái</th>
-            </tr>
-          </thead>
-          <tbody>
-            {bookings.map(booking => {
-              const status = getBookingStatusProps(booking.status);
-              return (
-                <tr key={booking.id}>
-                  <td>{booking.service.name}</td>
-                  <td>{booking.customerName}</td>
-                  <td>{booking.partnerName}</td>
-                  <td>{booking.createdAt.toDate().toLocaleDateString('vi-VN')}</td>
-                  <td>{booking.summary.totalPrice.toLocaleString()}đ</td>
-                  <td>
-                    <StatusBadge bgColor={status.bgColor} color={status.color}>{status.text}</StatusBadge>
-                  </td>
+      {/* --- PHẦN 3: TAB CONTENT --- */}
+
+      {/* Overview Tab */}
+      <TabContent active={activeTab === 'overview'}>
+        <TableCard>
+          <CardHeader><CardTitle>Hoạt động gần đây</CardTitle></CardHeader>
+          <div style={{ padding: '1.5rem' }}>
+            <p>Trang tổng quan sẽ hiển thị các hoạt động gần đây, biểu đồ thống kê, và thông tin tổng quan về hệ thống.</p>
+          </div>
+        </TableCard>
+      </TabContent>
+
+      {/* Users Tab */}
+      <TabContent active={activeTab === 'users'}>
+        <TableCard>
+          <CardHeader><CardTitle>Danh Sách Người Dùng ({users.length})</CardTitle></CardHeader>
+          <TableContainer>
+            <Table>
+              <thead>
+                <tr>
+                  <th><User size={16} /> Tên</th>
+                  <th>Email</th>
+                  <th>Vai trò</th>
+                  <th>Trạng thái</th>
+                  <th>Ngày tạo</th>
                 </tr>
-              );
-            })}
-          </tbody>
-        </Table>
-      </TableCard>
+              </thead>
+              <tbody>
+                {users.map(user => (
+                  <tr key={user.id}>
+                    <td>{user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim()}</td>
+                    <td>{user.email}</td>
+                    <td>
+                      <StatusBadge
+                        bgColor={user.role === 'admin' ? '#fef3c7' : user.role === 'partner' ? '#e0e7ff' : '#f0f9ff'}
+                        color={user.role === 'admin' ? '#d97706' : user.role === 'partner' ? '#3b82f6' : '#0369a1'}
+                      >
+                        {user.role === 'admin' ? 'Quản trị' : user.role === 'partner' ? 'Đối tác' : 'Khách hàng'}
+                      </StatusBadge>
+                    </td>
+                    <td>
+                      <StatusBadge
+                        bgColor={user.status === 'active' ? '#dcfce7' : '#fef2f2'}
+                        color={user.status === 'active' ? '#16a34a' : '#dc2626'}
+                      >
+                        {user.status === 'active' ? 'Hoạt động' : 'Chờ xác thực'}
+                      </StatusBadge>
+                    </td>
+                    <td>
+                      {user.createdAt ?
+                        new Date(user.createdAt.seconds ? user.createdAt.seconds * 1000 : user.createdAt).toLocaleDateString('vi-VN')
+                        : 'N/A'
+                      }
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </TableContainer>
+        </TableCard>
+      </TabContent>
+
+      {/* Orders Tab */}
+      <TabContent active={activeTab === 'orders'}>
+        <TableCard>
+          <CardHeader><CardTitle>Danh Sách Đơn Hàng ({orders.length})</CardTitle></CardHeader>
+          <TableContainer>
+            <Table>
+              <thead>
+                <tr>
+                  <th><Home size={16} /> Dịch Vụ</th>
+                  <th><User size={16} /> Khách Hàng</th>
+                  <th>Đối Tác</th>
+                  <th>Ngày Đặt</th>
+                  <th>Giá</th>
+                  <th>Trạng Thái</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map(order => {
+                  const status = getBookingStatusProps(order.status);
+                  return (
+                    <tr key={order.id}>
+                      <td>{order.service?.name || 'N/A'}</td>
+                      <td>{order.customerInfo?.name || order.contact?.name || 'N/A'}</td>
+                      <td>{order.partnerInfo?.name || 'Chưa gán'}</td>
+                      <td>
+                        {order.createdAt ?
+                          new Date(order.createdAt.seconds ? order.createdAt.seconds * 1000 : order.createdAt).toLocaleDateString('vi-VN')
+                          : 'N/A'
+                        }
+                      </td>
+                      <td>{order.payment?.amount ? order.payment.amount.toLocaleString() + 'đ' : 'N/A'}</td>
+                      <td>
+                        <StatusBadge bgColor={status.bgColor} color={status.color}>{status.text}</StatusBadge>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </Table>
+          </TableContainer>
+        </TableCard>
+      </TabContent>
+
+      {/* Partners Tab */}
+      <TabContent active={activeTab === 'partners'}>
+        <TableCard>
+          <CardHeader><CardTitle>Danh Sách Đối Tác ({partners.length})</CardTitle></CardHeader>
+          <TableContainer>
+            <Table>
+              <thead>
+                <tr>
+                  <th><Users size={16} /> Tên Đối Tác</th>
+                  <th>Email</th>
+                  <th>Trạng Thái</th>
+                  <th>Đánh giá</th>
+                  <th>Công việc hoàn thành</th>
+                  <th>Ngày Đăng Ký</th>
+                </tr>
+              </thead>
+              <tbody>
+                {partners.map(partner => {
+                  const status = getPartnerStatusProps(partner.operational?.status || 'pending');
+                  return (
+                    <tr key={partner.userId}>
+                      <td>{partner.name || 'N/A'}</td>
+                      <td>{partner.email || 'N/A'}</td>
+                      <td>
+                        <StatusBadge bgColor={status.bgColor} color={status.color}>{status.text}</StatusBadge>
+                      </td>
+                      <td>
+                        {partner.operational?.rating?.average ?
+                          `${partner.operational.rating.average.toFixed(1)} (${partner.operational.rating.count})`
+                          : 'Chưa có'
+                        }
+                      </td>
+                      <td>{partner.operational?.jobsCompleted || 0}</td>
+                      <td>
+                        {partner.registeredAt ?
+                          new Date(partner.registeredAt.seconds ? partner.registeredAt.seconds * 1000 : partner.registeredAt).toLocaleDateString('vi-VN')
+                          : 'N/A'
+                        }
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </Table>
+          </TableContainer>
+        </TableCard>
+      </TabContent>
     </AdminContainer>
   );
 };

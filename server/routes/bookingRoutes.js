@@ -8,45 +8,121 @@ const adminMiddleware = require('../middleware/adminMiddleware');
 
 /**
  * @route   GET /api/bookings
- * @desc    Lấy danh sách tất cả các đơn hàng trong hệ thống
+ * @desc    Lấy danh sách tất cả các đơn hàng trong hệ thống với pagination và filtering
  * @access  Private (Admin only)
  */
 router.get('/', [authMiddleware, adminMiddleware], async (req, res, next) => {
   try {
-    const bookingsRef = db.collection('orders');
-    const snapshot = await bookingsRef.orderBy('createdAt', 'desc').get();
+    const { limit = 50, page = 1, status, partnerId, userId, startDate, endDate } = req.query;
+
+    let query = db.collection('orders');
+
+    // Filter by status if provided
+    if (status) {
+      query = query.where('status', '==', status);
+    }
+
+    // Filter by partnerId if provided
+    if (partnerId) {
+      query = query.where('partnerId', '==', partnerId);
+    }
+
+    // Filter by userId if provided
+    if (userId) {
+      query = query.where('userId', '==', userId);
+    }
+
+    // Filter by date range if provided
+    if (startDate) {
+      query = query.where('createdAt', '>=', new Date(startDate));
+    }
+    if (endDate) {
+      query = query.where('createdAt', '<=', new Date(endDate));
+    }
+
+    // Order by creation date
+    query = query.orderBy('createdAt', 'desc');
+
+    // Apply pagination
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    query = query.limit(parseInt(limit)).offset(offset);
+
+    const snapshot = await query.get();
 
     if (snapshot.empty) {
-      return res.status(200).json([]);
+      return res.status(200).json({
+        orders: [],
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: 0,
+          totalPages: 0
+        }
+      });
     }
 
     // Dùng Promise.all để lấy thông tin user và partner hiệu quả
     const bookingsPromises = snapshot.docs.map(async (doc) => {
       const bookingData = doc.data();
-      
+
       // Lấy thông tin khách hàng
       const userDoc = await db.collection('mm_users').doc(bookingData.userId).get();
       const customerName = userDoc.exists ? userDoc.data().name : 'Không rõ';
+      const customerEmail = userDoc.exists ? userDoc.data().email : '';
+      const customerPhone = userDoc.exists ? userDoc.data().phone : '';
 
       // Lấy thông tin đối tác (nếu có)
       let partnerName = 'Chưa gán';
+      let partnerEmail = '';
+      let partnerPhone = '';
       if (bookingData.partnerId) {
         const partnerDoc = await db.collection('mm_users').doc(bookingData.partnerId).get();
         if (partnerDoc.exists) {
-          partnerName = partnerDoc.data().name;
+          const partnerData = partnerDoc.data();
+          partnerName = partnerData.name;
+          partnerEmail = partnerData.email || '';
+          partnerPhone = partnerData.phone || '';
         }
       }
 
       return {
         id: doc.id,
         ...bookingData,
-        customerName,
-        partnerName,
+        customerInfo: {
+          name: customerName,
+          email: customerEmail,
+          phone: customerPhone
+        },
+        partnerInfo: {
+          name: partnerName,
+          email: partnerEmail,
+          phone: partnerPhone
+        }
       };
     });
 
-    const bookingsList = await Promise.all(bookingsPromises);
-    res.status(200).json(bookingsList);
+    const ordersList = await Promise.all(bookingsPromises);
+
+    // Get total count for pagination
+    let totalQuery = db.collection('orders');
+    if (status) totalQuery = totalQuery.where('status', '==', status);
+    if (partnerId) totalQuery = totalQuery.where('partnerId', '==', partnerId);
+    if (userId) totalQuery = totalQuery.where('userId', '==', userId);
+    if (startDate) totalQuery = totalQuery.where('createdAt', '>=', new Date(startDate));
+    if (endDate) totalQuery = totalQuery.where('createdAt', '<=', new Date(endDate));
+
+    const totalSnapshot = await totalQuery.get();
+    const total = totalSnapshot.size;
+
+    res.status(200).json({
+      orders: ordersList,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages: Math.ceil(total / parseInt(limit))
+      }
+    });
 
   } catch (error) {
     console.error('Error fetching all bookings:', error);
