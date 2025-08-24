@@ -420,38 +420,6 @@ const BookingPage = () => {
                           <p className="text-red-500 text-sm mt-1">Vui lòng chọn giờ bắt đầu</p>
                         )}
                       </div>
-                      <div>
-                            <label className="block text-sm font-medium text-neutral-700 mb-2">
-                              Diện tích / Quy mô
-                            </label>
-                            <select
-                              name="area" // Đổi name thành "area"
-                              value={formData.area} // value là formData.area
-                              onChange={handleInputChange}
-                              className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                            >
-                              {areaOptions.map(option => (
-                                <option key={option.id} value={option.id}>
-                                  {option.name || option.label}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                      <div>
-                        <label className="block text-sm font-medium text-neutral-700 mb-2">
-                          Tần suất
-                        </label>
-                        <select
-                          name="frequency"
-                          value={formData.frequency}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                        >
-                          <option value="one-time">Một lần</option>
-                          <option value="weekly">Hàng tuần</option>
-                          <option value="monthly">Hàng tháng</option>
-                        </select>
-                      </div>
                     </div>
                   </div>
                 )}
