@@ -132,28 +132,28 @@ const PaymentResultPage = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [orderId, setOrderId] = useState(null);
 
-  const updateOrderAfterPayment = async (paymentInfo) => {
-    try {
-      // Import payment service
-      const { processVNPayReturn } = await import('../services/paymentService');
+  // const updateOrderAfterPayment = async (paymentInfo) => {
+  //   try {
+  //     // Import payment service
+  //     const { processVNPayReturn } = await import('../services/paymentService');
 
-      // Process VNPay return with Firebase
-      const result = await processVNPayReturn(paymentInfo);
+  //     // Process VNPay return with Firebase
+  //     const result = await processVNPayReturn(paymentInfo);
 
-      if (result.success) {
-        console.log('✅ Cập nhật đơn hàng thành công:', result.orderId);
-        setOrderId(result.orderId);
-        showUserSuccess(result.message || 'Thanh toán thành công!', 'VNPay');
-      } else {
-        console.error('❌ Lỗi khi cập nhật đơn hàng:', result.error);
-        showUserError(result, 'Có lỗi xảy ra khi cập nhật đơn hàng');
-      }
-    } catch (error) {
-      console.error('❌ Lỗi khi xử lý kết quả thanh toán:', error);
-      // Show user-friendly error
-      showUserError(error, 'Có lỗi xảy ra khi xử lý kết quả thanh toán. Vui lòng liên hệ hỗ trợ.');
-    }
-  };
+  //     if (result.success) {
+  //       console.log('✅ Cập nhật đơn hàng thành công:', result.orderId);
+  //       setOrderId(result.orderId);
+  //       showUserSuccess(result.message || 'Thanh toán thành công!', 'VNPay');
+  //     } else {
+  //       console.error('❌ Lỗi khi cập nhật đơn hàng:', result.error);
+  //       showUserError(result, 'Có lỗi xảy ra khi cập nhật đơn hàng');
+  //     }
+  //   } catch (error) {
+  //     console.error('❌ Lỗi khi xử lý kết quả thanh toán:', error);
+  //     // Show user-friendly error
+  //     showUserError(error, 'Có lỗi xảy ra khi xử lý kết quả thanh toán. Vui lòng liên hệ hỗ trợ.');
+  //   }
+  // };
 
   useEffect(() => {
     // Check if this is from navigation state (cash payment)
@@ -173,31 +173,31 @@ const PaymentResultPage = () => {
       return;
     }
 
-    // Handle VNPay return
+    // --- LUỒNG XỬ LÝ KẾT QUẢ VNPAY ---
     const params = new URLSearchParams(location.search);
     const responseCode = params.get('vnp_ResponseCode');
+    
+    const storedOrderId = localStorage.getItem('orderDbId');
+    setOrderId(storedOrderId);
+    localStorage.removeItem('orderDbId');
 
     if (responseCode) {
-      const info = {
+      const success = responseCode === '00';
+      setIsSuccess(success);
+      setPaymentInfo({
         amount: params.get('vnp_Amount') ? params.get('vnp_Amount') / 100 : 0,
         bankCode: params.get('vnp_BankCode'),
         transactionNo: params.get('vnp_TransactionNo'),
         payDate: params.get('vnp_PayDate'),
         orderInfo: params.get('vnp_OrderInfo'),
         responseCode,
-        vnp_TxnRef: params.get('vnp_TxnRef')
-      };
+      });
 
-      setPaymentInfo(info);
-      setIsSuccess(responseCode === '00');
-
-      if (responseCode === '00') {
-        // Cập nhật trạng thái đơn hàng thành công
-        updateOrderAfterPayment(info);
+      if (success) {
         localStorage.removeItem('bookingDetails');
+        console.log(`Hiển thị thành công cho đơn hàng ${storedOrderId}. Backend sẽ xử lý cập nhật qua IPN.`);
       }
-    } else {
-      // No payment info found, redirect to home
+    } else if (!location.state) {
       navigate('/');
     }
   }, [location, navigate]);
@@ -226,8 +226,11 @@ const PaymentResultPage = () => {
               <CheckCircle2 size={80} strokeWidth={1.5} />
             </StatusIcon>
             <SectionTitle>Thanh toán thành công</SectionTitle>
-            <StatusMessage>Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!</StatusMessage>
-            
+            <StatusMessage>
+              {paymentInfo.paymentMethod === 'cash' 
+                ? 'Đơn hàng của bạn đã được ghi nhận!' 
+                : 'Cảm ơn bạn đã sử dụng dịch vụ! Trạng thái đơn hàng sẽ được cập nhật tự động.'}
+            </StatusMessage>
             {/* Hiển thị thông tin dựa trên phương thức thanh toán */}
             {paymentInfo.paymentMethod === 'cash' ? (
               <>
