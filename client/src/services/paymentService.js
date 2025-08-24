@@ -6,19 +6,13 @@
 import { createError, ERROR_TYPES, SERVICES, showUserError, logError } from './errorHandler';
 import { createOrder, updatePaymentInfo, PAYMENT_METHODS } from './firebaseOrderService';
 
-// VNPay configuration (mock for demo)
-const VNPAY_CONFIG = {
-  tmnCode: '6VGCX6IG',
-  returnUrl: window.location.origin + '/payment-result',
-  vnpUrl: 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html'
-};
+import config from '../config/default.json';
 
 /**
  * Tạo URL thanh toán VNPay
  */
 export const createVNPayPaymentUrl = async (orderData, userId) => {
   try {
-    // Tạo đơn hàng trong Firebase trước
     const orderResult = await createOrder(orderData, userId);
     
     if (!orderResult.success) {
@@ -28,41 +22,42 @@ export const createVNPayPaymentUrl = async (orderData, userId) => {
     const { orderId } = orderResult;
     const amount = orderData.payment.amount;
 
-    // Simulate VNPay URL creation (thay thế localhost call)
-    const vnpayOrderId = 'VNP' + Date.now();
-    const mockPaymentUrl = `${VNPAY_CONFIG.vnpUrl}?` + new URLSearchParams({
-      vnp_Version: '2.1.0',
-      vnp_Command: 'pay',
-      vnp_TmnCode: VNPAY_CONFIG.tmnCode,
-      vnp_Amount: amount * 100,
-      vnp_CurrCode: 'VND',
-      vnp_TxnRef: vnpayOrderId,
-      vnp_OrderInfo: `Thanh toan don hang ${orderId}`,
-      vnp_OrderType: 'other',
-      vnp_Locale: 'vn',
-      vnp_ReturnUrl: VNPAY_CONFIG.returnUrl,
-      vnp_CreateDate: new Date().toISOString().replace(/[-:]/g, '').split('.')[0]
-    }).toString();
+const response = await fetch('http://localhost:5000/api/payment/create_payment_url', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            orderDbId: orderId, // Gửi ID đơn hàng thật
+            amount: amount,
+            language: 'vn',
+        }),
+    });
 
-    // Lưu thông tin để tracking
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Lỗi khi tạo URL thanh toán từ server');
+    }
+
+    const result = await response.json();
+    const { paymentUrl } = result;
+
+    if (!paymentUrl) {
+        throw new Error("Không nhận được URL thanh toán từ server.");
+    }
+
+    // Lưu orderId để xác thực khi VNPAY trả về
     localStorage.setItem('orderDbId', orderId);
-    localStorage.setItem('vnpayOrderId', vnpayOrderId);
 
     return {
       success: true,
-      paymentUrl: mockPaymentUrl,
-      vnpayOrderId,
+      paymentUrl: paymentUrl, // URL này đã có đầy đủ chữ ký từ backend
       orderDbId: orderId,
       message: 'Tạo URL thanh toán thành công'
     };
 
   } catch (error) {
     logError(error, 'createVNPayPaymentUrl');
-    
-    if (error.success === false) {
-      throw error;
-    }
-    
     throw createError(
       ERROR_TYPES.PAYMENT_ERROR,
       SERVICES.PAYMENT,
@@ -80,7 +75,6 @@ export const processVNPayReturn = async (params) => {
       vnp_ResponseCode,
       vnp_TransactionNo,
       vnp_Amount,
-      vnp_BankCode,
       vnp_PayDate,
       vnp_TxnRef
     } = params;
@@ -111,7 +105,6 @@ export const processVNPayReturn = async (params) => {
     const paymentData = {
       vnpayTransactionId: vnp_TransactionNo,
       vnpayResponseCode: vnp_ResponseCode,
-      vnpayBankCode: vnp_BankCode,
       vnpayPayDate: vnp_PayDate,
       amount: parseInt(vnp_Amount) / 100
     };
@@ -143,6 +136,33 @@ export const processVNPayReturn = async (params) => {
       'Lỗi xử lý kết quả thanh toán: ' + error.message
     );
   }
+};
+
+/**
+ * Chuyển đổi mã lỗi VNPay thành thông báo
+ */
+const getVNPayErrorMessage = (responseCode) => {
+  const errorMessages = {
+    '01': 'Giao dịch chưa hoàn tất',
+    '02': 'Giao dịch bị lỗi',
+    '04': 'Giao dịch đảo (Khách hàng đã bị trừ tiền tại Ngân hàng nhưng GD chưa thành công ở VNPAY)',
+    '05': 'VNPAY đang xử lý giao dịch này (GD hoàn tiền)',
+    '06': 'VNPAY đã gửi yêu cầu hoàn tiền sang Ngân hàng (GD hoàn tiền)',
+    '07': 'Giao dịch bị nghi ngờ gian lận',
+    '09': 'GD Hoàn trả bị từ chối',
+    '10': 'Đã giao hàng',
+    '11': 'Giao dịch không thành công do: Khách hàng nhập sai mật khẩu xác thực giao dịch (OTP)',
+    '12': 'Giao dịch không thành công do: Thẻ/Tài khoản của khách hàng bị khóa',
+    '13': 'Giao dịch không thành công do Quý khách nhập sai mật khẩu xác thực giao dịch (OTP)',
+    '24': 'Giao dịch không thành công do: Khách hàng hủy giao dịch',
+    '51': 'Giao dịch không thành công do: Tài khoản của quý khách không đủ số dư để thực hiện giao dịch',
+    '65': 'Giao dịch không thành công do: Tài khoản của Quý khách đã vượt quá hạn mức giao dịch trong ngày',
+    '75': 'Ngân hàng thanh toán đang bảo trì',
+    '79': 'Giao dịch không thành công do: KH nhập sai mật khẩu thanh toán quá số lần quy định',
+    '99': 'Các lỗi khác (lỗi còn lại, không có trong danh sách mã lỗi đã liệt kê)'
+  };
+
+  return errorMessages[responseCode] || 'Giao dịch không thành công';
 };
 
 /**
@@ -188,33 +208,6 @@ export const processCashPayment = async (orderData, userId) => {
       'Không thể xử lý đặt dịch vụ: ' + error.message
     );
   }
-};
-
-/**
- * Chuyển đổi mã lỗi VNPay thành thông báo
- */
-const getVNPayErrorMessage = (responseCode) => {
-  const errorMessages = {
-    '01': 'Giao dịch chưa hoàn tất',
-    '02': 'Giao dịch bị lỗi',
-    '04': 'Giao dịch đảo (Khách hàng đã bị trừ tiền tại Ngân hàng nhưng GD chưa thành công ở VNPAY)',
-    '05': 'VNPAY đang xử lý giao dịch này (GD hoàn tiền)',
-    '06': 'VNPAY đã gửi yêu cầu hoàn tiền sang Ngân hàng (GD hoàn tiền)',
-    '07': 'Giao dịch bị nghi ngờ gian lận',
-    '09': 'GD Hoàn trả bị từ chối',
-    '10': 'Đã giao hàng',
-    '11': 'Giao dịch không thành công do: Khách hàng nhập sai mật khẩu xác thực giao dịch (OTP)',
-    '12': 'Giao dịch không thành công do: Thẻ/Tài khoản của khách hàng bị khóa',
-    '13': 'Giao dịch không thành công do Quý khách nhập sai mật khẩu xác thực giao dịch (OTP)',
-    '24': 'Giao dịch không thành công do: Khách hàng hủy giao dịch',
-    '51': 'Giao dịch không thành công do: Tài khoản của quý khách không đủ số dư để thực hiện giao dịch',
-    '65': 'Giao dịch không thành công do: Tài khoản của Quý khách đã vượt quá hạn mức giao dịch trong ngày',
-    '75': 'Ngân hàng thanh toán đang bảo trì',
-    '79': 'Giao dịch không thành công do: KH nhập sai mật khẩu thanh toán quá số lần quy định',
-    '99': 'Các lỗi khác (lỗi còn lại, không có trong danh sách mã lỗi đã liệt kê)'
-  };
-
-  return errorMessages[responseCode] || 'Giao dịch không thành công';
 };
 
 /**
@@ -285,8 +278,7 @@ export const getAvailablePaymentMethods = () => {
       name: 'VNPay',
       description: 'Thanh toán online qua VNPay (ATM, Visa, MasterCard)',
       icon: '💳',
-      available: false, // Disabled due to localhost dependency
-      note: 'Tạm thời không khả dụng'
+      available: true
     }
   ];
 };

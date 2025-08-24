@@ -3,6 +3,8 @@ require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const express = require('express');
 const bodyParser = require('body-parser');
 
+require('./config/firebaseAdmin');
+
 const vnpayRouter = require('./routes/payment');
 const cors = require('cors');
 
