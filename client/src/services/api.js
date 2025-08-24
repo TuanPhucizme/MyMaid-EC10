@@ -62,4 +62,54 @@ export const linkAPI = {
   deleteLinkResult: (linkId) => api.delete(`/links/${linkId}`),
 };
 
+// Admin API endpoints
+export const adminAPI = {
+  // Users management
+  getAllUsers: (params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page);
+    if (params.limit) queryParams.append('limit', params.limit);
+    if (params.role) queryParams.append('role', params.role);
+    if (params.status) queryParams.append('status', params.status);
+
+    const queryString = queryParams.toString();
+    return api.get(`/api/users${queryString ? `?${queryString}` : ''}`);
+  },
+
+  // Orders management
+  getAllOrders: (params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page);
+    if (params.limit) queryParams.append('limit', params.limit);
+    if (params.status) queryParams.append('status', params.status);
+    if (params.partnerId) queryParams.append('partnerId', params.partnerId);
+    if (params.userId) queryParams.append('userId', params.userId);
+    if (params.startDate) queryParams.append('startDate', params.startDate);
+    if (params.endDate) queryParams.append('endDate', params.endDate);
+
+    const queryString = queryParams.toString();
+    return api.get(`/api/bookings${queryString ? `?${queryString}` : ''}`);
+  },
+
+  // Partners management
+  getAllPartners: (params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page);
+    if (params.limit) queryParams.append('limit', params.limit);
+
+    const queryString = queryParams.toString();
+    return api.get(`/api/partners${queryString ? `?${queryString}` : ''}`);
+  },
+
+  // Update partner status
+  updatePartnerStatus: (partnerId, status) =>
+    api.put(`/partners/${partnerId}/status`, { status }),
+
+  // Services management
+  getAllServices: () => api.get('/services'),
+
+  // Statistics
+  getAdminStats: () => api.get('/admin/stats'),
+};
+
 export default api;

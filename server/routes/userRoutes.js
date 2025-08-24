@@ -157,4 +157,69 @@ router.put('/profile', authMiddleware, async (req, res, next) => {
   }
 });
 
+/**
+ * @route   GET /api/users
+ * @desc    Lấy danh sách tất cả người dùng trong hệ thống (Admin only)
+ * @access  Private (Admin only)
+ */
+router.get('/', [authMiddleware, require('../middleware/adminMiddleware')], async (req, res, next) => {
+  try {
+    const { limit = 50, page = 1, role, status } = req.query;
+
+    let query = db.collection('mm_users');
+
+    // Filter by role if provided
+    if (role) {
+      query = query.where('role', '==', role);
+    }
+
+    // Filter by status if provided
+    if (status) {
+      query = query.where('status', '==', status);
+    }
+
+    // Order by creation date
+    query = query.orderBy('createdAt', 'desc');
+
+    // Apply pagination
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    query = query.limit(parseInt(limit)).offset(offset);
+
+    const snapshot = await query.get();
+
+    if (snapshot.empty) {
+      return res.status(200).json([]);
+    }
+
+    const users = snapshot.docs.map(doc => {
+      const userData = doc.data();
+      // Remove sensitive information
+      delete userData.password;
+      return {
+        id: doc.id,
+        ...userData
+      };
+    });
+
+    // Get total count for pagination
+    const totalQuery = db.collection('mm_users');
+    const totalSnapshot = await totalQuery.get();
+    const total = totalSnapshot.size;
+
+    res.status(200).json({
+      users,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages: Math.ceil(total / parseInt(limit))
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching users for admin:', error);
+    next(error);
+  }
+});
+
 module.exports = router;

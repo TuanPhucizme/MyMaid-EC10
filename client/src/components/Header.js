@@ -46,8 +46,8 @@ const DesktopNav = ({ navItems, location }) => (
 );
 
 // Component Menu người dùng Dropdown
-// Thêm prop isPartner
-const UserDropdown = ({ fullName, userInitial, setIsUserMenuOpen, isUserMenuOpen, handleLogout, isPartner }) => {
+// Thêm prop isPartner và isAdmin
+const UserDropdown = ({ fullName, userInitial, setIsUserMenuOpen, isUserMenuOpen, handleLogout, isPartner, isAdmin }) => {
   // Xác định đường dẫn dựa trên vai trò
   const profilePath = isPartner ? '/profile' : '/profile';
   const ordersPath = isPartner ? '/dashboard-partner' : '/my-orders';
@@ -80,6 +80,12 @@ const UserDropdown = ({ fullName, userInitial, setIsUserMenuOpen, isUserMenuOpen
           <Link to="/services" className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
             Đặt dịch vụ
           </Link>
+          {/* Admin button - chỉ hiển thị cho admin */}
+          {isAdmin && (
+            <Link to="/admin" className="block px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 transition-colors font-medium">
+              🛠️ Quản trị viên
+            </Link>
+          )}
           {/* Đã loại bỏ một link 'Dịch vụ của tôi' trùng lặp */}
           <hr className="my-2" />
           <button
@@ -132,8 +138,8 @@ const MobileMenuButton = ({ isMobileMenuOpen, toggleMobileMenu }) => (
 );
 
 // Component Thanh điều hướng trên Mobile
-// Thêm prop isPartner
-const MobileNav = ({ navItems, location, user, userProfile, handleLogout, closeMobileMenu, isPartner }) => {
+// Thêm prop isPartner và isAdmin
+const MobileNav = ({ navItems, location, user, userProfile, handleLogout, closeMobileMenu, isPartner, isAdmin }) => {
   const mobileUserInitial = user?.displayName ? user.displayName.charAt(0).toUpperCase() : 'U';
 
   // Xác định đường dẫn dựa trên vai trò
@@ -175,6 +181,14 @@ const MobileNav = ({ navItems, location, user, userProfile, handleLogout, closeM
               {isPartner ? 'Hồ sơ đối tác' : 'Hồ sơ'}
             </Button>
           </Link>
+          {/* Admin button cho mobile - chỉ hiển thị cho admin */}
+          {isAdmin && (
+            <Link to="/admin" onClick={closeMobileMenu}>
+              <Button variant="outline" className="w-full justify-center text-blue-600 border-blue-200 hover:bg-blue-50">
+                🛠️ Quản trị viên
+              </Button>
+            </Link>
+          )}
           {/* Đã loại bỏ một link 'Dịch vụ của tôi' trùng lặp */}
           <div onClick={() => { handleLogout(); closeMobileMenu(); }}>
             <Button variant="danger" className="w-full justify-center">
@@ -210,9 +224,10 @@ const Header = () => {
   const navigate = useNavigate();
   const { user, userProfile, logout } = useAuth();
 
-  // Xác định xem người dùng có phải là đối tác hay không
-  // Giả định userProfile có thuộc tính 'role' và giá trị 'partner'
+  // Xác định xem người dùng có phải là đối tác hay admin hay không
+  // Giả định userProfile có thuộc tính 'role' và giá trị 'partner' hoặc 'admin'
   const isPartner = userProfile?.role === 'partner';
+  const isAdmin = userProfile?.role === 'admin';
 
   // Xử lý logic tên và chữ cái đầu rõ ràng hơn
   const fullName = userProfile
@@ -290,6 +305,7 @@ const Header = () => {
                 isUserMenuOpen={isUserMenuOpen}
                 handleLogout={handleLogout}
                 isPartner={isPartner} // Truyền prop isPartner
+                isAdmin={isAdmin} // Truyền prop isAdmin
               />
             ) : (
               <AuthButtons />
@@ -315,6 +331,7 @@ const Header = () => {
               handleLogout={handleLogout}
               closeMobileMenu={closeMobileMenu}
               isPartner={isPartner} // Truyền prop isPartner
+              isAdmin={isAdmin} // Truyền prop isAdmin
             />
           )}
         </div>
