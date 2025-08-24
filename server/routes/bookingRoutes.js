@@ -88,6 +88,9 @@ router.get('/', [authMiddleware, adminMiddleware], async (req, res, next) => {
       return {
         id: doc.id,
         ...bookingData,
+        // Convert Firestore timestamps to JavaScript Date objects
+        createdAt: bookingData.createdAt?.toDate ? bookingData.createdAt.toDate() : bookingData.createdAt,
+        updatedAt: bookingData.updatedAt?.toDate ? bookingData.updatedAt.toDate() : bookingData.updatedAt,
         customerInfo: {
           name: customerName,
           email: customerEmail,

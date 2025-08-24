@@ -4,6 +4,7 @@ import { DollarSign, ListChecks, Bell, CheckCircle, Star } from 'lucide-react';
 import styled from 'styled-components';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
+import { formatDate } from '../utils/dateUtils';
 import toast from 'react-hot-toast';
 import "../index.css";
 
@@ -296,7 +297,7 @@ const fetchPartnerData = useCallback(async (firebaseUser) => {
               <JobInfo>
                 <ServiceName>{job.service?.name || 'Dịch vụ không xác định'}</ServiceName>
                 <JobMeta>
-                  Ngày: {job.schedule?.date ? new Date(job.schedule.date).toLocaleDateString('vi-VN') : 'N/A'} | 
+                  Ngày: {formatDate(job.schedule?.date)} | 
                   Giờ: {job.schedule?.time || 'N/A'} | 
                   Địa chỉ: {job.contact?.address || 'N/A'}
                 </JobMeta>
@@ -317,7 +318,7 @@ const fetchPartnerData = useCallback(async (firebaseUser) => {
               <JobInfo>
                 <ServiceName>{job.service?.name || 'Dịch vụ không xác định'}</ServiceName>
                 <JobMeta>
-                  Ngày: {job.schedule?.date ? new Date(job.schedule.date).toLocaleDateString('vi-VN') : 'N/A'} | 
+                  Ngày: {formatDate(job.schedule?.date)} | 
                   Giờ: {job.schedule?.time || 'N/A'} | 
                   Khách hàng: {job.contact?.name || 'N/A'}
                 </JobMeta>

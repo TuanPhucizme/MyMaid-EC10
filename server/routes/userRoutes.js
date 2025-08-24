@@ -197,7 +197,10 @@ router.get('/', [authMiddleware, require('../middleware/adminMiddleware')], asyn
       delete userData.password;
       return {
         id: doc.id,
-        ...userData
+        ...userData,
+        // Convert Firestore timestamps to JavaScript Date objects
+        createdAt: userData.createdAt?.toDate ? userData.createdAt.toDate() : userData.createdAt,
+        updatedAt: userData.updatedAt?.toDate ? userData.updatedAt.toDate() : userData.updatedAt
       };
     });
 

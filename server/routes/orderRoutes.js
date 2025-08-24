@@ -30,6 +30,9 @@ const enrichOrderData = async (doc) => {
   return {
     id: doc.id,
     ...orderData,
+    // Convert Firestore timestamps to JavaScript Date objects
+    createdAt: orderData.createdAt?.toDate ? orderData.createdAt.toDate() : orderData.createdAt,
+    updatedAt: orderData.updatedAt?.toDate ? orderData.updatedAt.toDate() : orderData.updatedAt,
     customerName,
     partnerName,
     partnerPhone,

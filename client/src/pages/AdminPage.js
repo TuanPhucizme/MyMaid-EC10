@@ -7,6 +7,9 @@ import { DollarSign, ListChecks, UserCheck, User, Users, Home, Settings } from '
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 
+// Import utilities
+import { formatDate, parseDate } from '../utils/dateUtils';
+
 // Import API services
 import { adminAPI } from '../services/api';
 
@@ -222,17 +225,49 @@ const AdminPage = () => {
       setUsers(usersResponse.data.users || []);
       setOrders(ordersResponse.data.orders || []);
 
+      // Debug: Log the actual data (only in development)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 Debug - API Responses:');
+        console.log('Partners:', partnersResponse.data);
+        console.log('Users:', usersResponse.data);
+        console.log('Orders:', ordersResponse.data);
+
+        // Debug: Check date formats in orders
+        if (ordersResponse.data.orders && ordersResponse.data.orders.length > 0) {
+          console.log('🔍 Debug - First order createdAt:', ordersResponse.data.orders[0].createdAt);
+          console.log('🔍 Debug - First order createdAt type:', typeof ordersResponse.data.orders[0].createdAt);
+        }
+      }
+
       // Calculate stats from the data
       const totalUsers = usersResponse.data.pagination?.total || usersResponse.data.users?.length || 0;
       const totalOrders = ordersResponse.data.pagination?.total || ordersResponse.data.orders?.length || 0;
-      const pendingPartners = partnersResponse.data?.filter(p => p.operational?.status === 'pending')?.length || 0;
+      const pendingPartners = partnersResponse.data?.filter(p => p.status === 'pending')?.length || 0;
 
       // Calculate revenue from completed orders
       const completedOrders = ordersResponse.data.orders?.filter(order => order.status === 'completed') || [];
+      console.log('🔍 Debug - Completed orders:', completedOrders);
+
       const revenueThisMonth = completedOrders.reduce((sum, order) => {
-        const orderDate = new Date(order.createdAt?.seconds ? order.createdAt.seconds * 1000 : order.createdAt);
+        // Handle different createdAt formats
+        const orderDate = parseDate(order.createdAt);
+        if (!orderDate) {
+          console.warn('Invalid date for order:', order.id, order.createdAt);
+          return sum;
+        }
+
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
+
+        console.log(`🔍 Debug - Order ${order.id}:`, {
+          orderDate: orderDate.toISOString(),
+          currentMonth,
+          currentYear,
+          orderMonth: orderDate.getMonth(),
+          orderYear: orderDate.getFullYear(),
+          amount: order.payment?.amount,
+          isThisMonth: orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear
+        });
 
         if (orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear) {
           return sum + (order.payment?.amount || 0);
@@ -241,11 +276,21 @@ const AdminPage = () => {
       }, 0);
 
       const bookingsThisMonth = ordersResponse.data.orders?.filter(order => {
-        const orderDate = new Date(order.createdAt?.seconds ? order.createdAt.seconds * 1000 : order.createdAt);
+        const orderDate = parseDate(order.createdAt);
+        if (!orderDate) return false;
+
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
         return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
       })?.length || 0;
+
+      console.log('🔍 Debug - Final stats:', {
+        revenueThisMonth,
+        bookingsThisMonth,
+        pendingPartners,
+        totalUsers,
+        totalOrders
+      });
 
       setStats({
         revenueThisMonth,
@@ -393,10 +438,7 @@ const AdminPage = () => {
                       </StatusBadge>
                     </td>
                     <td>
-                      {user.createdAt ?
-                        new Date(user.createdAt.seconds ? user.createdAt.seconds * 1000 : user.createdAt).toLocaleDateString('vi-VN')
-                        : 'N/A'
-                      }
+                      {formatDate(user.createdAt)}
                     </td>
                   </tr>
                 ))}
@@ -431,10 +473,7 @@ const AdminPage = () => {
                       <td>{order.customerInfo?.name || order.contact?.name || 'N/A'}</td>
                       <td>{order.partnerInfo?.name || 'Chưa gán'}</td>
                       <td>
-                        {order.createdAt ?
-                          new Date(order.createdAt.seconds ? order.createdAt.seconds * 1000 : order.createdAt).toLocaleDateString('vi-VN')
-                          : 'N/A'
-                        }
+                        {formatDate(order.createdAt)}
                       </td>
                       <td>{order.payment?.amount ? order.payment.amount.toLocaleString() + 'đ' : 'N/A'}</td>
                       <td>
@@ -483,10 +522,7 @@ const AdminPage = () => {
                       </td>
                       <td>{partner.operational?.jobsCompleted || 0}</td>
                       <td>
-                        {partner.registeredAt ?
-                          new Date(partner.registeredAt.seconds ? partner.registeredAt.seconds * 1000 : partner.registeredAt).toLocaleDateString('vi-VN')
-                          : 'N/A'
-                        }
+                        {formatDate(partner.registeredAt)}
                       </td>
                     </tr>
                   );

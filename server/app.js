@@ -134,6 +134,8 @@ app.get('/test', (req, res) => {
 });
 console.log('Test route /test added');
 
+// Test route for checking order data format (removed - was temporary for debugging)
+
 // Test route để generate token cho test avatar upload
 app.get('/generate-test-token', async (req, res) => {
   try {
