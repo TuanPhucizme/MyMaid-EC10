@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { CheckCircle2, XCircle, FileText, DollarSign, Banknote, Calendar } from 'lucide-react';
+import { showUserError, showUserSuccess } from '../services/errorHandler';
+import ToastNotification from '../components/ToastNotification';
 
 // --- TÁI SỬ DỤNG CÁC STYLED COMPONENTS TỪ PaymentDetailPage ---
 const PaymentContainer = styled.div`
@@ -128,60 +130,77 @@ const PaymentResultPage = () => {
   const navigate = useNavigate();
   const [paymentInfo, setPaymentInfo] = useState(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [orderId, setOrderId] = useState(null);
 
   const updateOrderAfterPayment = async (paymentInfo) => {
     try {
-      const orderDbId = localStorage.getItem('orderDbId');
-      if (!orderDbId) {
-        console.warn('Không tìm thấy order ID để cập nhật');
-        return;
-      }
+      // Import payment service
+      const { processVNPayReturn } = await import('../services/paymentService');
 
-      const response = await fetch(`http://localhost:5000/api/orders/${orderDbId}/payment-success`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          vnpayTransactionId: paymentInfo.transactionNo,
-          vnpayResponseCode: paymentInfo.responseCode,
-          vnpayAmount: paymentInfo.amount,
-          vnpayBankCode: paymentInfo.bankCode,
-          vnpayPayDate: paymentInfo.payDate
-        })
-      });
+      // Process VNPay return with Firebase
+      const result = await processVNPayReturn(paymentInfo);
 
-      if (response.ok) {
-        console.log('Cập nhật đơn hàng thành công');
+      if (result.success) {
+        console.log('✅ Cập nhật đơn hàng thành công:', result.orderId);
+        setOrderId(result.orderId);
+        showUserSuccess(result.message || 'Thanh toán thành công!', 'VNPay');
       } else {
-        console.error('Lỗi khi cập nhật đơn hàng:', await response.text());
+        console.error('❌ Lỗi khi cập nhật đơn hàng:', result.error);
+        showUserError(result, 'Có lỗi xảy ra khi cập nhật đơn hàng');
       }
     } catch (error) {
-      console.error('Lỗi khi cập nhật đơn hàng:', error);
+      console.error('❌ Lỗi khi xử lý kết quả thanh toán:', error);
+      // Show user-friendly error
+      showUserError(error, 'Có lỗi xảy ra khi xử lý kết quả thanh toán. Vui lòng liên hệ hỗ trợ.');
     }
   };
 
   useEffect(() => {
+    // Check if this is from navigation state (cash payment)
+    if (location.state) {
+      const { success, orderId, paymentMethod, message } = location.state;
+      setIsSuccess(success);
+      setOrderId(orderId);
+      setPaymentInfo({
+        paymentMethod,
+        message,
+        orderId
+      });
+
+      if (success) {
+        localStorage.removeItem('bookingDetails');
+      }
+      return;
+    }
+
+    // Handle VNPay return
     const params = new URLSearchParams(location.search);
     const responseCode = params.get('vnp_ResponseCode');
 
-    const info = {
-      amount: params.get('vnp_Amount') / 100,
-      bankCode: params.get('vnp_BankCode'),
-      transactionNo: params.get('vnp_TransactionNo'),
-      payDate: params.get('vnp_PayDate'),
-      orderInfo: params.get('vnp_OrderInfo'),
-      responseCode,
-    };
+    if (responseCode) {
+      const info = {
+        amount: params.get('vnp_Amount') ? params.get('vnp_Amount') / 100 : 0,
+        bankCode: params.get('vnp_BankCode'),
+        transactionNo: params.get('vnp_TransactionNo'),
+        payDate: params.get('vnp_PayDate'),
+        orderInfo: params.get('vnp_OrderInfo'),
+        responseCode,
+        vnp_TxnRef: params.get('vnp_TxnRef')
+      };
 
-    setPaymentInfo(info);
-    setIsSuccess(responseCode === '00');
+      setPaymentInfo(info);
+      setIsSuccess(responseCode === '00');
 
-    if (responseCode === '00') {
-      // Cập nhật trạng thái đơn hàng thành công
-      updateOrderAfterPayment(info);
-      localStorage.removeItem('bookingDetails'); // Xoá khi thanh toán thành công
-      localStorage.removeItem('orderDbId');
+      if (responseCode === '00') {
+        // Cập nhật trạng thái đơn hàng thành công
+        updateOrderAfterPayment(info);
+        localStorage.removeItem('bookingDetails');
+      }
+    } else {
+      // No payment info found, redirect to home
+      navigate('/');
     }
-  }, [location]);
+  }, [location, navigate]);
 
   const handleRetry = () => {
     const storedBooking = localStorage.getItem('bookingDetails');
@@ -209,27 +228,66 @@ const PaymentResultPage = () => {
             <SectionTitle>Thanh toán thành công</SectionTitle>
             <StatusMessage>Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!</StatusMessage>
             
-            <InfoRow>
-              <IconWrapper><DollarSign size={20} /></IconWrapper>
-              <InfoText>
-                <Label>Số tiền</Label>
-                <Value>{formatCurrency(paymentInfo.amount)}</Value>
-              </InfoText>
-            </InfoRow>
-            <InfoRow>
-              <IconWrapper><Banknote size={20} /></IconWrapper>
-              <InfoText>
-                <Label>Ngân hàng</Label>
-                <Value>{paymentInfo.bankCode}</Value>
-              </InfoText>
-            </InfoRow>
-             <InfoRow>
-              <IconWrapper><FileText size={20} /></IconWrapper>
-              <InfoText>
-                <Label>Mã giao dịch VNPAY</Label>
-                <Value>{paymentInfo.transactionNo}</Value>
-              </InfoText>
-            </InfoRow>
+            {/* Hiển thị thông tin dựa trên phương thức thanh toán */}
+            {paymentInfo.paymentMethod === 'cash' ? (
+              <>
+                <InfoRow>
+                  <IconWrapper><CheckCircle2 size={20} /></IconWrapper>
+                  <InfoText>
+                    <Label>Phương thức thanh toán</Label>
+                    <Value>Thanh toán khi hoàn thành</Value>
+                  </InfoText>
+                </InfoRow>
+                <InfoRow>
+                  <IconWrapper><FileText size={20} /></IconWrapper>
+                  <InfoText>
+                    <Label>Mã đơn hàng</Label>
+                    <Value>{orderId || paymentInfo.orderId}</Value>
+                  </InfoText>
+                </InfoRow>
+                <div style={{
+                  background: '#f0f9ff',
+                  border: '1px solid #0ea5e9',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  margin: '16px 0',
+                  textAlign: 'left'
+                }}>
+                  <p style={{ color: '#0369a1', fontSize: '14px', margin: 0 }}>
+                    <strong>Lưu ý:</strong> Bạn sẽ thanh toán bằng tiền mặt sau khi maid hoàn thành dịch vụ.
+                    Chúng tôi sẽ liên hệ với bạn để xác nhận lịch hẹn.
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <InfoRow>
+                  <IconWrapper><DollarSign size={20} /></IconWrapper>
+                  <InfoText>
+                    <Label>Số tiền</Label>
+                    <Value>{formatCurrency(paymentInfo.amount)}</Value>
+                  </InfoText>
+                </InfoRow>
+                {paymentInfo.bankCode && (
+                  <InfoRow>
+                    <IconWrapper><Banknote size={20} /></IconWrapper>
+                    <InfoText>
+                      <Label>Ngân hàng</Label>
+                      <Value>{paymentInfo.bankCode}</Value>
+                    </InfoText>
+                  </InfoRow>
+                )}
+                {paymentInfo.transactionNo && (
+                  <InfoRow>
+                    <IconWrapper><FileText size={20} /></IconWrapper>
+                    <InfoText>
+                      <Label>Mã giao dịch VNPAY</Label>
+                      <Value>{paymentInfo.transactionNo}</Value>
+                    </InfoText>
+                  </InfoRow>
+                )}
+              </>
+            )}
             <InfoRow>
               <IconWrapper><Calendar size={20} /></IconWrapper>
               <InfoText>
@@ -266,6 +324,9 @@ const PaymentResultPage = () => {
           </>
         )}
       </PaymentCard>
+
+      {/* Toast Notifications */}
+      <ToastNotification />
     </PaymentContainer>
   );
 };

@@ -351,6 +351,40 @@ const MapModalBody = styled.div`
   min-height: 400px;
 `;
 
+// Helper functions
+const getLocationIcon = (type) => {
+  switch (type) {
+    case 'address': return '🏠';
+    case 'poi': return '🏢';
+    case 'place': return '📍';
+    case 'neighborhood': return '🏘️';
+    case 'district': return '🏛️';
+    case 'region': return '🗺️';
+    default: return '📍';
+  }
+};
+
+const highlightSearchTerm = (text, searchTerm) => {
+  if (!text || !searchTerm) return text;
+
+  const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  const parts = text.split(regex);
+
+  return parts.map((part, index) =>
+    regex.test(part) ?
+      <span key={index} style={{ fontWeight: 'bold', color: '#3b82f6' }}>{part}</span> :
+      part
+  );
+};
+
+const formatDistance = (distance) => {
+  if (distance < 1000) {
+    return `${Math.round(distance)}m`;
+  } else {
+    return `${(distance / 1000).toFixed(1)}km`;
+  }
+};
+
 const AddressSelector = ({
   value = '',
   onChange,
@@ -366,7 +400,48 @@ const AddressSelector = ({
   const [selectedCoordinates, setSelectedCoordinates] = useState(null);
   const [showResults, setShowResults] = useState(false);
   const [recentSearches, setRecentSearches] = useState([]);
+  const [popularPlaces, setPopularPlaces] = useState([]);
   const containerRef = useRef(null);
+
+  // Địa điểm phổ biến mặc định
+  const defaultPopularPlaces = [
+    {
+      id: 'hcm-center',
+      name: 'Quận 1, TP. Hồ Chí Minh',
+      fullName: 'Quận 1, Thành phố Hồ Chí Minh',
+      type: 'district',
+      icon: '🏛️',
+      coordinates: [106.7017, 10.7769],
+      components: { district: 'Quận 1', city: 'TP. Hồ Chí Minh' }
+    },
+    {
+      id: 'hanoi-center',
+      name: 'Quận Hoàn Kiếm, Hà Nội',
+      fullName: 'Quận Hoàn Kiếm, Thành phố Hà Nội',
+      type: 'district',
+      icon: '🏛️',
+      coordinates: [105.8542, 21.0285],
+      components: { district: 'Quận Hoàn Kiếm', city: 'Hà Nội' }
+    },
+    {
+      id: 'tan-binh',
+      name: 'Sân bay Tân Sơn Nhất',
+      fullName: 'Sân bay Quốc tế Tân Sơn Nhất, TP. Hồ Chí Minh',
+      type: 'poi',
+      icon: '✈️',
+      coordinates: [106.6519, 10.8188],
+      components: { district: 'Tân Bình', city: 'TP. Hồ Chí Minh' }
+    },
+    {
+      id: 'noi-bai',
+      name: 'Sân bay Nội Bài',
+      fullName: 'Sân bay Quốc tế Nội Bài, Hà Nội',
+      type: 'poi',
+      icon: '✈️',
+      coordinates: [105.8019, 21.2187],
+      components: { district: 'Sóc Sơn', city: 'Hà Nội' }
+    }
+  ];
 
   // Tìm kiếm địa chỉ với autocomplete
   const handleSearch = useCallback(async () => {
@@ -399,22 +474,30 @@ const AddressSelector = ({
       const saved = localStorage.getItem('mymaid_recent_addresses');
       if (saved) {
         try {
-          setRecentSearches(JSON.parse(saved));
+          const recentData = JSON.parse(saved);
+          setRecentSearches(recentData);
         } catch (error) {
           console.error('Error loading recent searches:', error);
         }
       }
 
-      // Load popular suggestions if no recent searches
-      if (!saved) {
-        try {
-          const suggestions = await getAddressSuggestions();
-          if (suggestions.success && suggestions.suggestions) {
-            setRecentSearches(suggestions.suggestions.slice(0, 3));
-          }
-        } catch (error) {
-          console.error('Error loading address suggestions:', error);
+      // Load popular places
+      try {
+        const suggestions = await getAddressSuggestions();
+        if (suggestions.success && suggestions.suggestions) {
+          // Kết hợp địa điểm phổ biến từ API và mặc định
+          const combinedPopular = [
+            ...suggestions.suggestions.slice(0, 3),
+            ...defaultPopularPlaces
+          ];
+          setPopularPlaces(combinedPopular.slice(0, 6));
+        } else {
+          // Sử dụng địa điểm mặc định nếu API không hoạt động
+          setPopularPlaces(defaultPopularPlaces);
         }
+      } catch (error) {
+        console.error('Error loading address suggestions:', error);
+        setPopularPlaces(defaultPopularPlaces);
       }
     };
 
@@ -440,7 +523,7 @@ const AddressSelector = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Autocomplete khi gõ với debounce
+  // Autocomplete thông minh khi gõ với debounce tối ưu
   const handleInputChange = useCallback((e) => {
     const newValue = e.target.value;
     setSearchQuery(newValue);
@@ -458,34 +541,70 @@ const AddressSelector = ({
     // Xóa kết quả tìm kiếm cũ nếu input trống
     if (!newValue.trim()) {
       setSearchResults([]);
+      setIsSearching(false);
       return;
     }
 
-    // Chỉ tìm kiếm khi có ít nhất 2 ký tự và sau 300ms
-    if (newValue.trim().length >= 2) {
+    // Tìm kiếm ngay lập tức cho ký tự đầu tiên, sau đó debounce
+    const searchDelay = newValue.trim().length === 1 ? 100 : 200;
+
+    if (newValue.trim().length >= 1) {
       setIsSearching(true);
       debounceTimeout.current = setTimeout(async () => {
         try {
-          // Sử dụng tìm kiếm kết hợp cho kết quả tốt hơn
-          const result = await searchCombinedPlaces(newValue, null, 8);
-          if (result.success) {
-            setSearchResults(result.addresses || result.places || []);
+          // Tìm kiếm thông minh với nhiều nguồn dữ liệu
+          const [combinedResult, vietnamResult] = await Promise.allSettled([
+            searchCombinedPlaces(newValue, null, 6),
+            searchVietnamesePlaces(newValue, null, 4)
+          ]);
+
+          let allResults = [];
+
+          // Kết hợp kết quả từ nhiều nguồn
+          if (combinedResult.status === 'fulfilled' && combinedResult.value.success) {
+            allResults = [...(combinedResult.value.addresses || combinedResult.value.places || [])];
           }
+
+          if (vietnamResult.status === 'fulfilled' && vietnamResult.value.success) {
+            const vietnamPlaces = vietnamResult.value.places || [];
+            // Loại bỏ trùng lặp dựa trên tên và tọa độ
+            vietnamPlaces.forEach(place => {
+              const isDuplicate = allResults.some(existing =>
+                existing.name === place.name ||
+                (existing.coordinates && place.coordinates &&
+                 Math.abs(existing.coordinates[0] - place.coordinates[0]) < 0.001 &&
+                 Math.abs(existing.coordinates[1] - place.coordinates[1]) < 0.001)
+              );
+              if (!isDuplicate) {
+                allResults.push(place);
+              }
+            });
+          }
+
+          // Sắp xếp kết quả theo độ liên quan
+          allResults.sort((a, b) => {
+            const aRelevance = a.relevance || 0;
+            const bRelevance = b.relevance || 0;
+            return bRelevance - aRelevance;
+          });
+
+          setSearchResults(allResults.slice(0, 8));
         } catch (error) {
           console.error('Lỗi autocomplete:', error);
-          // Fallback về tìm kiếm Mapbox thông thường
+          // Fallback đơn giản
           try {
-            const fallbackResult = await searchVietnamesePlaces(newValue, null, 8);
+            const fallbackResult = await searchVietnamesePlaces(newValue, null, 6);
             if (fallbackResult.success) {
               setSearchResults(fallbackResult.places || []);
             }
           } catch (fallbackError) {
             console.error('Lỗi fallback search:', fallbackError);
+            setSearchResults([]);
           }
         } finally {
           setIsSearching(false);
         }
-      }, 300);
+      }, searchDelay);
     }
   }, [onChange]);
 
@@ -500,25 +619,47 @@ const AddressSelector = ({
 
   // Xử lý khi chọn kết quả tìm kiếm
   const handleSelectResult = useCallback((result) => {
-    setSearchQuery(result.fullName);
+    const selectedAddress = result.fullName || result.place_name || result.name;
+    const selectedCoords = result.coordinates || result.center;
+
+    setSearchQuery(selectedAddress);
     setSearchResults([]);
-    setSelectedCoordinates(result.coordinates);
+    setSelectedCoordinates(selectedCoords);
     setShowResults(false);
 
-    // Save to recent searches
-    saveToRecentSearches(result);
+    // Tạo object địa chỉ chi tiết
+    const addressData = {
+      address: selectedAddress,
+      coordinates: selectedCoords,
+      components: result.components || {
+        district: result.context?.find(c => c.id.includes('district'))?.text,
+        city: result.context?.find(c => c.id.includes('region'))?.text,
+        country: 'Vietnam'
+      },
+      formattedAddress: result.formattedAddress || selectedAddress,
+      type: result.type || 'address',
+      source: result.source || 'mapbox',
+      relevance: result.relevance,
+      place_type: result.place_type
+    };
+
+    // Save to recent searches với thông tin đầy đủ
+    const recentItem = {
+      ...result,
+      id: result.id || `addr_${Date.now()}`,
+      name: result.name || selectedAddress,
+      fullName: selectedAddress,
+      coordinates: selectedCoords,
+      timestamp: Date.now()
+    };
+    saveToRecentSearches(recentItem);
 
     if (onChange) {
-      onChange(result.fullName);
+      onChange(selectedAddress);
     }
 
     if (onAddressSelect) {
-      onAddressSelect({
-        address: result.fullName,
-        coordinates: result.coordinates,
-        components: result.components,
-        formattedAddress: result.formattedAddress
-      });
+      onAddressSelect(addressData);
     }
   }, [onChange, onAddressSelect, saveToRecentSearches]);
 
@@ -635,7 +776,7 @@ const AddressSelector = ({
                 >
                   <ResultHeader>
                     <ResultIcon type={result.type}>
-                      {result.icon || '📍'}
+                      {result.icon || getLocationIcon(result.type)}
                     </ResultIcon>
                     <ResultContent>
                       <ResultName>{result.name}</ResultName>
@@ -644,6 +785,40 @@ const AddressSelector = ({
                         <ResultBadge>
                           <Clock size={10} />
                           Gần đây
+                        </ResultBadge>
+                      </ResultMeta>
+                    </ResultContent>
+                  </ResultHeader>
+                </SearchResultItem>
+              ))}
+            </>
+          )}
+
+          {/* Popular places when no query and no recent searches */}
+          {!searchQuery.trim() && recentSearches.length === 0 && popularPlaces.length > 0 && (
+            <>
+              <div style={{ padding: '12px 16px', borderBottom: '1px solid #f1f5f9', background: '#f8fafc' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '600', color: '#64748b' }}>
+                  <Sparkles size={14} />
+                  Địa điểm phổ biến
+                </div>
+              </div>
+              {popularPlaces.map((place) => (
+                <SearchResultItem
+                  key={`popular-${place.id}`}
+                  onClick={() => handleSelectResult(place)}
+                >
+                  <ResultHeader>
+                    <ResultIcon type={place.type}>
+                      {place.icon || getLocationIcon(place.type)}
+                    </ResultIcon>
+                    <ResultContent>
+                      <ResultName>{place.name}</ResultName>
+                      <ResultAddress>{place.fullName}</ResultAddress>
+                      <ResultMeta>
+                        <ResultBadge style={{ background: '#fef3c7', color: '#92400e' }}>
+                          <Star size={10} />
+                          Phổ biến
                         </ResultBadge>
                       </ResultMeta>
                     </ResultContent>
@@ -664,39 +839,51 @@ const AddressSelector = ({
                   </div>
                 </div>
               )}
-              {searchResults.map((result) => (
+              {searchResults.map((result, index) => (
                 <SearchResultItem
-                  key={result.id}
+                  key={result.id || `result-${index}`}
                   onClick={() => handleSelectResult(result)}
                 >
                   <ResultHeader>
                     <ResultIcon type={result.type}>
-                      {result.icon || '📍'}
+                      {getLocationIcon(result.type)}
                     </ResultIcon>
                     <ResultContent>
-                      <ResultName>{result.name}</ResultName>
-                      <ResultAddress>{result.fullName}</ResultAddress>
-                      {result.components && (
-                        <ResultMeta>
-                          {result.components.district && (
-                            <ResultBadge>
-                              <MapPin size={10} />
-                              {result.components.district}
-                            </ResultBadge>
-                          )}
-                          {result.components.city && (
-                            <ResultBadge>
-                              {result.components.city}
-                            </ResultBadge>
-                          )}
-                          {result.relevance && (
-                            <ResultBadge>
-                              <Star size={10} />
-                              {Math.round(result.relevance * 100)}%
-                            </ResultBadge>
-                          )}
-                        </ResultMeta>
-                      )}
+                      <ResultName>
+                        {highlightSearchTerm(result.name || result.place_name, searchQuery)}
+                      </ResultName>
+                      <ResultAddress>
+                        {result.fullName || result.place_name || result.formatted_address}
+                      </ResultAddress>
+                      <ResultMeta>
+                        {result.components?.district && (
+                          <ResultBadge>
+                            <MapPin size={10} />
+                            {result.components.district}
+                          </ResultBadge>
+                        )}
+                        {result.components?.city && (
+                          <ResultBadge>
+                            {result.components.city}
+                          </ResultBadge>
+                        )}
+                        {result.distance && (
+                          <ResultBadge>
+                            📏 {formatDistance(result.distance)}
+                          </ResultBadge>
+                        )}
+                        {result.relevance && result.relevance > 0.7 && (
+                          <ResultBadge style={{ background: '#dcfce7', color: '#166534' }}>
+                            <Star size={10} />
+                            Phù hợp
+                          </ResultBadge>
+                        )}
+                        {result.source === 'vietnam_api' && (
+                          <ResultBadge style={{ background: '#fef3c7', color: '#92400e' }}>
+                            🇻🇳 Việt Nam
+                          </ResultBadge>
+                        )}
+                      </ResultMeta>
                     </ResultContent>
                   </ResultHeader>
                 </SearchResultItem>
@@ -716,12 +903,17 @@ const AddressSelector = ({
       )}
 
       {/* Loading state */}
-      {isSearching && searchQuery.trim().length >= 2 && showResults && (
+      {isSearching && searchQuery.trim().length >= 1 && showResults && (
         <SearchResults>
           <LoadingContainer>
             <LoadingSpinner />
-            <LoadingText>Đang tìm kiếm...</LoadingText>
-            <LoadingSubtext>Vui lòng chờ trong giây lát</LoadingSubtext>
+            <LoadingText>🔍 Đang tìm kiếm địa chỉ...</LoadingText>
+            <LoadingSubtext>
+              {searchQuery.length < 3 ?
+                'Nhập thêm ký tự để có kết quả chính xác hơn' :
+                'Đang tìm kiếm từ nhiều nguồn dữ liệu'
+              }
+            </LoadingSubtext>
           </LoadingContainer>
         </SearchResults>
       )}

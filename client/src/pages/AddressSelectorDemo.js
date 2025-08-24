@@ -69,19 +69,27 @@ const AddressSelectorDemo = () => {
 
   return (
     <DemoContainer>
-      <Title>🏠 Address Selector Demo - Việt Nam</Title>
-      
+      <Title>🏠 Enhanced Address Selector - Google Maps Style</Title>
+
       <Section>
-        <SectionTitle>Tính năng chọn địa chỉ Việt Nam</SectionTitle>
-        <p style={{ color: '#6b7280', marginBottom: '20px' }}>
-          Thử nhập địa chỉ hoặc tên tỉnh/thành phố để xem gợi ý. Ví dụ: "Hà Nội", "Quận 1", "Hồ Chí Minh"
-        </p>
-        
+        <SectionTitle>🚀 Tính năng Autocomplete thông minh</SectionTitle>
+        <div style={{ color: '#6b7280', marginBottom: '20px' }}>
+          <p><strong>✨ Tính năng mới:</strong></p>
+          <ul style={{ paddingLeft: '20px', lineHeight: '1.6' }}>
+            <li>🔍 <strong>Autocomplete thông minh:</strong> Tìm kiếm ngay khi gõ, giống Google Maps</li>
+            <li>🏢 <strong>Địa điểm phổ biến:</strong> Hiển thị sân bay, trung tâm thành phố khi chưa nhập gì</li>
+            <li>🕒 <strong>Lịch sử tìm kiếm:</strong> Lưu và gợi ý các địa chỉ đã tìm gần đây</li>
+            <li>🎯 <strong>Kết quả đa nguồn:</strong> Kết hợp Mapbox API và Vietnam Address API</li>
+            <li>📍 <strong>Thông tin chi tiết:</strong> Hiển thị quận/huyện, thành phố, độ liên quan</li>
+            <li>⚡ <strong>Tối ưu hiệu năng:</strong> Debounce thông minh, tìm kiếm song song</li>
+          </ul>
+        </div>
+
         <AddressSelector
           value={selectedAddress}
           onChange={handleAddressChange}
           onAddressSelect={handleAddressSelect}
-          placeholder="Nhập địa chỉ hoặc chọn từ gợi ý..."
+          placeholder="🔍 Nhập địa chỉ để xem autocomplete thông minh..."
         />
       </Section>
 
@@ -99,34 +107,96 @@ const AddressSelectorDemo = () => {
 
       {addressDetails && (
         <Section>
-          <SectionTitle>Chi tiết địa chỉ đã chọn</SectionTitle>
-          <ResultDisplay>
-            <ResultTitle>Dữ liệu JSON:</ResultTitle>
-            <ResultContent>
-              {JSON.stringify(addressDetails, null, 2)}
-            </ResultContent>
-          </ResultDisplay>
+          <SectionTitle>🔍 Thông tin chi tiết địa chỉ</SectionTitle>
+          <div style={{ display: 'grid', gap: '16px' }}>
+            <ResultDisplay>
+              <ResultTitle>📋 Thông tin cơ bản:</ResultTitle>
+              <div style={{ display: 'grid', gap: '8px' }}>
+                <div><strong>Địa chỉ:</strong> {addressDetails.address}</div>
+                <div><strong>Loại:</strong> {addressDetails.type}</div>
+                <div><strong>Nguồn:</strong> {addressDetails.source}</div>
+                {addressDetails.relevance && (
+                  <div><strong>Độ liên quan:</strong> {Math.round(addressDetails.relevance * 100)}%</div>
+                )}
+              </div>
+            </ResultDisplay>
+
+            {addressDetails.coordinates && (
+              <ResultDisplay>
+                <ResultTitle>🗺️ Tọa độ:</ResultTitle>
+                <div style={{ display: 'grid', gap: '8px' }}>
+                  <div><strong>Kinh độ:</strong> {addressDetails.coordinates[0]}</div>
+                  <div><strong>Vĩ độ:</strong> {addressDetails.coordinates[1]}</div>
+                  <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                    📍 <a
+                      href={`https://www.google.com/maps?q=${addressDetails.coordinates[1]},${addressDetails.coordinates[0]}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: '#3b82f6' }}
+                    >
+                      Xem trên Google Maps
+                    </a>
+                  </div>
+                </div>
+              </ResultDisplay>
+            )}
+
+            {addressDetails.components && (
+              <ResultDisplay>
+                <ResultTitle>🏛️ Thành phần địa chỉ:</ResultTitle>
+                <div style={{ display: 'grid', gap: '8px' }}>
+                  {addressDetails.components.district && (
+                    <div><strong>Quận/Huyện:</strong> {addressDetails.components.district}</div>
+                  )}
+                  {addressDetails.components.city && (
+                    <div><strong>Thành phố:</strong> {addressDetails.components.city}</div>
+                  )}
+                  {addressDetails.components.country && (
+                    <div><strong>Quốc gia:</strong> {addressDetails.components.country}</div>
+                  )}
+                </div>
+              </ResultDisplay>
+            )}
+
+            <ResultDisplay>
+              <ResultTitle>💻 Raw JSON Data:</ResultTitle>
+              <ResultContent>
+                {JSON.stringify(addressDetails, null, 2)}
+              </ResultContent>
+            </ResultDisplay>
+          </div>
         </Section>
       )}
 
       <Section>
-        <SectionTitle>Hướng dẫn sử dụng</SectionTitle>
+        <SectionTitle>📖 Hướng dẫn sử dụng Enhanced Address Selector</SectionTitle>
         <div style={{ color: '#6b7280', lineHeight: '1.6' }}>
-          <h4 style={{ color: '#374151', marginBottom: '8px' }}>Các tính năng:</h4>
+          <h4 style={{ color: '#374151', marginBottom: '8px' }}>🚀 Tính năng nâng cao:</h4>
           <ul style={{ paddingLeft: '20px' }}>
-            <li>🔍 <strong>Tìm kiếm thông minh:</strong> Gõ tên tỉnh/thành phố, quận/huyện để xem gợi ý</li>
-            <li>📍 <strong>Tích hợp Mapbox:</strong> Kết quả từ cả API Việt Nam và Mapbox</li>
-            <li>⏰ <strong>Lịch sử tìm kiếm:</strong> Hiển thị các địa chỉ đã tìm gần đây</li>
-            <li>🗺️ <strong>Chọn trên bản đồ:</strong> Click nút "Bản đồ" để chọn địa chỉ chính xác</li>
-            <li>✨ <strong>Giao diện đẹp:</strong> Dropdown với animation và icon</li>
+            <li>⚡ <strong>Autocomplete thông minh:</strong> Tìm kiếm ngay khi gõ với debounce tối ưu</li>
+            <li>🌟 <strong>Địa điểm phổ biến:</strong> Hiển thị sân bay, trung tâm thành phố khi chưa nhập</li>
+            <li>🔄 <strong>Tìm kiếm đa nguồn:</strong> Kết hợp Mapbox API và Vietnam Address API song song</li>
+            <li>🎯 <strong>Kết quả thông minh:</strong> Sắp xếp theo độ liên quan, loại bỏ trùng lặp</li>
+            <li>💾 <strong>Lịch sử tìm kiếm:</strong> Lưu và gợi ý các địa chỉ đã chọn gần đây</li>
+            <li>🎨 <strong>Giao diện đẹp:</strong> Highlight từ khóa, icon phân loại, badge thông tin</li>
+            <li>🗺️ <strong>Tích hợp bản đồ:</strong> Chọn địa chỉ chính xác trên bản đồ Mapbox</li>
+            <li>📱 <strong>Responsive:</strong> Hoạt động tốt trên mọi thiết bị</li>
           </ul>
-          
-          <h4 style={{ color: '#374151', margin: '16px 0 8px', }}>Ví dụ tìm kiếm:</h4>
+
+          <h4 style={{ color: '#374151', margin: '16px 0 8px' }}>💡 Cách sử dụng:</h4>
           <ul style={{ paddingLeft: '20px' }}>
-            <li>"Hà Nội" - Tìm các quận/huyện ở Hà Nội</li>
-            <li>"Quận 1" - Tìm Quận 1 ở các thành phố</li>
-            <li>"Hồ Chí Minh" - Tìm các quận ở TP.HCM</li>
-            <li>"Cầu Giấy" - Tìm quận Cầu Giấy</li>
+            <li><strong>Bước 1:</strong> Click vào ô tìm kiếm để xem địa điểm phổ biến hoặc lịch sử</li>
+            <li><strong>Bước 2:</strong> Gõ từ khóa (ít nhất 1 ký tự) để xem gợi ý autocomplete</li>
+            <li><strong>Bước 3:</strong> Chọn địa chỉ từ danh sách hoặc dùng bản đồ</li>
+            <li><strong>Bước 4:</strong> Xem thông tin chi tiết bao gồm tọa độ và thành phần địa chỉ</li>
+          </ul>
+
+          <h4 style={{ color: '#374151', margin: '16px 0 8px' }}>🔍 Ví dụ tìm kiếm:</h4>
+          <ul style={{ paddingLeft: '20px' }}>
+            <li><code>"H"</code> → Hà Nội, Hồ Chí Minh, Hải Phòng...</li>
+            <li><code>"Quận 1"</code> → Quận 1 ở các thành phố</li>
+            <li><code>"Sân bay"</code> → Tân Sơn Nhất, Nội Bài...</li>
+            <li><code>"123 Nguyễn Huệ"</code> → Địa chỉ cụ thể</li>
           </ul>
         </div>
       </Section>

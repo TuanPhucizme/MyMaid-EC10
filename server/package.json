@@ -5,7 +5,14 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "node app.js",
-    "seed": "node scripts/seedFirestore.js"
+    "seed": "node scripts/seedFirestore.js",
+    "test-firebase": "node scripts/testFirebaseConnection.js",
+    "reset-firestore": "node scripts/resetFirestore.js",
+    "check-data": "node scripts/checkFirestoreData.js",
+    "test-flows": "node scripts/testUserFlows.js",
+    "test-api": "node scripts/testAPIEndpoints.js",
+    "setup": "npm run test-firebase && npm run seed",
+    "fresh-start": "npm run reset-firestore -- --confirm && npm run seed"
   },
   "keywords": [],
   "author": "",

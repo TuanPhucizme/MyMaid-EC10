@@ -1,15 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { CreditCard, DollarSign, FileText, Package, Scale, Clock, MapPin, User, Phone, Mail } from 'lucide-react';
+import { CreditCard, DollarSign, FileText, Package, Scale, Clock, MapPin, User, Phone, Mail, AlertCircle, CheckCircle, Loader } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { services } from '../data/services';
+import { useAuth } from '../context/AuthContext';
+import { processCashPayment, createVNPayPaymentUrl, validatePaymentData, getAvailablePaymentMethods } from '../services/paymentService';
+import { showUserError, showUserSuccess, getUserFriendlyMessage } from '../services/errorHandler';
+import ToastNotification from '../components/ToastNotification';
+import ErrorMessage from '../components/ErrorMessage';
 
 const PaymentPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
+
   const [bookingData, setBookingData] = useState(null);
   const [selectedService, setSelectedService] = useState(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('cash');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (location.state) {
@@ -19,11 +30,98 @@ const PaymentPage = () => {
         setSelectedService(service);
       }
     }
+
+    // Load available payment methods
+    setPaymentMethods(getAvailablePaymentMethods());
   }, [location.state]);
 
-  const handlePaymentClick = () => {
-    // Xử lý thanh toán ở đây
-    alert('Chức năng thanh toán đang được phát triển!');
+  const handlePaymentClick = async () => {
+    if (!user) {
+      showUserError({ error: { message: 'Vui lòng đăng nhập để tiếp tục' } });
+      navigate('/login');
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      // Prepare order data
+      const orderData = {
+        service: {
+          id: selectedService.id,
+          name: selectedService.name,
+          icon: selectedService.icon,
+          category: selectedService.category
+        },
+        schedule: {
+          date: bookingData.date,
+          time: bookingData.time,
+          duration: bookingData.duration || 2,
+          frequency: bookingData.frequency || 'one-time'
+        },
+        contact: {
+          name: bookingData.name,
+          phone: bookingData.phone,
+          email: bookingData.email,
+          address: bookingData.address,
+          addressCoordinates: bookingData.addressCoordinates,
+          addressComponents: bookingData.addressComponents,
+          notes: bookingData.notes || ''
+        },
+        payment: {
+          amount: totalPrice,
+          method: selectedPaymentMethod
+        }
+      };
+
+      // Validate payment data
+      validatePaymentData(orderData);
+
+      if (selectedPaymentMethod === 'cash') {
+        // Process cash payment (create order directly)
+        const result = await processCashPayment(orderData, user.uid);
+
+        if (result.success) {
+          // Hiển thị thông báo thành công
+          showUserSuccess(result.message || 'Đặt dịch vụ thành công!', 'Thanh toán tiền mặt');
+
+          navigate('/payment-result', {
+            state: {
+              success: true,
+              orderId: result.orderId,
+              paymentMethod: 'cash',
+              message: result.message
+            }
+          });
+        } else {
+          // Xử lý khi tạo order thất bại
+          throw result;
+        }
+      } else if (selectedPaymentMethod === 'vnpay') {
+        // Create VNPay payment URL
+        const result = await createVNPayPaymentUrl(orderData, user.uid);
+
+        if (result.success) {
+          // Redirect to VNPay
+          window.location.href = result.paymentUrl;
+        } else {
+          // Xử lý khi tạo VNPay URL thất bại
+          throw result;
+        }
+      }
+
+    } catch (error) {
+      console.error('Payment error:', error);
+
+      // Lấy thông báo lỗi chi tiết từ backend
+      const errorMessage = getUserFriendlyMessage(error);
+      setError(errorMessage);
+
+      // Hiển thị toast notification
+      showUserError(error);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   if (!bookingData || !selectedService) {
@@ -259,29 +357,97 @@ const PaymentPage = () => {
               {/* Payment Methods */}
               <div>
                 <h3 className="font-semibold text-neutral-900 mb-3">Phương thức thanh toán</h3>
-                <div className="space-y-2">
-                  <label className="flex items-center gap-3 p-3 border border-neutral-200 rounded-lg cursor-pointer hover:border-primary-300">
-                    <input type="radio" name="payment" value="cash" defaultChecked className="text-primary-600" />
-                    <DollarSign className="w-5 h-5 text-green-600" />
-                    <span>Thanh toán khi hoàn thành</span>
-                  </label>
-                  <label className="flex items-center gap-3 p-3 border border-neutral-200 rounded-lg cursor-pointer hover:border-primary-300">
-                    <input type="radio" name="payment" value="online" className="text-primary-600" />
-                    <CreditCard className="w-5 h-5 text-blue-600" />
-                    <span>Thanh toán online</span>
-                  </label>
+                <div className="space-y-3">
+                  {paymentMethods.map((method) => (
+                    <label
+                      key={method.id}
+                      className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-all ${
+                        selectedPaymentMethod === method.id
+                          ? 'border-primary-500 bg-primary-50'
+                          : method.available
+                            ? 'border-neutral-200 hover:border-primary-300'
+                            : 'border-neutral-100 bg-neutral-50 cursor-not-allowed opacity-60'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="payment"
+                        value={method.id}
+                        checked={selectedPaymentMethod === method.id}
+                        onChange={(e) => setSelectedPaymentMethod(e.target.value)}
+                        disabled={!method.available}
+                        className="text-primary-600 mt-1"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-lg">{method.icon}</span>
+                          <span className="font-medium text-neutral-900">{method.name}</span>
+                          {!method.available && (
+                            <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">
+                              {method.note}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-neutral-600">{method.description}</p>
+                        {method.id === 'cash' && (
+                          <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-xs text-green-700">
+                            <CheckCircle className="w-3 h-3 inline mr-1" />
+                            Được khuyến nghị - Thanh toán an toàn sau khi hoàn thành dịch vụ
+                          </div>
+                        )}
+                        {method.id === 'vnpay' && !method.available && (
+                          <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded text-xs text-orange-700">
+                            <AlertCircle className="w-3 h-3 inline mr-1" />
+                            Dịch vụ thanh toán online tạm thời không khả dụng
+                          </div>
+                        )}
+                      </div>
+                    </label>
+                  ))}
                 </div>
               </div>
 
+              {/* Error Message */}
+              {error && (
+                <ErrorMessage
+                  message={error}
+                  onClose={() => setError('')}
+                  show={!!error}
+                />
+              )}
+
               {/* Action Buttons */}
               <div className="space-y-3">
-                <Button onClick={handlePaymentClick} className="w-full" size="lg">
-                  Xác nhận đặt dịch vụ
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => navigate('/booking', { state: bookingData })} 
+                <Button
+                  onClick={handlePaymentClick}
                   className="w-full"
+                  size="lg"
+                  disabled={isProcessing || !user}
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader className="w-4 h-4 mr-2 animate-spin" />
+                      Đang xử lý...
+                    </>
+                  ) : selectedPaymentMethod === 'cash' ? (
+                    'Xác nhận đặt dịch vụ'
+                  ) : (
+                    'Thanh toán ngay'
+                  )}
+                </Button>
+
+                {!user && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm">
+                    <AlertCircle className="w-4 h-4 inline mr-2" />
+                    Vui lòng đăng nhập để tiếp tục đặt dịch vụ
+                  </div>
+                )}
+
+                <Button
+                  variant="outline"
+                  onClick={() => navigate('/booking', { state: bookingData })}
+                  className="w-full"
+                  disabled={isProcessing}
                 >
                   Quay lại chỉnh sửa
                 </Button>
@@ -290,6 +456,9 @@ const PaymentPage = () => {
           </Card>
         </div>
       </div>
+
+      {/* Toast Notifications */}
+      <ToastNotification />
     </div>
   );
 };

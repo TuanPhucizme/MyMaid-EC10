@@ -6,6 +6,9 @@ import toast from 'react-hot-toast';
 
 import OrderDetailModal from '../components/OrderDetailModal';
 import ReviewDetailModal from '../components/ReviewDetailModal';
+import { getUserOrders, cancelOrder } from '../services/firebaseOrderService';
+import { showUserError, showUserSuccess } from '../services/errorHandler';
+import ToastNotification from '../components/ToastNotification';
 
 import { 
   Clock, 
@@ -303,31 +306,34 @@ const OrderManagementPage = () => {
 
   const fetchOrders = useCallback(async () => {
     if (!user) return;
-    
-    // Tìm tab hiện tại để lấy đúng chuỗi statuses
-    const currentTab = tabs.find(tab => tab.id === activeTab);
-    if (!currentTab) return;
-    
+
     try {
       setLoading(true);
-      const token = await user.getIdToken();
-      const response = await fetch(`http://localhost:5000/api/orders?status=${currentTab.statuses}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
+      console.log('📋 Fetching orders for user:', user.uid);
+
+      // Lấy tất cả orders từ Firebase
+      const result = await getUserOrders(user.uid);
+
+      if (result.success) {
+        let filteredOrders = result.orders;
+
+        // Filter theo tab hiện tại
+        const currentTab = tabs.find(tab => tab.id === activeTab);
+        if (currentTab && currentTab.statuses) {
+          const statusArray = currentTab.statuses.split(',');
+          filteredOrders = result.orders.filter(order =>
+            statusArray.includes(order.status)
+          );
         }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setOrders(data.orders);
+
+        console.log(`✅ Loaded ${filteredOrders.length} orders for tab "${activeTab}"`);
+        setOrders(filteredOrders);
       } else {
-        console.error('Error fetching orders:', response.statusText);
-        toast.error('Lỗi khi tải Dịch vụ.');
-        setOrders([]);
+        throw new Error('Failed to fetch orders');
       }
     } catch (error) {
-      console.error('Error fetching orders:', error);
-      toast.error('Lỗi khi tải Dịch vụ.');
+      console.error('❌ Error fetching orders:', error);
+      showUserError(error, 'Lỗi khi tải danh sách đơn hàng');
       setOrders([]);
     } finally {
       setLoading(false);
@@ -384,28 +390,20 @@ const OrderManagementPage = () => {
 
   const handleCancelOrder = async (orderId, reason = 'Khách hàng yêu cầu hủy đơn') => {
     try {
-      const response = await fetch(`http://localhost:5000/api/orders/${orderId}/cancel`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await user.getIdToken()}`
-        },
-        body: JSON.stringify({
-          reason: reason
-        })
-      });
+      console.log('🚫 Cancelling order:', orderId, 'Reason:', reason);
 
-      if (response.ok) {
-        alert('Hủy Dịch vụ thành công');
-        fetchOrders(activeTab); // Refresh the list
+      const result = await cancelOrder(orderId, reason);
+
+      if (result.success) {
+        showUserSuccess('Hủy đơn hàng thành công', 'Đơn hàng đã được hủy');
+        fetchOrders(); // Refresh the list
         closeModal(); // Close modal after successful cancellation
       } else {
-        const errorData = await response.json();
-        alert('Lỗi: ' + errorData.message);
+        throw result;
       }
     } catch (error) {
-      console.error('Error cancelling order:', error);
-      alert('Có lỗi xảy ra khi hủy Dịch vụ');
+      console.error('❌ Error cancelling order:', error);
+      showUserError(error, 'Có lỗi xảy ra khi hủy đơn hàng');
     }
   };
 
@@ -588,6 +586,9 @@ const OrderManagementPage = () => {
         bookingId={viewingReviewFor}
         onClose={() => setViewingReviewFor(null)}
       />
+
+      {/* Toast Notifications */}
+      <ToastNotification />
     </Container>
   );
 };

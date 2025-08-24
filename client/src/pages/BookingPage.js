@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import * as yup from 'yup';
 import Button from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { useGSAP } from '../hooks/useGSAP';
@@ -8,7 +9,60 @@ import AddressSelector from '../components/AddressSelector';
 import LaundryServiceForm from '../components/LaundryServiceForm';
 import PricingCalculator from '../components/PricingCalculator';
 import { services } from '../data/services';
+import { showUserError, showUserSuccess } from '../services/errorHandler';
+import ErrorMessage from '../components/ErrorMessage';
+import ToastNotification from '../components/ToastNotification';
 
+// Validation schema cho từng step
+const step1Schema = yup.object({
+  serviceType: yup
+    .string()
+    .required('Vui lòng chọn loại dịch vụ')
+});
+
+const step2Schema = yup.object({
+  date: yup
+    .string()
+    .required('Vui lòng chọn ngày thực hiện'),
+  time: yup
+    .string()
+    .required('Vui lòng chọn giờ thực hiện')
+});
+
+const step3Schema = yup.object({
+  address: yup
+    .string()
+    .min(10, 'Địa chỉ phải có ít nhất 10 ký tự')
+    .required('Vui lòng nhập địa chỉ thực hiện dịch vụ')
+});
+
+const step4Schema = yup.object({
+  name: yup
+    .string()
+    .min(2, 'Họ và tên phải có ít nhất 2 ký tự')
+    .max(50, 'Họ và tên không được vượt quá 50 ký tự')
+    .required('Họ và tên là bắt buộc'),
+  phone: yup
+    .string()
+    .matches(/^(0\d{9}|84\d{8})$/, 'Số điện thoại không hợp lệ (10 số bắt đầu bằng 0)')
+    .required('Số điện thoại là bắt buộc'),
+  email: yup
+    .string()
+    .email('Email không hợp lệ')
+    .nullable()
+    .notRequired()
+});
+
+// Schema tổng hợp cho validation cuối cùng
+const fullBookingSchema = yup.object({
+  serviceType: yup.string().required('Vui lòng chọn loại dịch vụ'),
+  date: yup.string().required('Vui lòng chọn ngày thực hiện'),
+  time: yup.string().required('Vui lòng chọn giờ thực hiện'),
+  address: yup.string().min(10, 'Địa chỉ phải có ít nhất 10 ký tự').required('Vui lòng nhập địa chỉ thực hiện dịch vụ'),
+  name: yup.string().min(2, 'Họ và tên phải có ít nhất 2 ký tự').max(50, 'Họ và tên không được vượt quá 50 ký tự').required('Họ và tên là bắt buộc'),
+  phone: yup.string().matches(/^(0\d{9}|84\d{8})$/, 'Số điện thoại không hợp lệ (10 số bắt đầu bằng 0)').required('Số điện thoại là bắt buộc'),
+  email: yup.string().email('Email không hợp lệ').nullable().notRequired()
+});
 
 const BookingPage = () => {
   const navigate = useNavigate();
@@ -33,6 +87,9 @@ const BookingPage = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
+  const [validationErrors, setValidationErrors] = useState({});
+
+  // Không cần react-hook-form nữa, sử dụng manual validation với yup
 
   const { ref: pageRef, hasIntersected } = useIntersectionObserver();
   
@@ -110,24 +167,49 @@ const BookingPage = () => {
     return Math.round(basePrice * frequencyDiscount);
   };
 
-  const handleNext = () => {
-    if (currentStep === 1 && !formData.serviceType) {
-      alert('Vui lòng chọn loại dịch vụ');
-      return;
+  const handleNext = async () => {
+    try {
+      // Validate theo từng step với yup schema
+      switch (currentStep) {
+        case 1:
+          await step1Schema.validate({ serviceType: formData.serviceType });
+          break;
+        case 2:
+          await step2Schema.validate({
+            date: formData.date,
+            time: formData.time
+          });
+          break;
+        case 3:
+          await step3Schema.validate({ address: formData.address });
+          if (!formData.addressCoordinates) {
+            throw new Error('Vui lòng chọn địa chỉ chính xác bằng cách sử dụng bản đồ');
+          }
+          break;
+        case 4:
+          await step4Schema.validate({
+            name: formData.name,
+            phone: formData.phone,
+            email: formData.email
+          });
+          break;
+      }
+
+      console.log(`✅ Step ${currentStep} validation passed`);
+      setCurrentStep(prev => prev + 1);
+
+    } catch (error) {
+      console.error(`❌ Step ${currentStep} validation error:`, error);
+
+      if (error.inner && error.inner.length > 0) {
+        // Yup validation errors
+        const errorMessages = error.inner.map(err => err.message);
+        showUserError({ error: { message: errorMessages.join(', ') } });
+      } else {
+        // Single error or custom error
+        showUserError({ error: { message: error.message } });
+      }
     }
-    if (currentStep === 2 && (!formData.date || !formData.time)) {
-      alert('Vui lòng chọn ngày và giờ');
-      return;
-    }
-    if (currentStep === 3 && (!formData.address || !formData.addressCoordinates)) {
-      alert('Vui lòng chọn địa chỉ chính xác bằng cách sử dụng bản đồ');
-      return;
-    }
-    if (currentStep === 4 && (!formData.name || !formData.phone)) {
-      alert('Vui lòng điền đầy đủ thông tin liên hệ');
-      return;
-    }
-    setCurrentStep(prev => prev + 1);
   };
 
   const handleBack = () => {
@@ -138,8 +220,46 @@ const BookingPage = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Chuyển hướng đến trang payment với dữ liệu mới
-    navigate('/payment', { state: formData });
+    try {
+      // Validate toàn bộ form với yup schema
+      await fullBookingSchema.validate(formData, { abortEarly: false });
+
+      // Kiểm tra địa chỉ coordinates
+      if (!formData.addressCoordinates) {
+        showUserError({ error: { message: 'Vui lòng chọn địa chỉ chính xác bằng cách sử dụng bản đồ' } });
+        setIsSubmitting(false);
+        return;
+      }
+
+      console.log('✅ Form validation passed, navigating to payment...');
+      console.log('📋 Form data:', formData);
+
+      // Chuyển hướng đến trang payment với dữ liệu đã validate
+      navigate('/payment', { state: formData });
+
+    } catch (error) {
+      console.error('❌ Form validation error:', error);
+      console.log('📋 Current form data:', formData);
+
+      if (error.inner && error.inner.length > 0) {
+        // Yup validation errors
+        console.log('🔍 Validation errors:', error.inner);
+        const errorMessages = error.inner.map(err => {
+          console.log(`❌ Field "${err.path}": ${err.message} (value: ${err.value})`);
+          return `${err.path}: ${err.message}`;
+        });
+        showUserError({
+          error: {
+            message: errorMessages.join('; ')
+          }
+        });
+      } else {
+        // Other errors
+        showUserError({ error: { message: error.message || 'Có lỗi xảy ra khi xử lý form. Vui lòng thử lại.' } });
+      }
+
+      setIsSubmitting(false);
+    }
   };
 
   const totalPrice = calculatePrice();
@@ -183,13 +303,27 @@ const BookingPage = () => {
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Main Form */}
             <div className="lg:col-span-2">
+              {/* Required Fields Notice */}
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-start space-x-3">
+                  <div className="text-blue-600 text-lg">ℹ️</div>
+                  <div>
+                    <h4 className="text-blue-900 font-medium mb-1">Thông tin bắt buộc</h4>
+                    <p className="text-blue-700 text-sm">
+                      Các trường có dấu <span className="text-red-500 font-bold">*</span> là bắt buộc phải điền để hoàn tất đặt dịch vụ.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <Card className="p-8">
                 {/* Step 1 */}
                 {currentStep === 1 && (
                   <div>
-                    <h2 className="text-2xl font-bold text-neutral-900 mb-6">
-                      Bước 1: Chọn Dịch Vụ
+                    <h2 className="text-2xl font-bold text-neutral-900 mb-2">
+                      Bước 1: Chọn Dịch Vụ <span className="text-red-500">*</span>
                     </h2>
+                    <p className="text-neutral-600 mb-6">Vui lòng chọn loại dịch vụ bạn muốn sử dụng</p>
                     <div className="grid md:grid-cols-2 gap-4 mb-8">
                       {services.map((service) => (
                         <div
@@ -249,7 +383,7 @@ const BookingPage = () => {
                     <div className="grid md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-medium text-neutral-700 mb-2">
-                          Ngày thực hiện
+                          Ngày thực hiện <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="date"
@@ -257,24 +391,34 @@ const BookingPage = () => {
                           value={formData.date}
                           onChange={handleInputChange}
                           min={new Date().toISOString().split('T')[0]}
-                          className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                            !formData.date && currentStep > 2 ? 'border-red-500' : 'border-neutral-300'
+                          }`}
                         />
+                        {!formData.date && currentStep > 2 && (
+                          <p className="text-red-500 text-sm mt-1">Vui lòng chọn ngày thực hiện</p>
+                        )}
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-neutral-700 mb-2">
-                          Giờ bắt đầu
+                          Giờ bắt đầu <span className="text-red-500">*</span>
                         </label>
                         <select
                           name="time"
                           value={formData.time}
                           onChange={handleInputChange}
-                          className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                            !formData.time && currentStep > 2 ? 'border-red-500' : 'border-neutral-300'
+                          }`}
                         >
-                          <option value="">Chọn giờ</option>
+                          <option value="">Chọn giờ bắt đầu</option>
                           {timeSlots.map(time => (
                             <option key={time} value={time}>{time}</option>
                           ))}
                         </select>
+                        {!formData.time && currentStep > 2 && (
+                          <p className="text-red-500 text-sm mt-1">Vui lòng chọn giờ bắt đầu</p>
+                        )}
                       </div>
                       <div>
                             <label className="block text-sm font-medium text-neutral-700 mb-2">
@@ -321,7 +465,7 @@ const BookingPage = () => {
                     <div className="space-y-6">
                       <div>
                         <label className="block text-sm font-medium text-neutral-700 mb-2">
-                          Địa chỉ thực hiện dịch vụ *
+                          Địa chỉ thực hiện dịch vụ <span className="text-red-500">*</span>
                         </label>
                         <AddressSelector
                           value={formData.address}
@@ -407,33 +551,33 @@ const BookingPage = () => {
                     <div className="grid md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-medium text-neutral-700 mb-2">
-                          Họ và tên *
+                          Họ và tên <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
                           name="name"
                           value={formData.name}
                           onChange={handleInputChange}
-                          required
                           className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          placeholder="Nhập họ và tên đầy đủ"
                         />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-neutral-700 mb-2">
-                          Số điện thoại *
+                          Số điện thoại <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="tel"
                           name="phone"
                           value={formData.phone}
                           onChange={handleInputChange}
-                          required
                           className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          placeholder="Ví dụ: 0901234567"
                         />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-neutral-700 mb-2">
-                          Email
+                          Email <span className="text-neutral-400">(không bắt buộc)</span>
                         </label>
                         <input
                           type="email"
@@ -441,6 +585,7 @@ const BookingPage = () => {
                           value={formData.email}
                           onChange={handleInputChange}
                           className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          placeholder="email@example.com"
                         />
                       </div>
                       <div className="md:col-span-2">
@@ -584,6 +729,9 @@ const BookingPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Toast Notifications */}
+      <ToastNotification />
     </div>
   );
 };

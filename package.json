@@ -35,7 +35,9 @@
     "pm:start": "node process-manager.js start",
     "pm:stop": "node process-manager.js stop",
     "pm:status": "node process-manager.js status",
-    "pm:restart": "node process-manager.js restart"
+    "pm:restart": "node process-manager.js restart",
+    "setup-firebase": "node setup-firebase.js",
+    "test-firebase": "cd server && npm run test-firebase"
   },
   "dependencies": {
     "bootstrap": "^5.3.6",

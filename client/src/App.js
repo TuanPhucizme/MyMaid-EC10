@@ -13,6 +13,7 @@ import Testimonials from "./components/Testimonials";
 import VerificationBanner from "./components/VerificationBanner";
 import ScrollToTop from "./components/ScrollToTop";
 import LoadingSpinner from "./components/LoadingSpinner";
+import ToastNotification from "./components/ToastNotification";
 
 // Pages
 import AdminPage from "./pages/AdminPage";
@@ -36,6 +37,7 @@ import VerifyEmailPage from "./pages/VerifyEmailPage";
 import LeaveReviewPage from "./pages/ReviewPage";
 import ServiceFlowDemo from "./pages/ServiceFlowDemo";
 import ConsultationPage from "./pages/ConsultationPage";
+import ErrorTestPage from "./pages/ErrorTestPage";
 
 // Component cho nội dung trang chủ
 const HomePageContent = () => (
@@ -118,6 +120,7 @@ function App() {
         <Route path="/services" element={<ServicesPage />} />
         <Route path="/demo" element={<ServiceFlowDemo />} />
         <Route path="/consultation" element={<ConsultationPage />} />
+        <Route path="/error-test" element={<ErrorTestPage />} />
 
         {/* --- LUỒNG XÁC THỰC NGƯỜI DÙNG --- */}
         <Route path="/login" element={<LoginPage />} />
@@ -156,6 +159,9 @@ function App() {
       </main>
       <Footer />
       <ScrollToTop />
+
+      {/* Global Toast Notifications */}
+      <ToastNotification />
     </div>
   );
 }
