@@ -69,10 +69,10 @@ const TabButtons = styled.div`
 const TabButton = styled.button`
   flex: 1;
   padding: 1rem 1.5rem;
-  background: ${props => props.active ? 'white' : 'transparent'};
+  background: ${props => props.$active ? 'white' : 'transparent'};
   border: none;
-  border-bottom: 2px solid ${props => props.active ? '#3b82f6' : 'transparent'};
-  color: ${props => props.active ? '#3b82f6' : '#6b7280'};
+  border-bottom: 2px solid ${props => props.$active ? '#3b82f6' : 'transparent'};
+  color: ${props => props.$active ? '#3b82f6' : '#6b7280'};
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
@@ -82,8 +82,8 @@ const TabButton = styled.button`
   gap: 0.5rem;
 
   &:hover {
-    background: ${props => props.active ? 'white' : '#f3f4f6'};
-    color: ${props => props.active ? '#3b82f6' : '#4b5563'};
+    background: ${props => props.$active ? 'white' : '#f3f4f6'};
+    color: ${props => props.$active ? '#3b82f6' : '#4b5563'};
   }
 `;
 
@@ -267,12 +267,12 @@ const OrderManagementPage = () => {
   };
 
   const tabs = React.useMemo(() => [
-    { 
-      id: 'pending_confirmation', 
-      label: 'Chờ xác nhận', 
+    {
+      id: 'pending_confirmation',
+      label: 'Chờ xác nhận',
       icon: Clock,
       color: '#f59e0b',
-      statuses: 'pending_confirmation' 
+      statuses: 'pending_payment,pending_confirmation'
     },
     { 
       id: 'confirmed', 
@@ -317,13 +317,18 @@ const OrderManagementPage = () => {
       if (result.success) {
         let filteredOrders = result.orders;
 
+        console.log(`📊 Total orders from Firebase: ${result.orders.length}`);
+        console.log('📋 All orders:', result.orders.map(o => ({ id: o.id, status: o.status })));
+
         // Filter theo tab hiện tại
         const currentTab = tabs.find(tab => tab.id === activeTab);
-        if (currentTab && currentTab.statuses) {
+        if (currentTab && currentTab.statuses && currentTab.statuses !== 'all') {
           const statusArray = currentTab.statuses.split(',');
+          console.log(`🔍 Filtering by statuses: [${statusArray.join(', ')}]`);
           filteredOrders = result.orders.filter(order =>
             statusArray.includes(order.status)
           );
+          console.log(`📊 Filtered orders: ${filteredOrders.length}`);
         }
 
         console.log(`✅ Loaded ${filteredOrders.length} orders for tab "${activeTab}"`);
@@ -346,6 +351,7 @@ const OrderManagementPage = () => {
   
   const getStatusText = (status) => {
     const statusTexts = {
+      'pending_payment': 'Chờ thanh toán',
       'pending_confirmation': 'Chờ xác nhận',
       'confirmed': 'Đã xác nhận',
       'in_progress': 'Đang thực hiện',
@@ -357,6 +363,7 @@ const OrderManagementPage = () => {
 
   const getStatusIcon = (status) => {
     const icons = {
+      'pending_payment': Clock,
       'pending_confirmation': Clock,
       'confirmed': CheckCircle,
       'in_progress': PlayCircle,
@@ -470,7 +477,7 @@ const OrderManagementPage = () => {
             return (
               <TabButton
                 key={tab.id}
-                active={activeTab === tab.id}
+                $active={activeTab === tab.id}
                 onClick={() => setActiveTab(tab.id)}
               >
                 <Icon size={18} />

@@ -259,7 +259,14 @@ const ActionButton = styled.button`
   }}
 `;
 
-const OrderDetailModal = ({ order, isOpen, onClose, onCancel, onConfirmCompletion, isProcessing = false }) => {
+const OrderDetailModal = ({
+  order = null,
+  isOpen,
+  onClose,
+  onCancel = null,
+  onConfirmCompletion = null,
+  isProcessing = false
+}) => {
   const [cancelReason, setCancelReason] = useState('');
   const [showCancelForm, setShowCancelForm] = useState(false);
 
@@ -645,12 +652,6 @@ OrderDetailModal.propTypes = {
   isProcessing: PropTypes.bool
 };
 
-OrderDetailModal.defaultProps = {
-  order: null,
-  onCancel: null,
-  onUpdate: null,
-  onConfirmCompletion: null,
-  isProcessing: false
-};
+
 
 export default OrderDetailModal;

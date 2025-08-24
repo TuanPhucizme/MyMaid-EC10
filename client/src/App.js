@@ -38,6 +38,7 @@ import LeaveReviewPage from "./pages/ReviewPage";
 import ServiceFlowDemo from "./pages/ServiceFlowDemo";
 import ConsultationPage from "./pages/ConsultationPage";
 import ErrorTestPage from "./pages/ErrorTestPage";
+import DebugOrdersPage from "./pages/DebugOrdersPage";
 
 // Component cho nội dung trang chủ
 const HomePageContent = () => (
@@ -121,6 +122,7 @@ function App() {
         <Route path="/demo" element={<ServiceFlowDemo />} />
         <Route path="/consultation" element={<ConsultationPage />} />
         <Route path="/error-test" element={<ErrorTestPage />} />
+        <Route path="/debug-orders" element={<DebugOrdersPage />} />
 
         {/* --- LUỒNG XÁC THỰC NGƯỜI DÙNG --- */}
         <Route path="/login" element={<LoginPage />} />
