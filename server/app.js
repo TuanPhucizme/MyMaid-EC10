@@ -46,6 +46,18 @@ app.use(bodyParser.urlencoded({ extended: true }));
 console.log('Body parser URL encoded middleware added');
 
 console.log('Mounting routes...');
+
+// Health check endpoint for Render
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    message: 'MyMaid API is running',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+console.log('Health check endpoint added at /api/health');
+
 try {
   console.log('About to mount user routes...');
   console.log('userRoutes type:', typeof userRoutes);
@@ -203,6 +215,22 @@ if (app.router && app.router.stack) {
 
 app.use('/api/bookings', bookingRoutes);
 console.log('Booking routes mounted at /api/bookings');
+
+// Serve static files from React build (for production)
+if (process.env.NODE_ENV === 'production') {
+  const clientBuildPath = path.join(__dirname, '../client/build');
+  console.log('Serving static files from:', clientBuildPath);
+  
+  app.use(express.static(clientBuildPath));
+  
+  // Handle React routing, return all requests to React app
+  app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api')) {
+      res.sendFile(path.join(clientBuildPath, 'index.html'));
+    }
+  });
+  console.log('Production static file serving configured');
+}
 
 // Start server with route checking
 app.listen(PORT, () => {

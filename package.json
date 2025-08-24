@@ -37,7 +37,14 @@
     "pm:status": "node process-manager.js status",
     "pm:restart": "node process-manager.js restart",
     "setup-firebase": "node setup-firebase.js",
-    "test-firebase": "cd server && npm run test-firebase"
+    "test-firebase": "cd server && npm run test-firebase",
+    "build:production": "cd client && npm run build",
+    "start:production": "cd server && npm start",
+    "deploy:render": "npm run build:production && echo 'Build completed. Push to GitHub to trigger Render auto-deploy'",
+    "deploy:render:manual": "npm run build:production && npm run start:production",
+    "deploy:check": "node scripts/deploy-render.js",
+    "deploy:render:setup": "node scripts/deploy-render.js",
+    "test:production": "node scripts/test-production.js"
   },
   "dependencies": {
     "bootstrap": "^5.3.6",
