@@ -26,6 +26,8 @@ const bookingRoutes = require('./routes/bookingRoutes');
 console.log('Booking routes loaded');
 const reviewRoutes = require('./routes/reviewRoutes');
 console.log('Review routes loaded');
+const notificationRoutes = require('./routes/notificationRoutes');
+console.log('Notification routes loaded');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -131,6 +133,13 @@ try {
 
 app.use('/api/reviews', reviewRoutes);
 console.log('Review routes mounted at /api/reviews');
+
+try {
+  app.use('/api/notifications', notificationRoutes);
+  console.log('Notification routes mounted at /api/notifications');
+} catch (error) {
+  console.error('Error mounting notification routes:', error);
+}
 
 // Debug: Log all registered routes
 console.log('Registered routes:');

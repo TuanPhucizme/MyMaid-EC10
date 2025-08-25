@@ -3,6 +3,7 @@ const router = express.Router();
 const { db } = require('../config/firebaseAdmin');
 const authMiddleware = require('../middleware/authMiddleware');
 const { FieldValue } = require('firebase-admin/firestore');
+const { notifyPartnerAssignment } = require('../services/partnerNotificationService');
 
 // --- HÀM TIỆN ÍCH ĐỂ "ÁNH XẠ" DỮ LIỆU ---
 // Hàm này sẽ được tái sử dụng để tránh lặp lại code
@@ -133,9 +134,10 @@ router.post('/', authMiddleware, async (req, res) => {
 router.get('/available', authMiddleware, async (req, res, next) => {
   try {
     const ordersRef = db.collection('orders');
-    // Lấy các đơn hàng chưa có partnerId và đang chờ xác nhận
+    // Lấy các đơn hàng đã thanh toán (confirmed) nhưng chưa có partnerId
     const q = ordersRef
-      .where('status', '==', 'pending_confirmation')
+      .where('status', '==', 'confirmed')
+      .where('partnerId', '==', null)
       .orderBy('createdAt', 'desc');
     const snapshot = await q.get();
 
@@ -161,43 +163,75 @@ router.put('/:orderId/accept', authMiddleware, async (req, res, next) => {
   const { uid: partnerId } = req.user;
   const { orderId } = req.params;
   const orderDocRef = db.collection('orders').doc(orderId);
-  const partnerDocRef = db.collection('partners').doc(partnerId);
+  const partnerDocRef = db.collection('mm_partners').doc(partnerId); // Fixed collection name
 
   try {
+    let orderData = null;
+
     // ✅ SỬ DỤNG TRANSACTION ĐỂ ĐẢM BẢO AN TOÀN DỮ LIỆU
     // Giúp ngăn chặn 2 đối tác cùng nhận 1 đơn hàng
     await db.runTransaction(async (transaction) => {
       const orderDoc = await transaction.get(orderDocRef);
       const partnerDoc = await transaction.get(partnerDocRef);
+
       if (!orderDoc.exists) {
         throw new Error('Đơn hàng không tồn tại.');
       }
 
-      const orderData = orderDoc.data();
-      // Kiểm tra lại trạng thái để chắc chắn đơn hàng vẫn còn khả dụng
-      if (orderData.status !== 'pending_confirmation') {
-        throw new Error('Đơn hàng này đã được nhận hoặc đã bị hủy.');
+      if (!partnerDoc.exists) {
+        throw new Error('Đối tác không tồn tại.');
       }
+
+      orderData = orderDoc.data();
+
+      // Kiểm tra lại trạng thái để chắc chắn đơn hàng vẫn còn khả dụng
+      if (orderData.status !== 'confirmed' || orderData.partnerId !== null) {
+        throw new Error('Đơn hàng này đã được nhận hoặc không khả dụng.');
+      }
+
+      // Kiểm tra đối tác có đang active không
+      const partnerData = partnerDoc.data();
+      if (partnerData.operational?.status !== 'active') {
+        throw new Error('Tài khoản đối tác không hoạt động.');
+      }
+
       const currentStatusHistory = orderData.statusHistory || [];
 
       const newHistoryEntry = {
-        status: 'confirmed',
-        note: `Được nhận bởi đối tác (ID: ${partnerId})`,
-        timestamp: new Date() // Sử dụng new Date() thay vì serverTimestamp()
+        status: 'in_progress',
+        note: `Được nhận bởi đối tác (ID: ${partnerId}) - Bắt đầu thực hiện`,
+        timestamp: new Date()
       };
       const updatedStatusHistory = [...currentStatusHistory, newHistoryEntry];
 
       // Cập nhật đơn hàng
       transaction.update(orderDocRef, {
         partnerId: partnerId, // Gán ID của đối tác
-        status: 'confirmed',  // Chuyển trạng thái
+        status: 'in_progress',  // Chuyển trạng thái sang đang thực hiện
         updatedAt: new Date(),
         statusHistory: updatedStatusHistory
       });
+
+      // Cập nhật thống kê đối tác
       transaction.update(partnerDocRef, {
         'operational.activeJobs': FieldValue.increment(1)
       });
     });
+
+    // Gửi thông báo cho đối tác về việc nhận đơn thành công
+    try {
+      const updatedOrderData = {
+        ...orderData,
+        partnerId: partnerId,
+        status: 'in_progress'
+      };
+
+      await notifyPartnerAssignment(partnerId, orderId, updatedOrderData);
+      console.log(`✅ Notified partner ${partnerId} about order assignment ${orderId}`);
+    } catch (notificationError) {
+      console.error('⚠️ Failed to send assignment notification:', notificationError);
+      // Don't fail the request if notification fails
+    }
 
     res.status(200).send({ message: 'Nhận đơn thành công!' });
 
@@ -330,12 +364,11 @@ router.put('/:orderId/status', authMiddleware, async (req, res) => {
 
     // Validate status
     const validStatuses = [
-      'pending_payment', 
-      'pending_confirmation', 
-      'confirmed', 
+      'pending_payment',
+      'confirmed',
       'in_progress',
-      'pending_completion_approval', 
-      'completed', 
+      'pending_completion_approval',
+      'completed',
       'cancelled'
     ];
     
@@ -406,7 +439,7 @@ router.put('/:orderId/status', authMiddleware, async (req, res) => {
 
 /**
  * @route   PUT /api/orders/:orderId/cancel
- * @desc    Hủy đơn hàng (chỉ cho phép ở trạng thái pending_confirmation)
+ * @desc    Hủy đơn hàng (chỉ cho phép ở trạng thái confirmed - chưa có partner)
  * @access  Private
  */
 router.put('/:orderId/cancel', authMiddleware, async (req, res) => {
@@ -439,7 +472,7 @@ router.put('/:orderId/cancel', authMiddleware, async (req, res) => {
     if (!canCancelOrder(orderData.status)) {
       return res.status(400).json({
         success: false,
-        message: `Không thể hủy đơn hàng ở trạng thái "${orderData.status}". Chỉ có thể hủy đơn hàng ở trạng thái "pending_confirmation".`
+        message: `Không thể hủy đơn hàng ở trạng thái "${orderData.status}". Chỉ có thể hủy đơn hàng ở trạng thái "confirmed" (chưa có nhân viên nhận việc).`
       });
     }
 
@@ -475,23 +508,20 @@ router.put('/:orderId/cancel', authMiddleware, async (req, res) => {
 
 /**
  * @route   PUT /api/orders/:orderId/payment-success
- * @desc    Cập nhật đơn hàng sau khi thanh toán thành công
+ * @desc    Cập nhật đơn hàng sau khi thanh toán thành công (Deprecated - use IPN instead)
  * @access  Public (được gọi từ VNPay callback)
+ * @deprecated This endpoint is deprecated. Payment updates should be handled via IPN.
  */
 router.put('/:orderId/payment-success', async (req, res) => {
   try {
     const { orderId } = req.params;
-    const { 
-      vnpayTransactionId, 
-      vnpayResponseCode, 
-      vnpayAmount,
-      vnpayBankCode,
-      vnpayPayDate 
-    } = req.body;
+
+    console.log('⚠️ DEPRECATED: payment-success endpoint called for order:', orderId);
+    console.log('💡 Payment updates should be handled via VNPay IPN for better reliability');
 
     const orderRef = db.collection('orders').doc(orderId);
     const doc = await orderRef.get();
-    
+
     if (!doc.exists) {
       return res.status(404).json({
         success: false,
@@ -500,43 +530,30 @@ router.put('/:orderId/payment-success', async (req, res) => {
     }
 
     const orderData = doc.data();
-    
-    // Validate payment amount
-    if (vnpayAmount && parseInt(vnpayAmount) !== orderData.payment.amount) {
-      return res.status(400).json({
-        success: false,
-        message: 'Số tiền thanh toán không khớp'
+
+    // Check if order is already processed by IPN
+    if (orderData.status === 'confirmed' && orderData.payment.paidAt) {
+      console.log('✅ Order already processed by IPN');
+      return res.json({
+        success: true,
+        message: 'Đơn hàng đã được xử lý bởi IPN',
+        alreadyProcessed: true
       });
     }
 
-    // Update order with payment info
-    const statusHistoryEntry = {
-      status: 'pending_confirmation',
-      timestamp: new Date(),
-      note: 'Thanh toán thành công, chờ xác nhận'
-    };
-
-    await orderRef.update({
-      status: 'pending_confirmation',
-      'payment.vnpayTransactionId': vnpayTransactionId,
-      'payment.vnpayResponseCode': vnpayResponseCode,
-      'payment.vnpayBankCode': vnpayBankCode,
-      'payment.vnpayPayDate': vnpayPayDate,
-      'payment.paidAt': new Date(),
-      statusHistory: [...(orderData.statusHistory || []), statusHistoryEntry],
-      updatedAt: new Date()
-    });
-
+    // If not processed by IPN yet, return success but don't update
+    // The IPN will handle the actual update
     res.json({
       success: true,
-      message: 'Cập nhật thanh toán thành công'
+      message: 'Đang chờ xác nhận thanh toán từ VNPay IPN',
+      pendingIPN: true
     });
 
   } catch (error) {
-    console.error('Error updating payment success:', error);
+    console.error('Error in payment-success endpoint:', error);
     res.status(500).json({
       success: false,
-      message: 'Lỗi server khi cập nhật thanh toán',
+      message: 'Lỗi server khi kiểm tra thanh toán',
       error: error.message
     });
   }
@@ -641,26 +658,24 @@ router.put('/:orderId/confirm-completion', authMiddleware, async (req, res, next
 // Helper functions
 function isValidStatusTransition(currentStatus, newStatus) {
   const transitions = {
-    'pending_payment': ['pending_confirmation', 'cancelled'],
-    'pending_confirmation': ['confirmed', 'cancelled'],
-    'confirmed': ['in_progress', 'cancelled'],
+    'pending_payment': ['confirmed', 'cancelled'], // VNPay success goes directly to confirmed
+    'confirmed': ['in_progress', 'cancelled'], // Partner accepts and starts work
     'in_progress': ['completed', 'pending_completion_approval'],
     'completed': [], // No transitions from completed
     'cancelled': [] // No transitions from cancelled
   };
-  
+
   return transitions[currentStatus]?.includes(newStatus) || false;
 }
 
 function canCancelOrder(status) {
-  return ['pending_confirmation'].includes(status);
+  return ['confirmed'].includes(status); // Can only cancel confirmed orders (before partner starts work)
 }
 
 function getDefaultStatusNote(status) {
   const notes = {
     'pending_payment': 'Chờ thanh toán',
-    'pending_confirmation': 'Chờ xác nhận',
-    'confirmed': 'Đã xác nhận, chờ nhân viên đến',
+    'confirmed': 'Đã thanh toán, chờ nhân viên nhận việc',
     'in_progress': 'Đang thực hiện dịch vụ',
     'completed': 'Hoàn thành dịch vụ',
     'cancelled': 'Đã hủy'

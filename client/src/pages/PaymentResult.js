@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { CheckCircle2, XCircle, FileText, DollarSign, Banknote, Calendar } from 'lucide-react';
 import { showUserError, showUserSuccess } from '../services/errorHandler';
 import ToastNotification from '../components/ToastNotification';
+import { auth } from '../config/firebase';
 
 // --- TÁI SỬ DỤNG CÁC STYLED COMPONENTS TỪ PaymentDetailPage ---
 const PaymentContainer = styled.div`
@@ -155,6 +156,60 @@ const PaymentResultPage = () => {
   //   }
   // };
 
+  // Verify order status with backend
+  const verifyOrderStatus = async (orderId) => {
+    if (!orderId) return;
+
+    try {
+      console.log(`🔍 Verifying order status for: ${orderId}`);
+
+      // Get current user token
+      const user = auth.currentUser;
+      if (!user) {
+        console.log('⚠️ No authenticated user, skipping verification');
+        return;
+      }
+
+      const token = await user.getIdToken();
+      const response = await fetch(`http://localhost:5000/api/orders/${orderId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const order = result.order;
+
+        console.log(`📋 Order status verified:`, order.status);
+
+        if (order.status === 'confirmed' && order.payment?.paidAt) {
+          console.log('✅ Order payment confirmed by IPN - ready for partner assignment');
+          // Update UI to show that payment is confirmed
+          setPaymentInfo(prev => ({
+            ...prev,
+            confirmed: true,
+            paidAt: order.payment.paidAt
+          }));
+        } else if (order.status === 'pending_payment') {
+          console.log('⏳ Order still pending payment, will retry once...');
+          // Đơn giản hóa: Chỉ retry 1 lần sau 3 giây
+          setTimeout(() => {
+            verifyOrderStatus(orderId);
+          }, 3000);
+        }
+      } else {
+        console.error('❌ Failed to verify order status:', response.status);
+      }
+    } catch (error) {
+      console.error('❌ Error verifying order status:', error);
+    }
+  };
+
+
+
   useEffect(() => {
     // Check if this is from navigation state (cash payment)
     if (location.state) {
@@ -195,7 +250,15 @@ const PaymentResultPage = () => {
 
       if (success) {
         localStorage.removeItem('bookingDetails');
-        console.log(`Hiển thị thành công cho đơn hàng ${storedOrderId}. Backend sẽ xử lý cập nhật qua IPN.`);
+        console.log(`✅ Payment successful for order ${storedOrderId}. Backend will handle updates via IPN.`);
+
+        // Verify order status with backend after a short delay
+        // This allows time for IPN to process
+        setTimeout(() => {
+          verifyOrderStatus(storedOrderId);
+        }, 3000);
+      } else {
+        console.log(`❌ Payment failed for order ${storedOrderId} with code: ${responseCode}`);
       }
     } else if (!location.state) {
       navigate('/');
@@ -298,6 +361,38 @@ const PaymentResultPage = () => {
                 <Value>{formatDateTime(paymentInfo.payDate)}</Value>
               </InfoText>
             </InfoRow>
+
+            {/* Payment confirmation status */}
+            {paymentInfo.confirmed ? (
+              <div style={{
+                background: '#f0fdf4',
+                border: '1px solid #22c55e',
+                borderRadius: '8px',
+                padding: '16px',
+                margin: '16px 0',
+                textAlign: 'left'
+              }}>
+                <p style={{ color: '#15803d', fontSize: '14px', margin: 0 }}>
+                  <strong>✅ Thanh toán thành công:</strong> Đơn hàng đã được xác nhận và sẵn sàng.
+                  Chúng tôi sẽ tìm nhân viên phù hợp cho bạn.
+                </p>
+              </div>
+            ) : paymentInfo.responseCode === '00' ? (
+              <div style={{
+                background: '#fffbeb',
+                border: '1px solid #f59e0b',
+                borderRadius: '8px',
+                padding: '16px',
+                margin: '16px 0',
+                textAlign: 'left'
+              }}>
+                <p style={{ color: '#d97706', fontSize: '14px', margin: 0 }}>
+                  <strong>⏳ Đang xử lý:</strong> Thanh toán đang được xác nhận.
+                  Vui lòng đợi trong giây lát...
+                </p>
+              </div>
+            ) : null}
+
             <ActionButton onClick={() => navigate('/my-orders')}>Xem đơn hàng</ActionButton>
             <ActionButton onClick={() => navigate('/')}>Về trang chủ</ActionButton>
           </>
